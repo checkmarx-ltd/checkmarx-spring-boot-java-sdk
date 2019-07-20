@@ -8,7 +8,7 @@
 		<version>2.1.6.RELEASE</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.checkmarx</groupId>
+	<groupId>com.github.checkmarx-ts</groupId>
 	<artifactId>cx-spring-boot-sdk</artifactId>
 	<version>0.1</version>
 	<name>cx-spring-boot-sdk</name>
