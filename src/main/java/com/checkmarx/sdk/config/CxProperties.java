@@ -34,6 +34,8 @@ public class CxProperties {
     private String jiraAssigneeField = "jira-assignee";
     private Integer httpConnectionTimeout = 30000;
     private Integer httpReadTimeout = 120000;
+    private Integer scanPolling = 20000;
+    private Integer reportTimeout = 300000;
 
     private String portalUrl;
 
@@ -293,6 +295,22 @@ public class CxProperties {
 
     public void setHttpReadTimeout(Integer httpReadTimeout) {
         this.httpReadTimeout = httpReadTimeout;
+    }
+
+    public Integer getScanPolling() {
+        return scanPolling;
+    }
+
+    public void setScanPolling(Integer scanPolling) {
+        this.scanPolling = scanPolling;
+    }
+
+    public Integer getReportTimeout() {
+        return reportTimeout;
+    }
+
+    public void setReportTimeout(Integer reportTimeout) {
+        this.reportTimeout = reportTimeout;
     }
 }
 

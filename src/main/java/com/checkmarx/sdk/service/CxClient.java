@@ -19,15 +19,27 @@ import java.util.Map;
  */
 public interface CxClient {
 
+    /**
+     * Get the last scan Id of a given project Id
+     * @param projectId project Id
+     * @return
+     */
     public Integer getLastScanId(Integer projectId);
 
     /**
      * Fetches scan data based on given scan identifier, as a {@link JSONObject}.
+     *
      * @param scanId scan ID to use
      * @return  populated {@link JSONObject} if scan data was fetched; empty otherwise.
      */
     public JSONObject getScanData(String scanId);
 
+    /**
+     * Fetches the Timestamp of the last full scan
+     *
+     * @param projectId
+     * @return
+     */
     public LocalDateTime getLastScanDate(Integer projectId);
 
     /**
@@ -80,7 +92,7 @@ public interface CxClient {
      * @param projectId ID of project to lookup from Checkmarx
      * @return Map of custom field names to values
      */
-    public Map<String, String> getCustomFields(String projectId);
+    public Map<String, String> getCustomFields(Integer projectId);
 
     /**
      * Parse CX report file, mapped to ScanResults DTO, applying filtering as requested
@@ -177,6 +189,12 @@ public interface CxClient {
      */
     public void uploadProjectSource(Integer projectId, File file) throws CheckmarxException;
 
+    /**
+     *
+     * @param projectId Id of Checkmarx Project
+     * @param excludeFolders list of folder exclusions to apply to a scan
+     * @param excludeFiles list of file exclusions to apply to a scan
+     */
     public void setProjectExcludeDetails(Integer projectId, List<String> excludeFolders, List<String> excludeFiles);
 
     /**
@@ -198,6 +216,7 @@ public interface CxClient {
      */
     public String createTeam(String parentTeamId, String teamName) throws CheckmarxException;
 
+
     /**
      * Get scan configuration Id
      *
@@ -207,29 +226,113 @@ public interface CxClient {
      */
     public Integer getScanConfiguration(String configuration) throws CheckmarxException;
 
+    /**
+     * Fetch the Id of a given preset name
+     *
+     * @param preset name of the preset to find the Id for
+     * @return Id for the scan configuration
+     * @throws CheckmarxException
+     */
     public Integer getPresetId(String preset) throws CheckmarxException;
 
     /**
      * Get scan summary for given scanId
      *
      * @param scanId
+     * @return Id for the preset
+     * @throws CheckmarxException
+     */
+    public CxScanSummary getScanSummaryByScanId(Integer scanId) throws CheckmarxException;
+
+    /**
+     * Get scan summary for the latest scan of a given project Id
+     *
+     * @param projectId project Id to retrieve the latest scan summary for
+     * @return CxScanSummary containing scan summary information
+     * @throws CheckmarxException
+     */
+    public CxScanSummary getScanSummary(Integer projectId) throws CheckmarxException;
+
+    /**
+     * Get scan summary for the latest scan associated with a teamName & projectName
+     *
+     * @param teamName
+     * @param projectName
+     * @return CxScanSummary containing scan summary information
+     * @throws CheckmarxException
+     */
+    public CxScanSummary getScanSummary(String teamName, String projectName) throws CheckmarxException;
+
+    /**
+     * Create a scan based on the CxScanParams and return the scan Id
+     *
+     * @param params attributes used to define the project
+     * @param comment
+     * @return Scan Id associated with the new scan
+     * @throws CheckmarxException
+     */
+    public Integer createScan(CxScanParams params, String comment) throws CheckmarxException;
+
+    /**
+     * Wait for the scan of a given scan Id to finish
+     *
+     * @param scanId
+     * @throws CheckmarxException
+     */
+    public void waitForScanCompletion(Integer scanId) throws CheckmarxException;
+
+    /**
+     *
+     * @param scanId
      * @return
      * @throws CheckmarxException
      */
-    public CxScanSummary getScanSummary(Integer scanId) throws CheckmarxException;
+    public void deleteScan(Integer scanId) throws CheckmarxException;
 
-    public CxScanSummary getScanSummary(String projectId) throws CheckmarxException;
-
-    public CxScanSummary getScanSummary(String teamName, String projectName) throws CheckmarxException;
-
-    public Integer createScan(CxScanParams params, String comment) throws CheckmarxException;
-
+    /**
+     * Create a scan based on the CxScanParams and wait for the scan to complete, returning the result XML Jaxb object
+     *
+     * @param params attributes used to define the project
+     * @param comment
+     * @return CxXMLResultType (Jaxb/XML object representation of the scan results)
+     * @throws CheckmarxException
+     */
     public CxXMLResultsType createScanAndReport(CxScanParams params, String comment) throws CheckmarxException;
 
+    /**
+     * Create a scan based on the CxScanParams and return the ScanResults object based on filters
+     * @param params attributes used to define the project
+     * @param comment
+     * @param filters filters to apply to the scan result set (severity, category, cwe)
+     * @return
+     * @throws CheckmarxException
+     */
     public ScanResults createScanAndReport(CxScanParams params, String comment, List<Filter> filters) throws CheckmarxException;
 
+    /**
+     * Create a scan based on the CxScanParams and wait for the scan to complete, returning the result XML Jaxb object
+     *
+     * @param teamName
+     * @param projectName
+     * @return
+     * @throws CheckmarxException
+     */
     public CxXMLResultsType getLatestScanReport(String teamName, String projectName) throws CheckmarxException;
 
+    /**
+     * Create a scan based on the CxScanParams and return the ScanResults object based on filters
+     *
+     * @param teamName
+     * @param projectName
+     * @param filters
+     * @return
+     * @throws CheckmarxException
+     */
     public ScanResults getLatestScanResults(String teamName, String projectName, List<Filter> filters) throws CheckmarxException;
 
+    /*
+    Team
+    add team
+    ldap?
+     */
 }

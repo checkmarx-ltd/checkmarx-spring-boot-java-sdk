@@ -86,6 +86,7 @@ public class CxService implements CxClient{
     private static final String REPORT_DOWNLOAD = "/reports/sastScan/{id}";
     private static final String REPORT_STATUS = "/reports/sastScan/{id}/status";
     private static final String OSA_VULN = "Vulnerable_Library";
+    private static final Long SLEEP = 20000L;
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
     private final RestTemplate restTemplate;
@@ -506,7 +507,7 @@ public class CxService implements CxClient{
             }
         }
         // Add custom field values if requested
-        Map<String, String> customFields = getCustomFields(cxResults.getProjectId());
+        Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
         additionalDetails.put("customFields", customFields);
         return additionalDetails;
     }
@@ -517,16 +518,16 @@ public class CxService implements CxClient{
      * @param projectId ID of project to lookup from Checkmarx
      * @return Map of custom field names to values
      */
-    public Map<String, String> getCustomFields(String projectId) {
+    public Map<String, String> getCustomFields(Integer projectId) {
         Map<String, String> customFields = new HashMap<String, String>();
-        log.info("Fetching custom fields from project ID ".concat(projectId));
+        log.info("Fetching custom fields from project ID ".concat(projectId.toString()));
         CxProject cxProject = getProject(Integer.valueOf(projectId));
         if (cxProject != null) {
             for (CxProject.CustomField customField : cxProject.getCustomFields()) {
                 customFields.put(customField.getName(), customField.getValue());
             }
         } else {
-            log.error("Could not find project with ID ".concat(projectId));
+            log.error("Could not find project with ID ".concat(projectId.toString()));
         }
         return customFields;
     }
@@ -1293,7 +1294,7 @@ public class CxService implements CxClient{
      * @return
      * @throws CheckmarxException
      */
-    public CxScanSummary getScanSummary(Integer scanId) throws CheckmarxException {
+    public CxScanSummary getScanSummaryByScanId(Integer scanId) throws CheckmarxException {
         HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
         try {
             log.debug("Retrieving scan summary for scan id: {}", scanId);
@@ -1311,24 +1312,45 @@ public class CxService implements CxClient{
         return null;
     }
 
+    /**
+     * Get the scan summary for the latest scan of a given project Id
+     *
+     * @param projectId project Id to retrieve the latest scan summary for
+     * @return
+     * @throws CheckmarxException
+     */
     @Override
-    public CxScanSummary getScanSummary(String projectId) throws CheckmarxException {
-        return null;
+    public CxScanSummary getScanSummary(Integer projectId) throws CheckmarxException {
+        Integer scanId = getLastScanId(projectId);
+        return getScanSummaryByScanId(scanId);
     }
 
+    /**
+     * Get the scan summary for the latest scan of a given team and project name
+     *
+     * @param teamName
+     * @param projectName
+     * @return
+     * @throws CheckmarxException
+     */
     @Override
     public CxScanSummary getScanSummary(String teamName, String projectName) throws CheckmarxException {
-        return null;
+        String teamId = getTeamId(teamName);
+        Integer projectId = getProjectId(teamId, projectName);
+        Integer scanId = getLastScanId(projectId);
+        return getScanSummaryByScanId(scanId);
     }
 
     @Override
     public Integer createScan(CxScanParams params, String comment) throws CheckmarxException{
+        log.info("Creating scan...");
         validateScanParams(params);
         String teamId = getTeamId(params.getTeamName());
         Integer projectId = getProjectId(teamId, params.getProjectName());
         if(projectId.equals(UNKNOWN_INT)){
             projectId = createProject(teamId,params.getProjectName());
         }
+        setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
         CxScan scan = CxScan.builder()
                 .projectId(projectId)
                 .isIncremental(params.isIncremental())
@@ -1349,28 +1371,161 @@ public class CxService implements CxClient{
             log.error("Error occurred while creating Scan for project {}, http error {}", projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
         }
+        log.info("...Finished creating scan");
         return UNKNOWN_INT;
-
     }
 
+    /**
+     *
+     * @param params attributes used to define the project
+     * @param comment
+     * @return
+     * @throws CheckmarxException
+     */
     @Override
-    public CxXMLResultsType createScanAndReport(CxScanParams params, String comment) {
-        return null;
+    public CxXMLResultsType createScanAndReport(CxScanParams params, String comment) throws CheckmarxException{
+        Integer scanId = createScan(params, comment);
+        waitForScanCompletion(scanId);
+
+        try {
+            Integer reportId = createScanReport(scanId);
+            Thread.sleep(cxProperties.getScanPolling());
+            int timer = 0;
+            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
+                Thread.sleep(cxProperties.getScanPolling());
+                timer += cxProperties.getScanPolling();
+                if (timer >= cxProperties.getReportTimeout()) {
+                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
+                    throw new CheckmarxException("Timeout exceeded during report generation");
+                }
+            }
+            Thread.sleep(cxProperties.getScanPolling());
+            return getXmlReportContent(reportId);
+        } catch (InterruptedException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            Thread.currentThread().interrupt();
+            throw new CheckmarxException("Interrupted Exception Occurred");
+        }
     }
 
+    /**
+     *
+     * @param params attributes used to define the project
+     * @param comment
+     * @param filters filters to apply to the scan result set (severity, category, cwe)
+     * @return
+     * @throws CheckmarxException
+     */
     @Override
-    public ScanResults createScanAndReport(CxScanParams params, String comment, List<Filter> filters) {
-        return null;
+    public ScanResults createScanAndReport(CxScanParams params, String comment, List<Filter> filters) throws CheckmarxException{
+        Integer scanId = createScan(params, comment);
+        waitForScanCompletion(scanId);
+
+        try {
+            Integer reportId = createScanReport(scanId);
+            Thread.sleep(cxProperties.getScanPolling());
+            int timer = 0;
+            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
+                Thread.sleep(cxProperties.getScanPolling());
+                timer += cxProperties.getScanPolling();
+                if (timer >= cxProperties.getReportTimeout()) {
+                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
+                    throw new CheckmarxException("Timeout exceeded during report generation");
+                }
+            }
+            Thread.sleep(cxProperties.getScanPolling());
+            return getReportContent(reportId, filters);
+        } catch (InterruptedException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            Thread.currentThread().interrupt();
+            throw new CheckmarxException("Interrupted Exception Occurred");
+        }
     }
 
+    /**
+     *
+     * @param scanId
+     * @return
+     * @throws CheckmarxException
+     */
     @Override
-    public CxXMLResultsType getLatestScanReport(String teamName, String projectName) {
-        return null;
+    public void deleteScan(Integer scanId) throws CheckmarxException {
+        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        log.debug("Deleting scan with id {}", scanId);
+        try {
+            ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_STATUS), HttpMethod.DELETE, httpEntity, String.class, scanId);
+        } catch (HttpStatusCodeException e) {
+            log.error("HTTP Status Code of {} while deleting scan Id {}", e.getStatusCode(), scanId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
     }
 
+    /**
+     *
+     * @param teamName
+     * @param projectName
+     * @return
+     * @throws CheckmarxException
+     */
     @Override
-    public ScanResults getLatestScanResults(String teamName, String projectName, List<Filter> filters) {
-        return null;
+    public CxXMLResultsType getLatestScanReport(String teamName, String projectName) throws CheckmarxException {
+        String teamId = getTeamId(teamName);
+        Integer projectId = getProjectId(teamId, projectName);
+        Integer scanId = getLastScanId(projectId);
+        try {
+            Integer reportId = createScanReport(scanId);
+            Thread.sleep(cxProperties.getScanPolling());
+            int timer = 0;
+            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
+                Thread.sleep(cxProperties.getScanPolling());
+                timer += cxProperties.getScanPolling();
+                if (timer >= cxProperties.getReportTimeout()) {
+                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
+                    throw new CheckmarxException("Timeout exceeded during report generation");
+                }
+            }
+            Thread.sleep(cxProperties.getScanPolling());
+            return getXmlReportContent(reportId);
+        } catch (InterruptedException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            Thread.currentThread().interrupt();
+            throw new CheckmarxException("Interrupted Exception Occurred");
+        }
+    }
+
+    /**
+     * Get the latest scan results by teamName and projectName with filtered results
+     *
+     * @param teamName
+     * @param projectName
+     * @param filters
+     * @return
+     * @throws CheckmarxException
+     */
+    @Override
+    public ScanResults getLatestScanResults(String teamName, String projectName, List<Filter> filters) throws CheckmarxException {
+        String teamId = getTeamId(teamName);
+        Integer projectId = getProjectId(teamId, projectName);
+        Integer scanId = getLastScanId(projectId);
+        try {
+            Integer reportId = createScanReport(scanId);
+            Thread.sleep(cxProperties.getScanPolling());
+            int timer = 0;
+            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
+                Thread.sleep(cxProperties.getScanPolling());
+                timer += cxProperties.getScanPolling();
+                if (timer >= cxProperties.getReportTimeout()) {
+                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
+                    throw new CheckmarxException("Timeout exceeded during report generation");
+                }
+            }
+            Thread.sleep(cxProperties.getScanPolling());
+            return getReportContent(reportId, filters);
+        } catch (InterruptedException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            Thread.currentThread().interrupt();
+            throw new CheckmarxException("Interrupted Exception Occurred");
+        }
     }
 
 
@@ -1427,6 +1582,7 @@ public class CxService implements CxClient{
     }
 
     private void validateScanParams(CxScanParams params) throws CheckmarxException {
+        log.debug(params.toString());
         if(ScanUtils.empty(params.getProjectName())){
             throw new CheckmarxException("No project name was provided for the scan");
         }
@@ -1437,10 +1593,10 @@ public class CxService implements CxClient{
             params.setTeamName(cxProperties.getTeam());
         }
         if(ScanUtils.empty(params.getFileExclude())){
-            params.setFileExclude(cxProperties.getExcludeFiles());
+            params.setFileExclude(Arrays.asList(cxProperties.getExcludeFiles().split(",")));
         }
         if(ScanUtils.empty(params.getFolderExclude())){
-            params.setFolderExclude(cxProperties.getExcludeFolders());
+            params.setFolderExclude(Arrays.asList(cxProperties.getExcludeFolders().split(",")));
         }
         if(ScanUtils.empty(params.getScanPreset())){
             if(ScanUtils.empty(cxProperties.getScanPreset())){
@@ -1465,6 +1621,35 @@ public class CxService implements CxClient{
             }
         }else{
             throw new CheckmarxException("No source type was provided for the scan");
+        }
+    }
+
+    /**
+     * Wait for a for a scan with a given scan Id to complete with a finished or failure state
+     *
+     * @param scanId
+     * @throws CheckmarxException
+     */
+    public void waitForScanCompletion(Integer scanId) throws CheckmarxException{
+        Integer status = getScanStatus(scanId);
+        long timer = 0;
+        try {
+
+            while (!status.equals(CxService.SCAN_STATUS_FINISHED) && !status.equals(CxService.SCAN_STATUS_CANCELED) &&
+                    !status.equals(CxService.SCAN_STATUS_FAILED)) {
+                Thread.sleep(cxProperties.getScanPolling());
+                status = getScanStatus(scanId);
+                timer += cxProperties.getScanPolling();
+                if (timer >= (cxProperties.getScanTimeout() * 60000)) {
+                    log.error("Scan timeout exceeded.  {} minutes", cxProperties.getScanTimeout());
+                    throw new CheckmarxException("Timeout exceeded during scan");
+                }
+            }
+            if (status.equals(CxService.SCAN_STATUS_FAILED)) {
+                throw new CheckmarxException("Scan failed");
+            }
+        }catch (InterruptedException e){
+            throw new CheckmarxException("Thread interrupted");
         }
     }
 }

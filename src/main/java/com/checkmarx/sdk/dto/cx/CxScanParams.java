@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.dto.cx;
 
+import java.util.List;
 import java.util.Map;
 
 public class CxScanParams {
@@ -8,8 +9,8 @@ public class CxScanParams {
     private boolean incremental = false;
     private boolean isPublic = true;
     private boolean forceScan = false;
-    private String fileExclude;
-    private String folderExclude;
+    private List<String> fileExclude;
+    private List<String> folderExclude;
     private String scanPreset;
     private String scanConfiguration;
     private Type sourceType = Type.GIT;
@@ -60,19 +61,19 @@ public class CxScanParams {
         this.forceScan = forceScan;
     }
 
-    public String getFileExclude() {
+    public List<String> getFileExclude() {
         return fileExclude;
     }
 
-    public void setFileExclude(String fileExclude) {
+    public void setFileExclude(List<String> fileExclude) {
         this.fileExclude = fileExclude;
     }
 
-    public String getFolderExclude() {
+    public List<String> getFolderExclude() {
         return folderExclude;
     }
 
-    public void setFolderExclude(String folderExclude) {
+    public void setFolderExclude(List<String> folderExclude) {
         this.folderExclude = folderExclude;
     }
 
@@ -147,12 +148,12 @@ public class CxScanParams {
         return this;
     }
 
-    public CxScanParams withFileExclude(String fileExclude) {
+    public CxScanParams withFileExclude(List<String> fileExclude) {
         this.fileExclude = fileExclude;
         return this;
     }
 
-    public CxScanParams withFolderExclude(String folderExclude) {
+    public CxScanParams withFolderExclude(List<String> folderExclude) {
         this.folderExclude = folderExclude;
         return this;
     }
@@ -216,5 +217,25 @@ public class CxScanParams {
         public String getType() {
             return type;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "CxScanParams{" +
+                "teamName='" + teamName + '\'' +
+                ", projectName='" + projectName + '\'' +
+                ", incremental=" + incremental +
+                ", isPublic=" + isPublic +
+                ", forceScan=" + forceScan +
+                ", fileExclude=" + fileExclude +
+                ", folderExclude=" + folderExclude +
+                ", scanPreset='" + scanPreset + '\'' +
+                ", scanConfiguration='" + scanConfiguration + '\'' +
+                ", sourceType=" + sourceType +
+                ", gitUrl='" + gitUrl + '\'' +
+                ", filePath='" + filePath + '\'' +
+                ", customFields=" + customFields +
+                ", postAction='" + postAction + '\'' +
+                '}';
     }
 }
