@@ -7,6 +7,7 @@ import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
+import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -18,6 +19,28 @@ import java.util.Map;
  * Class used to orchestrate submitting scans and retrieving results
  */
 public interface CxClient {
+
+    /**
+     * Authenictate with Checkmarx and Creates a JWT/OIDC access token for Checkmarx REST based resource
+     *
+     * @param username
+     * @param password
+     * @param clientId
+     * @param clientSecret
+     * @return
+     */
+    public String getAuthToken(String username, String password, String clientId, String clientSecret) throws InvalidCredentialsException;
+
+    /**
+     * Authenictate with Checkmarx and Creates a session to access Checkmarx Legacy SOAP based resource
+     *
+     * @param username
+     * @param password
+     * @return
+     * @throws InvalidCredentialsException
+     */
+    public String legacyLogin(String username, String password) throws InvalidCredentialsException;
+
 
     /**
      * Get the last scan Id of a given project Id
@@ -207,6 +230,34 @@ public interface CxClient {
     public String getTeamId(String teamPath) throws CheckmarxException;
 
     /**
+     * Fetches all teams
+     *
+     * @return  a map containing the Team Id and the associated Team Path
+     * @throws CheckmarxException
+     */
+    public Map<String, String> getTeams() throws CheckmarxException;
+
+    /**
+     *
+     * @param ldapServerId
+     * @param teamId
+     * @param ldapGroupDn
+     * @throws CheckmarxException
+     */
+    public void mapTeamLdap(Integer ldapServerId, String teamId, String ldapGroupDn) throws CheckmarxException;
+
+    /**
+     * Removes an LDAP team association
+     *
+     * @param teamId
+     * @param ldap groupdn to map to the role
+     * @param role role in checkmarx
+     * @throws CheckmarxException
+     */
+    public void removeTeamLdap(String teamId, String ldap, String role) throws CheckmarxException;
+
+
+    /**
      * Create team under given parentId
      *
      * @param parentTeamId
@@ -330,9 +381,8 @@ public interface CxClient {
      */
     public ScanResults getLatestScanResults(String teamName, String projectName, List<Filter> filters) throws CheckmarxException;
 
-    /*
-    Team
-    add team
-    ldap?
-     */
+    public Integer getLdapServerId(String serverName) throws  CheckmarxException;
+
+
+
 }

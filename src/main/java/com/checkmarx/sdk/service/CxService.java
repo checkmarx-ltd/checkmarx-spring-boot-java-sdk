@@ -91,6 +91,7 @@ public class CxService implements CxClient{
     private final CxLegacyService cxLegacyService;
     private final RestTemplate restTemplate;
     private String token = null;
+    private String session = null;
     private LocalDateTime tokenExpires = null;
 
     public CxService(CxProperties cxProperties, CxLegacyService cxLegacyService, RestTemplate restTemplate) {
@@ -1528,6 +1529,23 @@ public class CxService implements CxClient{
         }
     }
 
+    @Override
+    public Map<String, String> getTeams() throws CheckmarxException {
+        return null;
+    }
+
+    @Override
+    public void mapTeamLdap(Integer ldapServerId, String teamId, String ldapGroupDn) throws CheckmarxException {
+        if(session == null){
+            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+        }
+        cxLegacyService.createLdapTeamMapping(session, ldapServerId, teamId, ldapGroupDn);
+    }
+
+    @Override
+    public void removeTeamLdap(String teamId, String ldap, String role) throws CheckmarxException {
+
+    }
 
     /**
      * Get Auth Token
@@ -1561,6 +1579,59 @@ public class CxService implements CxClient{
             log.error(ExceptionUtils.getStackTrace(e));
             throw new InvalidCredentialsException();
         }
+    }
+
+    /**
+     * Get Auth Token
+     */
+    public String getAuthToken(String username, String password, String clientId, String clientSecret) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        //clientId = resource_owner_client
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.add("username", username);
+        map.add("password", password);
+        map.add("grant_type", "password");
+        map.add("scope", "sast_rest_api");
+        map.add("client_id", clientId);
+        map.add("client_secret", clientSecret);
+
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(map, headers);
+
+        try {
+            //get the access token
+            log.info("Logging into Checkmarx {}", cxProperties.getUrl().concat(LOGIN));
+            CxAuthResponse response = restTemplate.postForObject(cxProperties.getUrl().concat(LOGIN), requestEntity, CxAuthResponse.class);
+            if (response == null) {
+                throw new InvalidCredentialsException();
+            }
+            token = response.getAccessToken();
+            tokenExpires = LocalDateTime.now().plusSeconds(response.getExpiresIn()-500); //expire 500 seconds early
+        }
+        catch (NullPointerException | HttpStatusCodeException e) {
+            log.error("Error occurred white obtaining Access Token.  Possibly incorrect credentials");
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new InvalidCredentialsException();
+        }
+        return token;
+    }
+
+    @Override
+    public String legacyLogin(String username, String password) throws InvalidCredentialsException {
+        try{
+            session = cxLegacyService.login(username, password);
+        }catch (CheckmarxLegacyException e){
+            throw new InvalidCredentialsException();
+        }
+        return session;
+    }
+
+    @Override
+    public Integer getLdapServerId(String serverName) throws CheckmarxException {
+        if(session == null){
+            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+        }
+        return cxLegacyService.getLdapServerId(session, serverName);
     }
 
     private boolean isTokenExpired() {

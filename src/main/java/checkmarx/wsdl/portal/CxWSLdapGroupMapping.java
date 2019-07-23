@@ -86,4 +86,14 @@ public class CxWSLdapGroupMapping {
         this.ldapGroup = value;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if(!(obj instanceof CxWSLdapGroupMapping)){
+            return false;
+        }
+        CxWSLdapGroupMapping mapping = (CxWSLdapGroupMapping) obj;
+        return mapping.getLdapServerId() == ((CxWSLdapGroupMapping) obj).getLdapServerId() &&
+                mapping.getLdapGroup().getDN().equalsIgnoreCase(((CxWSLdapGroupMapping) obj).getLdapGroup().getDN()) &&
+                mapping.getLdapGroup().getName().equalsIgnoreCase(((CxWSLdapGroupMapping) obj).getLdapGroup().getName());
+    }
 }
