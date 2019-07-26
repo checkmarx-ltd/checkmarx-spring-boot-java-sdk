@@ -15,6 +15,7 @@ public class CxScanParams {
     private String scanConfiguration;
     private Type sourceType = Type.GIT;
     private String gitUrl;
+    private String branch;
     private String filePath; //Only used if Type.FILE is used
     //TODO add custom fields
     private Map<String, String> customFields;
@@ -125,6 +126,14 @@ public class CxScanParams {
         this.gitUrl = gitUrl;
     }
 
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+
     public String getFilePath() {
         return filePath;
     }
@@ -188,6 +197,11 @@ public class CxScanParams {
         return this;
     }
 
+    public CxScanParams withBranch(String branch) {
+        this.branch = branch;
+        return this;
+    }
+
     public CxScanParams withFilePath(String filePath) {
         this.filePath = filePath;
         return this;
@@ -202,7 +216,6 @@ public class CxScanParams {
         this.projectName = projectName;
         return this;
     }
-
 
     public enum Type {
         GIT("GIT"),
