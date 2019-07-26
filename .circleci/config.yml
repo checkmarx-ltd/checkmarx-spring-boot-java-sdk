@@ -16,7 +16,16 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
+      - run: mvn -version
       - run: mvn clean package integration-test
+
+      #commands:
+          #  configure-gpg:
+          #    steps:
+          #      - run:
+          #          name: Configure GPG private key for signing project artifacts in OSS Sonatype
+        #          command: |
+        #            echo $SECRING_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
       - save_cache:
           paths:
             - ~/.m2
