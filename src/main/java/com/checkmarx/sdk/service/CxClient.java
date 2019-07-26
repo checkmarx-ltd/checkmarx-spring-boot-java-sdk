@@ -139,8 +139,20 @@ public interface CxClient {
 
     public String getIssueDescription(Long scanId, Long pathId);
 
+    /**
+     * Create Project under a given Owner Id team
+     *
+     * @param ownerId
+     * @param name
+     * @return Id of the new project
+     */
     public Integer createProject(String ownerId, String name);
 
+    /**
+     * Delete a project by Id
+     * @param projectId
+     */
+    public void deleteProject(Integer projectId);
 
     /**
      * Get All Projects in Checkmarx
@@ -238,23 +250,25 @@ public interface CxClient {
     public Map<String, String> getTeams() throws CheckmarxException;
 
     /**
-     *
+     * Adds an LDAP team association - uses SOAP Web Service
      * @param ldapServerId
      * @param teamId
+     * @param teamName
      * @param ldapGroupDn
      * @throws CheckmarxException
      */
-    public void mapTeamLdap(Integer ldapServerId, String teamId, String ldapGroupDn) throws CheckmarxException;
+    public void mapTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException;
 
     /**
-     * Removes an LDAP team association
+     * Removes an LDAP team association - uses SOAP Web Service
      *
+      * @param ldapServerId
      * @param teamId
-     * @param ldap groupdn to map to the role
-     * @param role role in checkmarx
+     * @param teamName
+     * @param ldapGroupDn
      * @throws CheckmarxException
      */
-    public void removeTeamLdap(String teamId, String ldap, String role) throws CheckmarxException;
+    public void removeTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException;
 
 
     /**
@@ -265,8 +279,16 @@ public interface CxClient {
      * @return
      * @throws CheckmarxException
      */
-    public String createTeam(String parentTeamId, String teamName) throws CheckmarxException;
+    public String createTeamWS(String parentTeamId, String teamName) throws CheckmarxException;
 
+    /**
+     * Delete a team based on the name for a given parent team id
+     *
+     * @param teamId
+     * @return
+     * @throws CheckmarxException
+     */
+    public void deleteTeamWS(String teamId) throws CheckmarxException;
 
     /**
      * Get scan configuration Id
@@ -383,6 +405,6 @@ public interface CxClient {
 
     public Integer getLdapServerId(String serverName) throws  CheckmarxException;
 
-
+    //TODO Engine Management
 
 }

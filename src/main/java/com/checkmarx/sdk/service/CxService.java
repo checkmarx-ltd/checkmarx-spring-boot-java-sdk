@@ -86,7 +86,6 @@ public class CxService implements CxClient{
     private static final String REPORT_DOWNLOAD = "/reports/sastScan/{id}";
     private static final String REPORT_STATUS = "/reports/sastScan/{id}/status";
     private static final String OSA_VULN = "Vulnerable_Library";
-    private static final Long SLEEP = 20000L;
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
     private final RestTemplate restTemplate;
@@ -383,7 +382,7 @@ public class CxService implements CxClient{
             Map<String, Integer> summary = getIssues(filter, session, xIssueList, cxResults);
             cxScanBuilder.xIssues(xIssueList);
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
-            CxScanSummary scanSummary = getScanSummary(Integer.valueOf(cxResults.getScanId()));
+            CxScanSummary scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
             cxScanBuilder.scanSummary(scanSummary);
             ScanResults results = cxScanBuilder.build();
             //Add the summary map (severity, count)
@@ -937,6 +936,18 @@ public class CxService implements CxClient{
         return UNKNOWN_INT;
     }
 
+    @Override
+    public void deleteProject(Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+
+        log.info("Deleting Project id {}", projectId);
+        try {
+            restTemplate.exchange(cxProperties.getUrl().concat(PROJECT), HttpMethod.DELETE, requestEntity, String.class, projectId);
+        } catch (HttpStatusCodeException e) {
+            log.error("HTTP error code {} while deleting project with id {}", e.getStatusCode(), projectId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+    }
 
     /**
      * Get All Projects in Checkmarx
@@ -1210,16 +1221,25 @@ public class CxService implements CxClient{
      * @return
      * @throws CheckmarxException
      */
-    public String createTeam(String parentTeamId, String teamName) throws CheckmarxException {
-        String session;
-        try {
-            session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
-            cxLegacyService.createTeam(session, parentTeamId, teamName);
-            return getTeamId(cxProperties.getTeam().concat("\\").concat(teamName));
-        } catch (CheckmarxLegacyException e) {
-            log.error("Error occurring while logging into Legacy SOAP based WebService to create new team {} under parent {}", teamName, parentTeamId);
-            throw new CheckmarxException("Error logging into legacy SOAP WebService for Team Creation");
+    public String createTeamWS(String parentTeamId, String teamName) throws CheckmarxException {
+        if(session == null){
+            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
         }
+        cxLegacyService.createTeam(session, parentTeamId, teamName);
+        return getTeamId(cxProperties.getTeam().concat("\\").concat(teamName));
+    }
+
+
+    /**
+     * Delete team based on Id
+      * @param teamId
+     * @throws CheckmarxException
+     */
+    public void deleteTeamWS(String teamId) throws CheckmarxException {
+        if(session == null){
+            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+        }
+        cxLegacyService.deleteTeam(session, teamId);
     }
 
     /**
@@ -1349,7 +1369,20 @@ public class CxService implements CxClient{
         String teamId = getTeamId(params.getTeamName());
         Integer projectId = getProjectId(teamId, params.getProjectName());
         if(projectId.equals(UNKNOWN_INT)){
-            projectId = createProject(teamId,params.getProjectName());
+            projectId = createProject(teamId, params.getProjectName());
+        }
+
+        Integer presetId = getPresetId(params.getScanPreset());
+        Integer engineId = getScanConfiguration(params.getScanConfiguration());
+        createScanSetting(projectId, presetId, engineId);
+
+        switch (params.getSourceType()){
+            case GIT:
+                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
+                break;
+            case FILE:
+                uploadProjectSource(projectId, new File(params.getFilePath()));
+                break;
         }
         setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
         CxScan scan = CxScan.builder()
@@ -1359,6 +1392,7 @@ public class CxService implements CxClient{
                 .isPublic(params.isPublic())
                 .comment(comment)
                 .build();
+
         HttpEntity<CxScan> requestEntity = new HttpEntity<>(scan, createAuthHeaders());
 
         log.info("Creating Scan for project Id {}", projectId);
@@ -1535,16 +1569,19 @@ public class CxService implements CxClient{
     }
 
     @Override
-    public void mapTeamLdap(Integer ldapServerId, String teamId, String ldapGroupDn) throws CheckmarxException {
+    public void mapTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
         if(session == null){
             legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
         }
-        cxLegacyService.createLdapTeamMapping(session, ldapServerId, teamId, ldapGroupDn);
+        cxLegacyService.createLdapTeamMapping(session, ldapServerId, teamId, teamName, ldapGroupDn);
     }
 
     @Override
-    public void removeTeamLdap(String teamId, String ldap, String role) throws CheckmarxException {
-
+    public void removeTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
+        if(session == null){
+            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+        }
+        cxLegacyService.removeLdapTeamMapping(session, ldapServerId, teamId, teamName, ldapGroupDn);
     }
 
     /**
@@ -1663,10 +1700,10 @@ public class CxService implements CxClient{
             }
             params.setTeamName(cxProperties.getTeam());
         }
-        if(ScanUtils.empty(params.getFileExclude())){
+        if(ScanUtils.empty(params.getFileExclude()) && !ScanUtils.empty(cxProperties.getExcludeFiles())){
             params.setFileExclude(Arrays.asList(cxProperties.getExcludeFiles().split(",")));
         }
-        if(ScanUtils.empty(params.getFolderExclude())){
+        if(ScanUtils.empty(params.getFolderExclude()) && !ScanUtils.empty(cxProperties.getExcludeFolders())){
             params.setFolderExclude(Arrays.asList(cxProperties.getExcludeFolders().split(",")));
         }
         if(ScanUtils.empty(params.getScanPreset())){
@@ -1682,8 +1719,8 @@ public class CxService implements CxClient{
             params.setScanConfiguration(cxProperties.getConfiguration());
         }
         if(params.getSourceType().equals(CxScanParams.Type.GIT)){
-            if(ScanUtils.empty(params.getGitUrl())){
-                throw new CheckmarxException("No git url was provided for the scan");
+            if(ScanUtils.empty(params.getGitUrl()) || ScanUtils.empty(params.getBranch())){
+                throw new CheckmarxException("No git url or branch was was missing for the scan");
             }
         }
         else if(params.getSourceType().equals(CxScanParams.Type.FILE)){
