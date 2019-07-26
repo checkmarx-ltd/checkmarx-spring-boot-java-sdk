@@ -1,9 +1,33 @@
 version: 2
 jobs:
-  build:
+  develop-build-verify:
     branches:
       only:
         - develop
+    docker:
+      - image: circleci/openjdk:8-jdk
+    working_directory: ~/repo
+    environment:
+      MAVEN_OPTS: -Xmx3200m
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "pom.xml" }}
+            - v1-dependencies-
+      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
+      - run: mvn -s .circleci/maven.settings.xml clean verify
+      - run: mvn -s .circleci/maven.settings.xml clean deploy
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "pom.xml" }}
+
+  master-build-release:
+    branches:
+      only:
+        - master
     docker:
       - image: circleci/openjdk:8-jdk
     working_directory: ~/repo
@@ -22,4 +46,3 @@ jobs:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
-          
