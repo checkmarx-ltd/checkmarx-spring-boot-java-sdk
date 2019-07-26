@@ -132,8 +132,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<skipTests>true</skipTests>
-					<!-- CircleCI build workaround -->
-					<argLine>${surefireArgLine} -Xms1024m -Xmx2048m</argLine>
 					<reuseForks>true</reuseForks>
 					<useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
@@ -149,6 +147,8 @@
 							<includes>
 								<include>**/*Test.java</include>
 							</includes>
+							<reuseForks>true</reuseForks>
+							<useSystemClassLoader>false</useSystemClassLoader>
 						</configuration>
 					</execution>
 					<execution>
@@ -162,6 +162,8 @@
 							<includes>
 								<include>**/*IT.*</include>
 							</includes>
+							<reuseForks>true</reuseForks>
+							<useSystemClassLoader>false</useSystemClassLoader>
 						</configuration>
 					</execution>
 				</executions>
