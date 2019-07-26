@@ -4,6 +4,14 @@
             <id>ossrh</id>
             <username>${env.SERVER_OSSRH_USERNAME}</username>
             <password>${env.SERVER_OSSRH_PASSWORD}</password>
+            <configuration>
+                <httpConfiguration>
+                    <put>
+                        <connectionTimeout>120000</connectionTimeout>
+                        <readTimeout>120000</readTimeout>
+                    </put>
+                </httpConfiguration>
+            </configuration>
         </server>
     </servers>
 
