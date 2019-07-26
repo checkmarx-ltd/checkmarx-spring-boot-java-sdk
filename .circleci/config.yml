@@ -16,20 +16,10 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
-      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --
-      - run: gpg --list-secret-keys
-      - run: mvn -s .circleci/maven.settings.xml clean verify -DskipTests
-      #- run: mvn clean package integration-test
-
-
-      #commands:
-          #  configure-gpg:
-          #    steps:
-          #      - run:
-          #          name: Configure GPG private key for signing project artifacts in OSS Sonatype
-        #          command: |
-        #            echo $SECRING_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
+      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
+      - run: mvn -s .circleci/maven.settings.xml clean deploy
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
+          
