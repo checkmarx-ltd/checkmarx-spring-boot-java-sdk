@@ -6,7 +6,6 @@ jobs:
     working_directory: ~/repo
     environment:
       MAVEN_OPTS: -Xmx3200m
-
     steps:
       - checkout
       - restore_cache:
@@ -21,9 +20,6 @@ jobs:
           key: v1-dependencies-{{ checksum "pom.xml" }}
 
   deploy:
-    branches:
-      only:
-        - master
     docker:
       - image: circleci/openjdk:8-jdk
     working_directory: ~/repo
@@ -41,3 +37,15 @@ jobs:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
+
+workflows:
+  version: 2
+  build_deploy:
+    jobs:
+      - build
+      - deploy:
+          filters:
+            branches:
+              only: master
+          requires:
+            - build
