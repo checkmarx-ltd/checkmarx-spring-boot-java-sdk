@@ -16,8 +16,10 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
-      - run: mvn -version
-      - run: mvn clean package integration-test
+      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
+      - run: mvn -s .circleci/maven.settings.xml clean verify -DskipTests
+      #- run: mvn clean package integration-test
+
 
       #commands:
           #  configure-gpg:
