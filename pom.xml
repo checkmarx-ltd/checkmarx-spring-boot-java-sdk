@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.github.checkmarx-ts</groupId>
 	<artifactId>cx-spring-boot-sdk</artifactId>
-	<version>0.01</version>
+	<version>0.2</version>
 	<name>cx-spring-boot-sdk</name>
 	<description>Checkmarx Java Spring Boot SDK</description>
 
@@ -132,6 +132,10 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<skipTests>true</skipTests>
+					<!-- CircleCI build workaround -->
+					<argLine>${surefireArgLine} -Xms1024m -Xmx2048m</argLine>
+					<reuseForks>true</reuseForks>
+					<useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
 				<executions>
 					<execution>
