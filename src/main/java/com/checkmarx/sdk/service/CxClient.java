@@ -29,7 +29,7 @@ public interface CxClient {
      * @param clientSecret
      * @return
      */
-    public String getAuthToken(String username, String password, String clientId, String clientSecret) throws InvalidCredentialsException;
+    public String getAuthToken(String username, String password, String clientId, String clientSecret, String scope) throws InvalidCredentialsException;
 
     /**
      * Authenictate with Checkmarx and Creates a session to access Checkmarx Legacy SOAP based resource

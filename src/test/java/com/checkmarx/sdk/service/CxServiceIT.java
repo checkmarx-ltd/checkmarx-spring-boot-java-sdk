@@ -9,6 +9,7 @@ import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
+import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,25 @@ public class CxServiceIT {
     private CxProperties properties;
     @Autowired
     private CxService service;
+
+    @Test
+    public void getVersionAndLogin() {
+        try {
+            String token = service.getAuthToken(
+                    properties.getUsername(),
+                    properties.getPassword(),
+                    properties.getClientId(),
+                    properties.getClientSecret(),
+                    properties.getScope()
+            );
+
+            assertNotNull(token);
+            assertNotEquals("",token);
+        }catch (InvalidCredentialsException e){
+            fail("Unexpected InvalidCredentialsException");
+        }
+
+    }
 
     @Test
     public void getLastScanDate() {

@@ -1588,40 +1588,20 @@ public class CxService implements CxClient{
      * Get Auth Token
      */
     private void getAuthToken() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("username", cxProperties.getUsername());
-        map.add("password", cxProperties.getPassword());
-        map.add("grant_type", "password");
-        map.add("scope", "sast_rest_api");
-        map.add("client_id", "resource_owner_client");
-        map.add("client_secret", cxProperties.getClientSecret());
-
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(map, headers);
-
-        try {
-            //get the access token
-            log.info("Logging into Checkmarx {}", cxProperties.getUrl().concat(LOGIN));
-            CxAuthResponse response = restTemplate.postForObject(cxProperties.getUrl().concat(LOGIN), requestEntity, CxAuthResponse.class);
-            if (response == null) {
-                throw new InvalidCredentialsException();
-            }
-            token = response.getAccessToken();
-            tokenExpires = LocalDateTime.now().plusSeconds(response.getExpiresIn()-500); //expire 500 seconds early
-        }
-        catch (NullPointerException | HttpStatusCodeException e) {
-            log.error("Error occurred white obtaining Access Token.  Possibly incorrect credentials");
-            log.error(ExceptionUtils.getStackTrace(e));
-            throw new InvalidCredentialsException();
-        }
+        getAuthToken(
+                cxProperties.getUsername(),
+                cxProperties.getPassword(),
+                cxProperties.getClientId(),
+                cxProperties.getClientSecret(),
+                cxProperties.getScope()
+        );
     }
 
     /**
      * Get Auth Token
      */
-    public String getAuthToken(String username, String password, String clientId, String clientSecret) {
+    @Override
+    public String getAuthToken(String username, String password, String clientId, String clientSecret, String scope) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         //clientId = resource_owner_client
@@ -1629,10 +1609,11 @@ public class CxService implements CxClient{
         map.add("username", username);
         map.add("password", password);
         map.add("grant_type", "password");
-        map.add("scope", "sast_rest_api");
+        map.add("scope", cxProperties.getScope());
         map.add("client_id", clientId);
-        map.add("client_secret", clientSecret);
-
+        if(!ScanUtils.empty(cxProperties.getClientSecret())){
+            map.add("client_secret", clientSecret);
+        }
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(map, headers);
 
         try {
