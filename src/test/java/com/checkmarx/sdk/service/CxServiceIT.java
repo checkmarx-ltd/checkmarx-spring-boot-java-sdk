@@ -7,6 +7,7 @@ import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.CxProject;
 import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
+import com.checkmarx.sdk.dto.cx.CxTeam;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
@@ -32,7 +33,7 @@ public class CxServiceIT {
     private CxService service;
 
     @Test
-    public void getVersionAndLogin() {
+    public void Login() {
         try {
             String token = service.getAuthToken(
                     properties.getUsername(),
@@ -47,7 +48,39 @@ public class CxServiceIT {
         }catch (InvalidCredentialsException e){
             fail("Unexpected InvalidCredentialsException");
         }
+    }
 
+    //TODO LDAP Tests
+
+    @Test
+    public void getTeams() {
+        try {
+            List<CxTeam> teams = service.getTeams();
+            assertNotNull(teams);
+        }catch (CheckmarxException e){
+            fail("Unexpected InvalidCredentialsException");
+        }
+    }
+
+    @Test
+    public void createTeam() {
+        try {
+            String id = service.getTeamId(properties.getTeam());
+            String newTeamId = service.createTeam(id, "Whatever");
+            assertNotNull(newTeamId);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
+
+    @Test
+    public void deleteTeam() {
+        try {
+            String id = service.getTeamId(properties.getTeam().concat(properties.getTeamPathSeparator()).concat("Whatever"));
+            service.deleteTeam(id);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
     }
 
     @Test

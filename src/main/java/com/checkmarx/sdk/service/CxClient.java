@@ -5,6 +5,7 @@ import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.CxProject;
 import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
+import com.checkmarx.sdk.dto.cx.CxTeam;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
@@ -233,6 +234,14 @@ public interface CxClient {
     public void setProjectExcludeDetails(Integer projectId, List<String> excludeFolders, List<String> excludeFiles);
 
     /**
+     *
+     * @param ldapServerId
+     * @param ldapGroupDn
+     * @throws CheckmarxException
+     */
+    public Integer getLdapTeamMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException;
+
+    /**
      * Get teamId for given path
      *
      * @param teamPath
@@ -244,10 +253,32 @@ public interface CxClient {
     /**
      * Fetches all teams
      *
-     * @return  a map containing the Team Id and the associated Team Path
+     * @return  a List containing the Teams in Checkmarx
      * @throws CheckmarxException
      */
-    public Map<String, String> getTeams() throws CheckmarxException;
+    public List<CxTeam> getTeams() throws CheckmarxException;
+
+    /**
+     * Adds an LDAP team association - uses SOAP Web Service
+     * @param ldapServerId
+     * @param teamId
+     * @param teamName
+     * @param ldapGroupDn
+     * @throws CheckmarxException
+     */
+    public void mapTeamLdap(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException;
+
+    /**
+     * Removes an LDAP team association - uses SOAP Web Service
+     *
+     * @param ldapServerId
+     * @param teamId
+     * @param teamName
+     * @param ldapGroupDn
+     * @throws CheckmarxException
+     */
+    public void removeTeamLdap(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException;
+
 
     /**
      * Adds an LDAP team association - uses SOAP Web Service
@@ -276,18 +307,47 @@ public interface CxClient {
      *
      * @param parentTeamId
      * @param teamName
-     * @return
+     * @return new TeamId
      * @throws CheckmarxException
      */
     public String createTeamWS(String parentTeamId, String teamName) throws CheckmarxException;
 
     /**
-     * Delete a team based on the name for a given parent team id
+     * Create team under given parentId - Will use REST API to create team for version 9.0+
+     *
+     * @param parentTeamId
+     * @param teamName
+     * @return new TeamId
+     * @throws CheckmarxException
+     */
+    public String createTeam(String parentTeamId, String teamName) throws CheckmarxException;
+
+    /**
+     * Create team under given parentId - Will use REST API to create team for version 9.0+
      *
      * @param teamId
      * @return
      * @throws CheckmarxException
      */
+    public void deleteTeam(String teamId) throws CheckmarxException;
+
+    /**
+     * Get a team Id based on the name and the Parent Team Id
+     * @param parentTeamId
+     * @param teamName
+     * @return
+     * @throws CheckmarxException
+     */
+    public String getTeamId(String parentTeamId, String teamName) throws CheckmarxException;
+
+
+        /**
+         * Delete a team based on the name for a given parent team id
+         *
+         * @param teamId
+         * @return
+         * @throws CheckmarxException
+         */
     public void deleteTeamWS(String teamId) throws CheckmarxException;
 
     /**

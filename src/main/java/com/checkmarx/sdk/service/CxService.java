@@ -25,6 +25,10 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.UnmarshalException;
@@ -70,6 +74,12 @@ public class CxService implements CxClient{
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
     private static final String LOGIN = "/auth/identity/connect/token";
     private static final String TEAMS = "/auth/teams";
+    private static final String TEAM = "/auth/teams/{id}";
+    private static final String TEAM_LDAP = "/auth/LDAPServers/{id}/TeamMappings";
+    private static final String TEAM_LDAP_MAPPINGS = "/auth/LDAPTeamMappings?ldapServerId={id}";
+    private static final String TEAM_LDAP_MAPPING = "/auth/LDAPTeamMappings/{id}";
+    private static final String TEAM_ROLE = "/auth/teams/{id}";
+    private static final String LDAP_SERVER = "/auth/LDAPServers";
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
@@ -1213,6 +1223,83 @@ public class CxService implements CxClient{
         return UNKNOWN;
     }
 
+
+    /**
+     * Get a team Id based on the name and the Parent Team Id
+     * @param parentTeamId
+     * @param teamName
+     * @return
+     * @throws CheckmarxException
+     */
+    @Override
+    public String getTeamId(String parentTeamId, String teamName) throws CheckmarxException {
+        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        try {
+            if(cxProperties.getVersion() < 9.0){
+                log.error("Unsupported function for this version of Checkmarx");
+                return null;
+            }
+            log.info("Retrieving Cx teams");
+            ResponseEntity<CxTeam[]> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAMS), HttpMethod.GET, httpEntity, CxTeam[].class);
+            CxTeam[] teams = response.getBody();
+            if (teams == null) {
+                throw new CheckmarxException("Error obtaining Team Id");
+            }
+            for (CxTeam team : teams) {
+                if (team.getName().equals(teamName) && team.getParentId().equals(parentTeamId)) {
+                    log.info("Found team {} with ID {}", teamName, team.getId());
+                    return team.getId();
+                }
+            }
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving Teams");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        log.info("No team was found for {} with parentId {}", teamName, parentTeamId);
+        return UNKNOWN;
+    }
+
+
+    @Override
+    public String createTeam(String parentTeamId, String teamName) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0){
+            return createTeamWS(parentTeamId, teamName);
+        }
+        else {
+            JSONObject json = new JSONObject();
+            json.put("name", teamName);
+            json.put("parentId", Long.parseLong(parentTeamId));
+            log.info("Creating team with name {} under parent Id {}", teamName, parentTeamId);
+            try {
+                HttpEntity requestEntity = new HttpEntity<>(json.toString(), createAuthHeaders());
+                restTemplate.postForObject(cxProperties.getUrl().concat(TEAMS), requestEntity, String.class);
+                return getTeamId(parentTeamId, teamName);
+            } catch (HttpStatusCodeException e) {
+                log.error("Error occurred while creating team and retrieving new Id");
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
+            return UNKNOWN;
+        }
+    }
+
+    @Override
+    public void deleteTeam(String teamId) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0){
+            deleteTeamWS(teamId);
+        }
+        else {
+            HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+            log.debug("Deleting team with id {}", teamId);
+            try {
+                ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(TEAM), HttpMethod.DELETE, httpEntity, String.class, teamId);
+            } catch (HttpStatusCodeException e) {
+                log.error("HTTP Status Code of {} while deleting team Id {}", e.getStatusCode(), teamId);
+                log.error(ExceptionUtils.getStackTrace(e));
+                throw new CheckmarxException("Error occurred deleting team with id ".concat(teamId));
+            }
+        }
+    }
+
     /**
      * Create team under given parentId
      *
@@ -1226,7 +1313,7 @@ public class CxService implements CxClient{
             legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
         }
         cxLegacyService.createTeam(session, parentTeamId, teamName);
-        return getTeamId(cxProperties.getTeam().concat("\\").concat(teamName));
+        return getTeamId(cxProperties.getTeam().concat(cxProperties.getTeamPathSeparator()).concat(teamName));
     }
 
 
@@ -1564,8 +1651,100 @@ public class CxService implements CxClient{
     }
 
     @Override
-    public Map<String, String> getTeams() throws CheckmarxException {
-        return null;
+    public List<CxTeam> getTeams() throws CheckmarxException { //TODO check for version < 9
+        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        try {
+            log.info("Retrieving Cx teams");
+            ResponseEntity<CxTeam[]> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAMS), HttpMethod.GET, httpEntity, CxTeam[].class);
+            CxTeam[] teams = response.getBody();
+            if (teams == null) {
+                throw new CheckmarxException("Error retrieving teams");
+            }
+            return Arrays.asList(teams);
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving Teams");
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("Error occurred while retrieving teams");
+        }
+    }
+
+    @Override
+    public void mapTeamLdap(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0){
+            log.debug("Calling legacy mapTeamLdapWS");
+            mapTeamLdapWS(ldapServerId, teamId, teamName, ldapGroupDn);
+        }
+        else{
+            try {
+                String name = getNameFromLDAP(ldapGroupDn);
+                JSONObject body = new JSONObject();
+                body.put("teamId", teamId);
+                body.put("ldapGroupDn", ldapGroupDn);
+                body.put("ldapGroupDisplayName", name);
+
+                HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), createAuthHeaders());
+                restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP),  HttpMethod.POST, requestEntity, String.class);
+            }catch (HttpStatusCodeException e) {
+                log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
+            }
+        }
+    }
+
+    static String getNameFromLDAP(String ldapGroupDn) {
+        try {
+            LdapName ldapName = new LdapName(ldapGroupDn);
+            List<Rdn> rdns = ldapName.getRdns();
+            Rdn r = rdns.get(rdns.size() - 1);
+            String cn = r.getValue().toString();
+            cn = cn.replace("CN=", "");
+            cn = cn.replace("cn=", "");
+            return cn;
+        }catch(InvalidNameException e){
+            log.warn("Could not determine name from CN, defaulting to full CN {}", ldapGroupDn);
+            return ldapGroupDn;
+        }
+    }
+
+    @Override
+    public void removeTeamLdap(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0){
+            log.debug("Calling legacy removeTeamLdapWS");
+            removeTeamLdapWS(ldapServerId, teamId, teamName, ldapGroupDn);
+        }
+        else{
+            Integer mapId = getLdapTeamMapId(ldapServerId, ldapGroupDn);
+            HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+
+            log.info("Deleting ldap team mapping id {}", mapId);
+            try {
+                restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP_MAPPING), HttpMethod.DELETE, requestEntity, String.class, mapId);
+            } catch (HttpStatusCodeException e) {
+                log.error("HTTP error code {} while deleting project with id {}", e.getStatusCode(), mapId);
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
+        }
+    }
+
+    @Override
+    public Integer getLdapTeamMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException {
+        try{
+            HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP_MAPPINGS),
+                    HttpMethod.GET, requestEntity, String.class, ldapServerId);
+            JSONArray objs = new JSONArray(response);
+            for(int i=0; i < objs.length(); i++){
+                JSONObject obj = objs.getJSONObject(i);
+                String cn = obj.getString("ldapGroupDn");
+                if(cn.equals(ldapGroupDn)){
+                    return obj.getInt("id");
+                }
+            }
+            log.info("No mapping found for {} with Server id {}", ldapGroupDn, ldapServerId);
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving ldap server mappings, http error {}", e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return UNKNOWN_INT;
     }
 
     @Override
@@ -1604,7 +1783,6 @@ public class CxService implements CxClient{
     public String getAuthToken(String username, String password, String clientId, String clientSecret, String scope) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        //clientId = resource_owner_client
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         map.add("username", username);
         map.add("password", password);
@@ -1646,10 +1824,32 @@ public class CxService implements CxClient{
 
     @Override
     public Integer getLdapServerId(String serverName) throws CheckmarxException {
-        if(session == null){
-            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+        if(cxProperties.getVersion() < 9.0) {
+            if (session == null) {
+                legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+            }
+            return cxLegacyService.getLdapServerId(session, serverName);
         }
-        return cxLegacyService.getLdapServerId(session, serverName);
+        else{
+            try{
+                HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+                ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(LDAP_SERVER),
+                        HttpMethod.GET, requestEntity, String.class);
+                JSONArray objs = new JSONArray(response);
+                for(int i=0; i < objs.length(); i++){
+                    JSONObject obj = objs.getJSONObject(i);
+                    String name = obj.getString("name");
+                    if(name.equals(serverName)){
+                        return obj.getInt("id");
+                    }
+                }
+                log.info("No LDAP Server found for name {}", serverName);
+            } catch (HttpStatusCodeException e) {
+                log.error("Error occurred while retrieving ldap servers, http error {}", e.getStatusCode());
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
+            return UNKNOWN_INT;
+        }
     }
 
     private boolean isTokenExpired() {
