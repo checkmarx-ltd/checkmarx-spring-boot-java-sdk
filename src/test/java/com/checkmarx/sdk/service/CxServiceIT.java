@@ -4,10 +4,7 @@ import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
-import com.checkmarx.sdk.dto.cx.CxProject;
-import com.checkmarx.sdk.dto.cx.CxScanParams;
-import com.checkmarx.sdk.dto.cx.CxScanSummary;
-import com.checkmarx.sdk.dto.cx.CxTeam;
+import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
@@ -50,15 +47,55 @@ public class CxServiceIT {
         }
     }
 
-    //TODO LDAP Tests
+    @Test
+    public void getLdapRoleMapId() {
+        try {
+            Integer ldapId = service.getLdapServerId("cx.local");
+            Integer id = service.getLdapRoleMapId(ldapId, "abc");
+            assertNotNull(ldapId);
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+
+
+    @Test
+    public void getRoles() {
+        try {
+            List<CxRole> roles = service.getRoles();
+            assertNotNull(roles);
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+
+    @Test
+    public void getRoleId() {
+        try {
+            Integer id = service.getRoleId("Admin");
+            assertNotNull(id);
+            assertTrue(id > 0);
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+
 
     @Test
     public void getTeams() {
         try {
             List<CxTeam> teams = service.getTeams();
             assertNotNull(teams);
-        }catch (CheckmarxException e){
-            fail("Unexpected InvalidCredentialsException");
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
         }
     }
 

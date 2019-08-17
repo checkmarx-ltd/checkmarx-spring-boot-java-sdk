@@ -78,7 +78,9 @@ public class CxService implements CxClient{
     private static final String TEAM_LDAP = "/auth/LDAPServers/{id}/TeamMappings";
     private static final String TEAM_LDAP_MAPPINGS = "/auth/LDAPTeamMappings?ldapServerId={id}";
     private static final String TEAM_LDAP_MAPPING = "/auth/LDAPTeamMappings/{id}";
-    private static final String TEAM_ROLE = "/auth/teams/{id}";
+    private static final String ROLE = "/auth/Roles";
+    private static final String ROLE_MAPPING = "/auth/LDAPServers/{id}/RoleMappings";
+    private static final String ROLE_MAPPINGS = "/auth/LDAPRoleMappings?ldapServerId={id}";
     private static final String LDAP_SERVER = "/auth/LDAPServers";
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
@@ -1651,7 +1653,10 @@ public class CxService implements CxClient{
     }
 
     @Override
-    public List<CxTeam> getTeams() throws CheckmarxException { //TODO check for version < 9
+    public List<CxTeam> getTeams() throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0) {
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
         HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
         try {
             log.info("Retrieving Cx teams");
@@ -1675,6 +1680,7 @@ public class CxService implements CxClient{
             mapTeamLdapWS(ldapServerId, teamId, teamName, ldapGroupDn);
         }
         else{
+            log.debug("Calling Access Control REST method for Team LDAP Mapping");
             try {
                 String name = getNameFromLDAP(ldapGroupDn);
                 JSONObject body = new JSONObject();
@@ -1727,6 +1733,9 @@ public class CxService implements CxClient{
 
     @Override
     public Integer getLdapTeamMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0) {
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
         try{
             HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
             ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP_MAPPINGS),
@@ -1762,6 +1771,104 @@ public class CxService implements CxClient{
         }
         cxLegacyService.removeLdapTeamMapping(session, ldapServerId, teamId, teamName, ldapGroupDn);
     }
+
+    @Override
+    public List<CxRole> getRoles() throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0) {
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
+        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        try {
+            log.info("Retrieving Cx Roles");
+            ResponseEntity<CxRole[]> response = restTemplate.exchange(cxProperties.getUrl().concat(ROLE), HttpMethod.GET, httpEntity, CxRole[].class);
+            CxRole[] roles = response.getBody();
+            if (roles == null) {
+                throw new CheckmarxException("Error retrieving roles");
+            }
+            return Arrays.asList(roles);
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving Roles");
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("Error occurred while retrieving teams");
+        }
+    }
+
+    @Override
+    public Integer getRoleId(String roleName) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0) {
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
+        List<CxRole> roles = getRoles();
+        for(CxRole role: roles){
+            if(role.getName().equalsIgnoreCase(roleName)){
+                log.debug("role found with id {}", role.getId());
+                return role.getId();
+            }
+        }
+        return UNKNOWN_INT;
+    }
+
+    @Override
+    public void mapRoleLdap(Integer ldapServerId, String roleId, String ldapGroupDn) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0) {
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
+        try {
+            log.info("Creating LDAP role mapping for role id {} with LDAP DN {}", roleId, ldapGroupDn);
+            String name = getNameFromLDAP(ldapGroupDn);
+            JSONObject body = new JSONObject();
+            body.put("roleId", roleId);
+            body.put("ldapGroupDn", ldapGroupDn);
+            body.put("ldapGroupDisplayName", name);
+            log.debug(body.toString());
+            HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), createAuthHeaders());
+            restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPING),  HttpMethod.POST, requestEntity, String.class, ldapServerId);
+        }catch (HttpStatusCodeException e) {
+            log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
+        }
+    }
+
+    @Override
+    public void removeRoleLdap(Integer roleMapId) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0) {
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
+        HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+
+        log.info("Deleting ldap role mapping id {}", roleMapId);
+        try {
+            restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPING), HttpMethod.DELETE, requestEntity, String.class, roleMapId);
+        } catch (HttpStatusCodeException e) {
+            log.error("HTTP error code {} while deleting role mapping with id {}", e.getStatusCode(), roleMapId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    @Override
+    public Integer getLdapRoleMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0) {
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
+        try{
+            HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPINGS),
+                    HttpMethod.GET, requestEntity, String.class, ldapServerId);
+            JSONArray objs = new JSONArray(response);
+            for(int i=0; i < objs.length(); i++){
+                JSONObject obj = objs.getJSONObject(i);
+                String cn = obj.getString("ldapGroupDn");
+                if(cn.equals(ldapGroupDn)){
+                    return obj.getInt("id");
+                }
+            }
+            log.info("No mapping found for {} with Server id {}", ldapGroupDn, ldapServerId);
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving ldap server mappings, http error {}", e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return UNKNOWN_INT;
+    }
+
 
     /**
      * Get Auth Token

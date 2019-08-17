@@ -2,10 +2,7 @@ package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
-import com.checkmarx.sdk.dto.cx.CxProject;
-import com.checkmarx.sdk.dto.cx.CxScanParams;
-import com.checkmarx.sdk.dto.cx.CxScanSummary;
-import com.checkmarx.sdk.dto.cx.CxTeam;
+import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
@@ -279,6 +276,20 @@ public interface CxClient {
      */
     public void removeTeamLdap(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException;
 
+    /**
+     * Returns a list of roles in Checkmarx
+     * @return
+     */
+    public List<CxRole> getRoles() throws CheckmarxException;
+
+    /**
+     * Returns the Id of an associated role in Checkmarx
+     * @param roleName
+     */
+    public Integer getRoleId(String roleName) throws CheckmarxException;
+    public Integer getLdapRoleMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException;
+    public void mapRoleLdap(Integer ldapServerId, String roleId, String ldapGroupDn) throws CheckmarxException;
+    public void removeRoleLdap(Integer roleMapId) throws CheckmarxException;
 
     /**
      * Adds an LDAP team association - uses SOAP Web Service
