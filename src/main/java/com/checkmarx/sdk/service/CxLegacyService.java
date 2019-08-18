@@ -128,116 +128,92 @@ public class CxLegacyService {
     }
 
     void createLdapTeamMapping(String session, Integer ldapServerId, String teamId, String teamName, String groupDn) throws CheckmarxException{
-        try {
-            GetTeamLdapGroupsMapping ldapReq = new GetTeamLdapGroupsMapping();
+        GetTeamLdapGroupsMapping ldapReq = new GetTeamLdapGroupsMapping();
 
-            ldapReq.setSessionId(session);
-            ldapReq.setTeamId(teamId);
-            log.info("Retrieving existing Ldap Group Mappings for ldap server {}", ldapServerId);
-            GetTeamLdapGroupsMappingResponse ldapResponse = (GetTeamLdapGroupsMappingResponse)
-                    ws.marshalSendAndReceive(ws.getDefaultUri(), ldapReq, new SoapActionCallback(CX_WS_TEAM_LDAP_MAPPINGS_URI));
+        ldapReq.setSessionId(session);
+        ldapReq.setTeamId(teamId);
+        log.info("Retrieving existing Ldap Group Mappings for ldap server {}", ldapServerId);
+        GetTeamLdapGroupsMappingResponse ldapResponse = (GetTeamLdapGroupsMappingResponse)
+                ws.marshalSendAndReceive(ws.getDefaultUri(), ldapReq, new SoapActionCallback(CX_WS_TEAM_LDAP_MAPPINGS_URI));
 
-            if (ldapResponse.getGetTeamLdapGroupsMappingResult().isIsSuccesfull()) {
-                log.debug("Successfully retrieved ldapMappings");
-                log.debug(ldapResponse.getGetTeamLdapGroupsMappingResult().getLdapGroups().getCxWSLdapGroupMapping().toString());
-                CxWSLdapGroupMapping newMapping = new CxWSLdapGroupMapping();
+        if (ldapResponse.getGetTeamLdapGroupsMappingResult().isIsSuccesfull()) {
+            log.debug("Successfully retrieved ldapMappings");
+            log.debug(ldapResponse.getGetTeamLdapGroupsMappingResult().getLdapGroups().getCxWSLdapGroupMapping().toString());
+            CxWSLdapGroupMapping newMapping = new CxWSLdapGroupMapping();
 
-                CxWSLdapGroup ldapGroup = new CxWSLdapGroup();
-                ldapGroup.setDN(groupDn);
-                LdapName ldapName = new LdapName(groupDn);
-                List<Rdn> rdns = ldapName.getRdns();
-                Rdn r = rdns.get(rdns.size()-1);
-                String cn = r.getValue().toString();
-                cn = cn.replace("CN=", "");
-                cn = cn.replace("cn=", "");
+            CxWSLdapGroup ldapGroup = new CxWSLdapGroup();
+            ldapGroup.setDN(groupDn);
+            String name = CxService.getNameFromLDAP(groupDn);
 
-                ldapGroup.setName(cn);
+            ldapGroup.setName(name);
 
-                newMapping.setLdapGroup(ldapGroup);
-                newMapping.setLdapServerId(ldapServerId);
+            newMapping.setLdapGroup(ldapGroup);
+            newMapping.setLdapServerId(ldapServerId);
 
-                ArrayOfCxWSLdapGroupMapping ldapArray = ldapResponse.getGetTeamLdapGroupsMappingResult().getLdapGroups();
-                List<CxWSLdapGroupMapping> ldapGroupMapping = ldapArray.getCxWSLdapGroupMapping();
-                if (!ldapGroupMapping.contains(newMapping)) {
-                    ldapGroupMapping.add(newMapping);
-                    UpdateTeam updateTeamReq = new UpdateTeam();
-                    updateTeamReq.setSessionID(session);
-                    updateTeamReq.setLdapGroupMappings(ldapArray);
-                    updateTeamReq.setTeamID(teamId);
-                    updateTeamReq.setNewTeamName(teamName);
-                    UpdateTeamResponse updateTeamResponse = (UpdateTeamResponse)
-                            ws.marshalSendAndReceive(ws.getDefaultUri(), updateTeamReq, new SoapActionCallback(CX_WS_UPDATE_TEAM_URI));
-                    if (!updateTeamResponse.getUpdateTeamResult().isIsSuccesfull()) {
-                        log.error("Error occurred while updating team ldap mapping {}", updateTeamResponse.getUpdateTeamResult().getErrorMessage());
-                        throw new CheckmarxException("Error occurred while updating team ldap mapping {}".concat(updateTeamResponse.getUpdateTeamResult().getErrorMessage()));
-                    }
-                } else {
-                    log.warn("Ldap mapping already exists for {} - {}", ldapServerId, groupDn);
-                }
-
+            ArrayOfCxWSLdapGroupMapping ldapArray = ldapResponse.getGetTeamLdapGroupsMappingResult().getLdapGroups();
+            List<CxWSLdapGroupMapping> ldapGroupMapping = ldapArray.getCxWSLdapGroupMapping();
+            if (!ldapGroupMapping.contains(newMapping)) {
+                ldapGroupMapping.add(newMapping);
+                updateTeam(session, teamId, teamName, ldapArray);
             } else {
-                log.error("Error occurred while getting team ldap mapping {}", ldapResponse.getGetTeamLdapGroupsMappingResult().getErrorMessage());
-                throw new CheckmarxException("Error occurred while getting team ldap mapping".concat(ldapResponse.getGetTeamLdapGroupsMappingResult().getErrorMessage()));
+                log.warn("Ldap mapping already exists for {} - {}", ldapServerId, groupDn);
             }
-        }catch (InvalidNameException e){
-            throw new CheckmarxException("Invalid LDAP Naming ".concat(ExceptionUtils.getMessage(e)));
+
+        } else {
+            log.error("Error occurred while getting team ldap mapping {}", ldapResponse.getGetTeamLdapGroupsMappingResult().getErrorMessage());
+            throw new CheckmarxException("Error occurred while getting team ldap mapping".concat(ldapResponse.getGetTeamLdapGroupsMappingResult().getErrorMessage()));
+        }
+    }
+
+    private void updateTeam(String session, String teamId, String teamName, ArrayOfCxWSLdapGroupMapping ldapArray) throws CheckmarxException {
+        UpdateTeam updateTeamReq = new UpdateTeam();
+        updateTeamReq.setSessionID(session);
+        updateTeamReq.setLdapGroupMappings(ldapArray);
+        updateTeamReq.setTeamID(teamId);
+        updateTeamReq.setNewTeamName(teamName);
+        UpdateTeamResponse updateTeamResponse = (UpdateTeamResponse)
+                ws.marshalSendAndReceive(ws.getDefaultUri(), updateTeamReq, new SoapActionCallback(CX_WS_UPDATE_TEAM_URI));
+        if (!updateTeamResponse.getUpdateTeamResult().isIsSuccesfull()) {
+            log.error("Error occurred while updating team ldap mapping {}", updateTeamResponse.getUpdateTeamResult().getErrorMessage());
+            throw new CheckmarxException("Error occurred while updating team ldap mapping {}".concat(updateTeamResponse.getUpdateTeamResult().getErrorMessage()));
         }
     }
 
     void removeLdapTeamMapping(String session, Integer ldapServerId, String teamId, String teamName, String groupDn) throws CheckmarxException{
-        try {
-            GetTeamLdapGroupsMapping ldapReq = new GetTeamLdapGroupsMapping();
+        GetTeamLdapGroupsMapping ldapReq = new GetTeamLdapGroupsMapping();
 
-            ldapReq.setSessionId(session);
-            ldapReq.setTeamId(teamId);
-            log.info("Retrieving existing Ldap Group Mappings for ldap server {}", ldapServerId);
-            GetTeamLdapGroupsMappingResponse ldapResponse = (GetTeamLdapGroupsMappingResponse)
-                    ws.marshalSendAndReceive(ws.getDefaultUri(), ldapReq, new SoapActionCallback(CX_WS_TEAM_LDAP_MAPPINGS_URI));
+        ldapReq.setSessionId(session);
+        ldapReq.setTeamId(teamId);
+        log.info("Retrieving existing Ldap Group Mappings for ldap server {}", ldapServerId);
+        GetTeamLdapGroupsMappingResponse ldapResponse = (GetTeamLdapGroupsMappingResponse)
+                ws.marshalSendAndReceive(ws.getDefaultUri(), ldapReq, new SoapActionCallback(CX_WS_TEAM_LDAP_MAPPINGS_URI));
 
-            if (ldapResponse.getGetTeamLdapGroupsMappingResult().isIsSuccesfull()) {
-                log.debug("Successfully retrieved ldapMappings");
-                log.debug(ldapResponse.getGetTeamLdapGroupsMappingResult().getLdapGroups().getCxWSLdapGroupMapping().toString());
-                CxWSLdapGroupMapping newMapping = new CxWSLdapGroupMapping();
+        if (ldapResponse.getGetTeamLdapGroupsMappingResult().isIsSuccesfull()) {
+            log.debug("Successfully retrieved ldapMappings");
+            log.debug(ldapResponse.getGetTeamLdapGroupsMappingResult().getLdapGroups().getCxWSLdapGroupMapping().toString());
+            CxWSLdapGroupMapping newMapping = new CxWSLdapGroupMapping();
 
-                CxWSLdapGroup ldapGroup = new CxWSLdapGroup();
-                ldapGroup.setDN(groupDn);
-                LdapName ldapName = new LdapName(groupDn);
-                List<Rdn> rdns = ldapName.getRdns();
-                Rdn r = rdns.get(rdns.size()-1);
-                String cn = r.getValue().toString();
-                cn = cn.replace("CN=", "");
-                cn = cn.replace("cn=", "");
+            CxWSLdapGroup ldapGroup = new CxWSLdapGroup();
+            ldapGroup.setDN(groupDn);
+            String name = CxService.getNameFromLDAP(groupDn);
 
-                ldapGroup.setName(cn);
+            ldapGroup.setName(name);
 
-                newMapping.setLdapGroup(ldapGroup);
-                newMapping.setLdapServerId(ldapServerId);
+            newMapping.setLdapGroup(ldapGroup);
+            newMapping.setLdapServerId(ldapServerId);
 
-                ArrayOfCxWSLdapGroupMapping ldapArray = ldapResponse.getGetTeamLdapGroupsMappingResult().getLdapGroups();
-                List<CxWSLdapGroupMapping> ldapGroupMapping = ldapArray.getCxWSLdapGroupMapping();
-                if (ldapGroupMapping.contains(newMapping)) {
-                    ldapGroupMapping.remove(newMapping);
-                    UpdateTeam updateTeamReq = new UpdateTeam();
-                    updateTeamReq.setSessionID(session);
-                    updateTeamReq.setLdapGroupMappings(ldapArray);
-                    updateTeamReq.setTeamID(teamId);
-                    updateTeamReq.setNewTeamName(teamName);
-                    UpdateTeamResponse updateTeamResponse = (UpdateTeamResponse)
-                            ws.marshalSendAndReceive(ws.getDefaultUri(), updateTeamReq, new SoapActionCallback(CX_WS_UPDATE_TEAM_URI));
-                    if (!updateTeamResponse.getUpdateTeamResult().isIsSuccesfull()) {
-                        log.error("Error occurred while updating team ldap mapping {}", updateTeamResponse.getUpdateTeamResult().getErrorMessage());
-                        throw new CheckmarxException("Error occurred while updating team ldap mapping {}".concat(updateTeamResponse.getUpdateTeamResult().getErrorMessage()));
-                    }
-                } else {
-                    log.warn("Ldap mapping already exists for {} - {}", ldapServerId, groupDn);
-                }
-
+            ArrayOfCxWSLdapGroupMapping ldapArray = ldapResponse.getGetTeamLdapGroupsMappingResult().getLdapGroups();
+            List<CxWSLdapGroupMapping> ldapGroupMapping = ldapArray.getCxWSLdapGroupMapping();
+            if (ldapGroupMapping.contains(newMapping)) {
+                ldapGroupMapping.remove(newMapping);
+                updateTeam(session, teamId, teamName, ldapArray);
             } else {
-                log.error("Error occurred while getting team ldap mapping {}", ldapResponse.getGetTeamLdapGroupsMappingResult().getErrorMessage());
-                throw new CheckmarxException("Error occurred while getting team ldap mapping".concat(ldapResponse.getGetTeamLdapGroupsMappingResult().getErrorMessage()));
+                log.warn("Ldap mapping already exists for {} - {}", ldapServerId, groupDn);
             }
-        }catch (InvalidNameException e){
-            throw new CheckmarxException("Invalid LDAP Naming ".concat(ExceptionUtils.getMessage(e)));
+
+        } else {
+            log.error("Error occurred while getting team ldap mapping {}", ldapResponse.getGetTeamLdapGroupsMappingResult().getErrorMessage());
+            throw new CheckmarxException("Error occurred while getting team ldap mapping".concat(ldapResponse.getGetTeamLdapGroupsMappingResult().getErrorMessage()));
         }
     }
 

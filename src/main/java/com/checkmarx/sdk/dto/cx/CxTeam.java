@@ -8,14 +8,20 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "id",
-        "fullName"
+        "name",
+        "fullName",
+        "parentId"
 })
 public class CxTeam {
 
     @JsonProperty("id")
     public String id;
+    @JsonProperty("name")
+    public String name;
     @JsonProperty("fullName")
     public String fullName;
+    @JsonProperty("parentId")
+    public String parentId;
 
     public CxTeam() {
     }
@@ -36,7 +42,29 @@ public class CxTeam {
         this.fullName = fullName;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+
+    @Override
     public String toString() {
-        return "CxTeam(id=" + this.getId() + ", fullName=" + this.getFullName() + ")";
+        return "CxTeam{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", fullName='" + fullName + '\'' +
+                ", parentId='" + parentId + '\'' +
+                '}';
     }
 }
