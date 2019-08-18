@@ -47,12 +47,30 @@ public class CxServiceIT {
         }
     }
 
+    /** TODO - Checkmarx not implemented in REST API yet
+    @Test
+    public void createLdapRoleMap() {
+        try {
+            Integer ldapId = service.getLdapServerId("cx.local");
+            Integer roleId = service.getRoleId("Admin");
+            service.mapRoleLdap(ldapId, roleId, "CN=CX_USERS,CN=Users,DC=cx,DC=local");
+            Integer id = service.getLdapRoleMapId(ldapId, "CN=CX_USERS,CN=Users,DC=cx,DC=local");
+            assertNotNull(id);
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+    */
+
+    /*
     @Test
     public void getLdapRoleMapId() {
         try {
             Integer ldapId = service.getLdapServerId("cx.local");
-            Integer id = service.getLdapRoleMapId(ldapId, "abc");
-            assertNotNull(ldapId);
+            Integer id = service.getLdapRoleMapId(ldapId, "CN=CX_ADMIN,CN=Users,DC=cx,DC=local");
+            assertNotNull(id);
         } catch (CheckmarxException e) {
             if(properties.getVersion() >= 9.0 ) {
                 fail("Unexpected CheckmarxException");
@@ -60,7 +78,21 @@ public class CxServiceIT {
         }
     }
 
-
+    TODO - Checkmarx implementaiton not complete
+    @Test
+    public void addTeamLdapMapping() {
+        try {
+            Integer ldapId = service.getLdapServerId("cx.local");
+            String teamId = service.getTeamId(properties.getTeam());
+            service.mapTeamLdap(ldapId, teamId, "", "CN=CX_USERS,CN=Users,DC=cx,DC=local");
+            //Integer id = service.getLdapRoleMapId(ldapId, "CN=CX_USERS,CN=Users,DC=cx,DC=local");
+        } catch (CheckmarxException e) {
+            if (properties.getVersion() >= 9.0) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+    */
     @Test
     public void getRoles() {
         try {
@@ -272,7 +304,7 @@ public class CxServiceIT {
         }
     }
 
-    //TESTS FOR LDAP
+    //TESTS FOR LDAP - test instance does not include LDAP
     /*@Test
     public void getLdapServerId(){
         try {
@@ -303,4 +335,5 @@ public class CxServiceIT {
             fail("Unexpected Checkmarx Exception");
         }
     }*/
+
 }

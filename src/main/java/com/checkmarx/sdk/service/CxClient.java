@@ -287,8 +287,24 @@ public interface CxClient {
      * @param roleName
      */
     public Integer getRoleId(String roleName) throws CheckmarxException;
+
+    /**
+     * Retrieve the Id of a role mapping associated with an LDAP Group DN
+     * @param ldapServerId
+     * @param ldapGroupDn
+     * @return
+     * @throws CheckmarxException
+     */
     public Integer getLdapRoleMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException;
-    public void mapRoleLdap(Integer ldapServerId, String roleId, String ldapGroupDn) throws CheckmarxException;
+
+    /**
+     * TODO - Checkmarx has not implemented this functionality (POST) in REST implementation | Only PUT supported for updates
+     * @param ldapServerId
+     * @param roleId
+     * @param ldapGroupDn
+     * @throws CheckmarxException
+     */
+    public void mapRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException;
     public void removeRoleLdap(Integer roleMapId) throws CheckmarxException;
 
     /**

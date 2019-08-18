@@ -1673,6 +1673,14 @@ public class CxService implements CxClient{
         }
     }
 
+    /**
+     *
+     * @param ldapServerId
+     * @param teamId
+     * @param teamName not used in 9.0+
+     * @param ldapGroupDn
+     * @throws CheckmarxException
+     */
     @Override
     public void mapTeamLdap(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0){
@@ -1689,7 +1697,7 @@ public class CxService implements CxClient{
                 body.put("ldapGroupDisplayName", name);
 
                 HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), createAuthHeaders());
-                restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP),  HttpMethod.POST, requestEntity, String.class);
+                restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP),  HttpMethod.POST, requestEntity, String.class, ldapServerId);
             }catch (HttpStatusCodeException e) {
                 log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
             }
@@ -1740,7 +1748,7 @@ public class CxService implements CxClient{
             HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
             ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP_MAPPINGS),
                     HttpMethod.GET, requestEntity, String.class, ldapServerId);
-            JSONArray objs = new JSONArray(response);
+            JSONArray objs = new JSONArray(response.getBody());
             for(int i=0; i < objs.length(); i++){
                 JSONObject obj = objs.getJSONObject(i);
                 String cn = obj.getString("ldapGroupDn");
@@ -1809,7 +1817,7 @@ public class CxService implements CxClient{
     }
 
     @Override
-    public void mapRoleLdap(Integer ldapServerId, String roleId, String ldapGroupDn) throws CheckmarxException {
+    public void mapRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
             throw new CheckmarxException("Operation only support in 9.0+");
         }
@@ -1822,7 +1830,7 @@ public class CxService implements CxClient{
             body.put("ldapGroupDisplayName", name);
             log.debug(body.toString());
             HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), createAuthHeaders());
-            restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPING),  HttpMethod.POST, requestEntity, String.class, ldapServerId);
+            restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPING),  HttpMethod.PUT, requestEntity, String.class, ldapServerId);
         }catch (HttpStatusCodeException e) {
             log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
         }
@@ -1853,7 +1861,7 @@ public class CxService implements CxClient{
             HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
             ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPINGS),
                     HttpMethod.GET, requestEntity, String.class, ldapServerId);
-            JSONArray objs = new JSONArray(response);
+            JSONArray objs = new JSONArray(response.getBody());
             for(int i=0; i < objs.length(); i++){
                 JSONObject obj = objs.getJSONObject(i);
                 String cn = obj.getString("ldapGroupDn");
@@ -1942,7 +1950,7 @@ public class CxService implements CxClient{
                 HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
                 ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(LDAP_SERVER),
                         HttpMethod.GET, requestEntity, String.class);
-                JSONArray objs = new JSONArray(response);
+                JSONArray objs = new JSONArray(response.getBody());
                 for(int i=0; i < objs.length(); i++){
                     JSONObject obj = objs.getJSONObject(i);
                     String name = obj.getString("name");
