@@ -9,11 +9,15 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "checkmarx")
 @Validated
 public class CxProperties {
+    private Double version = 8.9;
     private String username;
     private String password;
+    private String clientId = "resource_owner_client";
     private String clientSecret;
+    private String scope = "sast_rest_api";
     private String baseUrl;
     private String url;
+    private String acUrl;
     private boolean multiTenant = false;
     private String teamScript;
     private String projectScript;
@@ -36,6 +40,8 @@ public class CxProperties {
     private Integer httpReadTimeout = 120000;
     private Integer scanPolling = 20000;
     private Integer reportTimeout = 300000;
+    private String TEAM_PATH_SEPARATOR_9 = "/";
+    private String TEAM_PATH_SEPARATOR_8 = "\\";
 
     private String portalUrl;
 
@@ -55,6 +61,10 @@ public class CxProperties {
 
     public String getPassword() {
         return this.password;
+    }
+
+    public String getClientId() {
+        return this.clientId;
     }
 
     public String getClientSecret() {
@@ -155,6 +165,10 @@ public class CxProperties {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     public void setClientSecret(String clientSecret) {
@@ -311,6 +325,39 @@ public class CxProperties {
 
     public void setReportTimeout(Integer reportTimeout) {
         this.reportTimeout = reportTimeout;
+    }
+
+    public Double getVersion() {
+        return version;
+    }
+
+    public void setVersion(Double version) {
+        this.version = version;
+    }
+
+    public String getAcUrl() {
+        return acUrl;
+    }
+
+    public void setAcUrl(String acUrl) {
+        this.acUrl = acUrl;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    public String getTeamPathSeparator(){
+        if(version < 9.0){
+            return TEAM_PATH_SEPARATOR_8;
+        }
+        else{
+            return TEAM_PATH_SEPARATOR_9;
+        }
     }
 }
 

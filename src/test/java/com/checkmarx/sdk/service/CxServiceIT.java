@@ -4,11 +4,10 @@ import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
-import com.checkmarx.sdk.dto.cx.CxProject;
-import com.checkmarx.sdk.dto.cx.CxScanParams;
-import com.checkmarx.sdk.dto.cx.CxScanSummary;
+import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
+import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +28,129 @@ public class CxServiceIT {
     private CxProperties properties;
     @Autowired
     private CxService service;
+
+    @Test
+    public void Login() {
+        try {
+            String token = service.getAuthToken(
+                    properties.getUsername(),
+                    properties.getPassword(),
+                    properties.getClientId(),
+                    properties.getClientSecret(),
+                    properties.getScope()
+            );
+
+            assertNotNull(token);
+            assertNotEquals("",token);
+        }catch (InvalidCredentialsException e){
+            fail("Unexpected InvalidCredentialsException");
+        }
+    }
+
+    /** TODO - Checkmarx not implemented in REST API yet
+    @Test
+    public void createLdapRoleMap() {
+        try {
+            Integer ldapId = service.getLdapServerId("cx.local");
+            Integer roleId = service.getRoleId("Admin");
+            service.mapRoleLdap(ldapId, roleId, "CN=CX_USERS,CN=Users,DC=cx,DC=local");
+            Integer id = service.getLdapRoleMapId(ldapId, "CN=CX_USERS,CN=Users,DC=cx,DC=local");
+            assertNotNull(id);
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+    */
+
+    /*
+    @Test
+    public void getLdapRoleMapId() {
+        try {
+            Integer ldapId = service.getLdapServerId("cx.local");
+            Integer id = service.getLdapRoleMapId(ldapId, "CN=CX_ADMIN,CN=Users,DC=cx,DC=local");
+            assertNotNull(id);
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+
+    TODO - Checkmarx implementaiton not complete
+    @Test
+    public void addTeamLdapMapping() {
+        try {
+            Integer ldapId = service.getLdapServerId("cx.local");
+            String teamId = service.getTeamId(properties.getTeam());
+            service.mapTeamLdap(ldapId, teamId, "", "CN=CX_USERS,CN=Users,DC=cx,DC=local");
+            //Integer id = service.getLdapRoleMapId(ldapId, "CN=CX_USERS,CN=Users,DC=cx,DC=local");
+        } catch (CheckmarxException e) {
+            if (properties.getVersion() >= 9.0) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+    */
+    @Test
+    public void getRoles() {
+        try {
+            List<CxRole> roles = service.getRoles();
+            assertNotNull(roles);
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+
+    @Test
+    public void getRoleId() {
+        try {
+            Integer id = service.getRoleId("Admin");
+            assertNotNull(id);
+            assertTrue(id > 0);
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+
+
+    @Test
+    public void getTeams() {
+        try {
+            List<CxTeam> teams = service.getTeams();
+            assertNotNull(teams);
+        } catch (CheckmarxException e) {
+            if(properties.getVersion() >= 9.0 ) {
+                fail("Unexpected CheckmarxException");
+            }
+        }
+    }
+
+    @Test
+    public void createTeam() {
+        try {
+            String id = service.getTeamId(properties.getTeam());
+            String newTeamId = service.createTeam(id, "Whatever");
+            assertNotNull(newTeamId);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
+
+    @Test
+    public void deleteTeam() {
+        try {
+            String id = service.getTeamId(properties.getTeam().concat(properties.getTeamPathSeparator()).concat("Whatever"));
+            service.deleteTeam(id);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
 
     @Test
     public void getLastScanDate() {
@@ -182,7 +304,7 @@ public class CxServiceIT {
         }
     }
 
-    //TESTS FOR LDAP
+    //TESTS FOR LDAP - test instance does not include LDAP
     /*@Test
     public void getLdapServerId(){
         try {
@@ -213,4 +335,5 @@ public class CxServiceIT {
             fail("Unexpected Checkmarx Exception");
         }
     }*/
+
 }
