@@ -18,6 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -105,7 +105,7 @@ public class CxService implements CxClient{
     private String session = null;
     private LocalDateTime tokenExpires = null;
 
-    public CxService(CxProperties cxProperties, CxLegacyService cxLegacyService, RestTemplate restTemplate) {
+    public CxService(CxProperties cxProperties, CxLegacyService cxLegacyService, @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
         this.restTemplate = restTemplate;
@@ -318,6 +318,35 @@ public class CxService implements CxClient{
         return UNKNOWN_INT;
     }
 
+    /**
+     * Retrieve the report by reportId, mapped to ScanResults DTO, applying filtering as requested
+     *
+     * @param scanId
+     * @param filter
+     * @return
+     * @throws CheckmarxException
+     */
+    public ScanResults getReportContentByScanId(Integer scanId, List<Filter> filter) throws CheckmarxException{
+        Integer reportId = createScanReport(scanId);
+        try {
+            Thread.sleep(cxProperties.getReportPolling());
+            int timer = 0;
+            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
+                Thread.sleep(cxProperties.getReportPolling());
+                timer += cxProperties.getReportPolling();
+                if (timer >= cxProperties.getReportTimeout()) {
+                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
+                    throw new CheckmarxException("Timeout exceeded during report generation");
+                }
+            }
+            Thread.sleep(cxProperties.getScanPolling());
+        } catch (InterruptedException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            Thread.currentThread().interrupt();
+            throw new CheckmarxException("Interrupted Exception Occurred");
+        }
+        return getReportContent(reportId, filter);
+    }
     /**
      * Retrieve the report by reportId, mapped to ScanResults DTO, applying filtering as requested
      *
@@ -1473,6 +1502,22 @@ public class CxService implements CxClient{
                 uploadProjectSource(projectId, new File(params.getFilePath()));
                 break;
         }
+        if(params.isIncremental() && !projectId.equals(UNKNOWN_INT)) {
+            LocalDateTime scanDate = getLastScanDate(projectId);
+            if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
+                log.debug("Last scanDate: {}", scanDate);
+                log.info("Last scanDate does not meet the threshold for an incremental scan.");
+                params.setIncremental(false);
+            }
+            else{
+                log.info("Scan will be incremental");
+            }
+        }
+        else {
+            log.info("Scan will be Full Scan");
+            params.setIncremental(false);
+        }
+
         setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
         CxScan scan = CxScan.builder()
                 .projectId(projectId)
