@@ -4,17 +4,10 @@ import checkmarx.wsdl.portal.*;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
-import org.springframework.ldap.support.LdapUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.soap.client.core.SoapActionCallback;
-
-import javax.naming.InvalidNameException;
-import javax.naming.Name;
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
 import java.beans.ConstructorProperties;
 import java.util.List;
 

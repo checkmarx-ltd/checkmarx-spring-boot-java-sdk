@@ -20,7 +20,7 @@ public class CxConfig {
         this.properties = properties;
     }
 
-    @Bean
+    @Bean(name="cxRestTemplate")
     public RestTemplate getRestTemplate(){
         RestTemplate restTemplate = new RestTemplate();
 

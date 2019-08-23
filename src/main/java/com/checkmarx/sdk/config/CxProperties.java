@@ -39,6 +39,7 @@ public class CxProperties {
     private Integer httpConnectionTimeout = 30000;
     private Integer httpReadTimeout = 120000;
     private Integer scanPolling = 20000;
+    private Integer reportPolling = 5000;
     private Integer reportTimeout = 300000;
     private String TEAM_PATH_SEPARATOR_9 = "/";
     private String TEAM_PATH_SEPARATOR_8 = "\\";
@@ -349,6 +350,14 @@ public class CxProperties {
 
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    public Integer getReportPolling() {
+        return reportPolling;
+    }
+
+    public void setReportPolling(Integer reportPolling) {
+        this.reportPolling = reportPolling;
     }
 
     public String getTeamPathSeparator(){
