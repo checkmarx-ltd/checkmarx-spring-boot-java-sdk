@@ -88,6 +88,16 @@ public interface CxClient {
     Integer getReportStatus(Integer reportId);
 
     /**
+     * Retrieve the report by scanId, mapped to ScanResults DTO, applying filtering as requested
+     *
+     * @param scanId
+     * @param filter
+     * @return
+     * @throws CheckmarxException
+     */
+    public ScanResults getReportContentByScanId(Integer scanId, List<Filter> filter) throws CheckmarxException;
+
+    /**
      * Retrieve the report by reportId, mapped to ScanResults DTO, applying filtering as requested
      *
      * @param reportId
