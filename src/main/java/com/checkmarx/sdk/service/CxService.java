@@ -767,12 +767,6 @@ public class CxService implements CxClient{
                 /*Top node of each issue*/
                 for (ResultType r : q.getResult()) {
                     if (r.getFalsePositive().equalsIgnoreCase("FALSE") && checkFilter(r, filter)) {
-                        if(!summary.containsKey(r.getSeverity())){
-                            summary.put(r.getSeverity(), 0);
-                        }
-                        int x = summary.get(r.getSeverity());
-                        x++;
-                        summary.put(r.getSeverity(), x);
                         /*Map issue details*/
                         xIssueBuilder.cwe(q.getCweId());
                         xIssueBuilder.language(q.getLanguage());
@@ -808,7 +802,7 @@ public class CxService implements CxClient{
                         }
                         xIssueBuilder.details(details);
                         ScanResults.XIssue issue = xIssueBuilder.build();
-                        checkForDuplicateIssue(cxIssueList, r, details, issue);
+                        checkForDuplicateIssue(cxIssueList, r, details, issue, summary);
                     }
                 }
             }
@@ -922,7 +916,7 @@ public class CxService implements CxClient{
         return status.isEmpty() || status.contains(Integer.parseInt(r.getState()));
     }
 
-    private void checkForDuplicateIssue(List<ScanResults.XIssue> cxIssueList, ResultType r, Map<Integer, String> details, ScanResults.XIssue issue) {
+    private void checkForDuplicateIssue(List<ScanResults.XIssue> cxIssueList, ResultType r, Map<Integer, String> details, ScanResults.XIssue issue, Map<String, Integer> summary) {
         if (cxIssueList.contains(issue)) {
             /*Get existing issue of same vuln+filename*/
             ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
@@ -933,6 +927,13 @@ public class CxService implements CxClient{
                             r.getPath().getPathNode().get(0).getSnippet().getLine().getCode());
                 } catch (NullPointerException e) {
                     details.put(Integer.parseInt(r.getLine()), null);
+                }finally {
+                    if(!summary.containsKey(r.getSeverity())){
+                        summary.put(r.getSeverity(), 0);
+                    }
+                    int x = summary.get(r.getSeverity());
+                    x++;
+                    summary.put(r.getSeverity(), x);
                 }
             }
             // Copy additionalData.results from issue to existingIssue
@@ -941,6 +942,12 @@ public class CxService implements CxClient{
 
         } else {
             cxIssueList.add(issue);
+            if(!summary.containsKey(r.getSeverity())){
+                summary.put(r.getSeverity(), 0);
+            }
+            int x = summary.get(r.getSeverity());
+            x++;
+            summary.put(r.getSeverity(), x);
         }
     }
 
