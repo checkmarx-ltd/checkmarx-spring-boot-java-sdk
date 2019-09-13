@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * @author ken.mcdonald@checkmarx.com
  */
-@SpringBootApplication(scanBasePackages="com.checkmarx.sdk")
+@SpringBootApplication(scanBasePackages = { "com.checkmarx.sdk", "com.cx.restclient" })
 public class CheckmarxSdkApplication {
 
 
