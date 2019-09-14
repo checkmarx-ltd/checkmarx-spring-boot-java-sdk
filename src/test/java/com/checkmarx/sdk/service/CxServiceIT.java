@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.config.Constants;
+import com.checkmarx.sdk.config.CxConfig;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
@@ -8,10 +9,13 @@ import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
+import com.cx.restclient.CxOsaService;
+import com.cx.restclient.httpClient.CxHttpClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
@@ -21,6 +25,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
+@Import(CxConfig.class)
 @SpringBootTest
 public class CxServiceIT {
 
@@ -28,11 +33,16 @@ public class CxServiceIT {
     private CxProperties properties;
     @Autowired
     private CxService service;
-
+    @Autowired
+    private CxAuthService authService;
+    @Autowired
+    private CxOsaService osaService;
+    @Autowired
+    private CxHttpClient cxHttpClient;
     @Test
     public void Login() {
         try {
-            String token = service.getAuthToken(
+            String token = authService.getAuthToken(
                     properties.getUsername(),
                     properties.getPassword(),
                     properties.getClientId(),
@@ -46,6 +56,18 @@ public class CxServiceIT {
             fail("Unexpected InvalidCredentialsException");
         }
     }
+
+ /*   @Test
+    public void createOSAScanTest() {
+        try {
+            String id = osaService.createScan(2, "C:\\Users\\XXXX\\Documents\\projects\\samples\\JavaVulnerableLab");
+            ScanResults results = new ScanResults();
+            results = osaService.waitForOsaScan(id, 1, results, null);
+            assertNotNull(id);
+        } catch (CheckmarxException e) {
+             fail("Unexpected CheckmarxException");
+        }
+    }*/
 
     /** TODO - Checkmarx not implemented in REST API yet
     @Test
