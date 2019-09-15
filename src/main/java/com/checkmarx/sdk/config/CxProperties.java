@@ -26,7 +26,7 @@ public class CxProperties {
     private String excludeFiles;
     private String excludeFolders;
     private Boolean incremental = false;
-    private Boolean osaEnabled = false;
+    private Boolean enableOsa = false;
     private Integer incrementalThreshold = 7;
     private Integer incrementalNumScans = 5;
     private String team;
@@ -361,12 +361,12 @@ public class CxProperties {
         this.reportPolling = reportPolling;
     }
 
-    public Boolean getOsaEnabled() {
-        return osaEnabled;
+    public Boolean getEnableOsa() {
+        return enableOsa;
     }
 
-    public void setOsaEnabled(Boolean osaEnabled) {
-        this.osaEnabled = osaEnabled;
+    public void setEnableOsa(Boolean enableOsa) {
+        this.enableOsa = enableOsa;
     }
 
     public String getTeamPathSeparator(){

@@ -125,6 +125,7 @@ public class CxOsaService implements CxOsaClient {
                 "MEDIUM", 2,
                 "HIGH", 3
         );
+        //Map<String, Integer> summary = results.getAdditionalDetails()
         Map<String, Library> libsMap = getOsaLibsMap(osaResults.getOsaLibraries());
         for (CVE o : osaResults.getOsaVulnerabilities()) {
             if (filterOsa(filter, o) && libsMap.containsKey(o.getLibraryId())) {
@@ -158,10 +159,27 @@ public class CxOsaService implements CxOsaClient {
                     dList.add(details);
                     issue.setOsaDetails(dList);
                     issueList.add(issue);
+
+                    /*if(!summary.containsKey(r.getSeverity())){
+                        summary.put(r.getSeverity(), 0);
+                    }
+                    int x = summary.get(r.getSeverity());
+                    x++;
+                    summary.put(r.getSeverity(), x);*/
                 }
             }
         }
-        return null;
+        if(results == null) {
+            return ScanResults.builder()
+                    .osa(true)
+                    .xIssues(issueList)
+                    .build();
+        }
+        else {
+            results.setOsa(true);
+            results.getXIssues().addAll(issueList);
+            return results;
+        }
     }
 
     private boolean filterOsa(List<Filter> filters, CVE osa) {
