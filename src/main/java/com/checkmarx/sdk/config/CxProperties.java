@@ -363,7 +363,8 @@ public class CxProperties {
     }
 
     public Boolean getEnableOsa() {
-        return enableOsa;
+        //return enableOsa;
+        return false;
     }
 
     public void setEnableOsa(Boolean enableOsa) {
