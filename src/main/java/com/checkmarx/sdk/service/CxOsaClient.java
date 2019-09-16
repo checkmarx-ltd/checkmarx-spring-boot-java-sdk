@@ -3,7 +3,7 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.exception.CheckmarxException;
-import com.cx.restclient.osa.dto.OSAResults;
+//import com.cx.restclient.osa.dto.OSAResults;
 
 import java.util.List;
 
@@ -20,6 +20,6 @@ public interface CxOsaClient {
 
     public ScanResults getLatestOsaResults(Integer projectId, ScanResults results, List<Filter> filter) throws CheckmarxException;
 
-    public ScanResults mapOsaResults(OSAResults osaResults, ScanResults results, List<Filter> filters) throws CheckmarxException;
+    //public ScanResults mapOsaResults(OSAResults osaResults, ScanResults results, List<Filter> filters) throws CheckmarxException;
 
 }

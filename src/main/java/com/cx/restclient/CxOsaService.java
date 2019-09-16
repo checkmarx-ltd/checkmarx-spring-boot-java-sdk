@@ -4,16 +4,14 @@ import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
-import com.checkmarx.sdk.dto.cx.CxOsa;
-import com.checkmarx.sdk.dto.cx.CxOsaLib;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.service.CxOsaClient;
-import com.cx.restclient.configuration.CxScanConfig;
+/*import com.cx.restclient.configuration.CxScanConfig;
 import com.cx.restclient.exception.CxClientException;
 import com.cx.restclient.httpClient.CxHttpClient;
 import com.cx.restclient.osa.dto.CVE;
 import com.cx.restclient.osa.dto.Library;
-import com.cx.restclient.osa.dto.OSAResults;
+import com.cx.restclient.osa.dto.OSAResults;*/
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -29,16 +27,20 @@ import java.util.*;
 public class CxOsaService implements CxOsaClient {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxOsaService.class);
     private final CxProperties cxProperties;
-    private final CxHttpClient cxHttpClient;
+    //private final CxHttpClient cxHttpClient;
     private static final String OSA_VULN = "Vulnerable_Library";
 
-    public CxOsaService(CxProperties cxProperties, CxHttpClient cxHttpClient) {
+    /*public CxOsaService(CxProperties cxProperties, CxHttpClient cxHttpClient) {
         this.cxProperties = cxProperties;
         this.cxHttpClient = cxHttpClient;
+    }*/
+
+    public CxOsaService(CxProperties cxProperties) {
+        this.cxProperties = cxProperties;
     }
 
     public ScanResults createScanAndReport(Integer projectId, String sourceDir, ScanResults results, List<Filter> filter) throws CheckmarxException{
-        CxScanConfig config = getOsaScanConfig();
+        /*CxScanConfig config = getOsaScanConfig();
         //---------------------------------------------
         //config.setOsaFolderExclusions("");
         //config.setOsaFilterPattern("");
@@ -56,11 +58,12 @@ public class CxOsaService implements CxOsaClient {
             log.error(ExceptionUtils.getRootCauseMessage(e));
             log.debug(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException();
-        }
+        }*/
+        return null;
     }
 
     public String createScan(Integer projectId, String sourceDir) throws CheckmarxException{
-        CxScanConfig config = getOsaScanConfig();
+        /*CxScanConfig config = getOsaScanConfig();
         //---------------------------------------------
         //config.setOsaFolderExclusions("");
         //config.setOsaFilterPattern("");
@@ -76,11 +79,12 @@ public class CxOsaService implements CxOsaClient {
             log.error(ExceptionUtils.getRootCauseMessage(e));
             log.debug(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException();
-        }
+        }*/
+        return null;
     }
 
     public ScanResults waitForOsaScan(String scanId, Integer projectId, ScanResults results, List<Filter> filter) throws CheckmarxException {
-        CxScanConfig config = getOsaScanConfig();
+        /*CxScanConfig config = getOsaScanConfig();
         //---------------------------------------------
         //config.setOsaFolderExclusions("");
         //config.setOsaFilterPattern("");
@@ -94,11 +98,12 @@ public class CxOsaService implements CxOsaClient {
             log.error(ExceptionUtils.getRootCauseMessage(e));
             log.debug(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException();
-        }
+        }*/
+        return null;
     }
 
     public ScanResults getLatestOsaResults(Integer projectId, ScanResults results, List<Filter> filter) throws CheckmarxException {
-        CxScanConfig config = getOsaScanConfig();
+        /*CxScanConfig config = getOsaScanConfig();
         //---------------------------------------------
         //config.setOsaFolderExclusions("");
         //config.setOsaFilterPattern("");
@@ -112,10 +117,11 @@ public class CxOsaService implements CxOsaClient {
             log.error(ExceptionUtils.getRootCauseMessage(e));
             log.debug(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException();
-        }
+        }*/
+        return null;
     }
 
-    public ScanResults mapOsaResults(OSAResults osaResults, ScanResults results, List<Filter> filter) {
+    /*public ScanResults mapOsaResults(OSAResults osaResults, ScanResults results, List<Filter> filter) {
         if (osaResults.getOsaLibraries() == null || osaResults.getOsaVulnerabilities() == null) {
             return results;
         }
@@ -180,9 +186,9 @@ public class CxOsaService implements CxOsaClient {
         results.setOsa(true);
         results.getXIssues().addAll(issueList);
         return results;
-    }
+    }*/
 
-    private boolean filterOsa(List<Filter> filters, CVE osa) {
+    /*private boolean filterOsa(List<Filter> filters, CVE osa) {
         boolean all = true;
         for (Filter f : filters) {
             if (f.getType().equals(Filter.Type.SEVERITY)) {
@@ -193,17 +199,17 @@ public class CxOsaService implements CxOsaClient {
             }
         }
         return all;
-    }
+    }*/
 
-    private Map<String, Library> getOsaLibsMap(List<Library> libs) {
+    /*private Map<String, Library> getOsaLibsMap(List<Library> libs) {
         Map<String, Library> libMap = new HashMap<>();
         for (Library o : libs) {
             libMap.put(o.getId(), o);
         }
         return libMap;
-    }
+    }*/
 
-    private CxScanConfig getOsaScanConfig(){
+    /*private CxScanConfig getOsaScanConfig(){
         CxScanConfig config = new CxScanConfig();
         config.setUrl(cxProperties.getBaseUrl());
         config.setUsername(cxProperties.getUsername());
@@ -211,5 +217,5 @@ public class CxOsaService implements CxOsaClient {
         config.setCxOrigin("CxFlow");
         config.setDisableCertificateValidation(false);
         return config;
-    }
+    }*/
 }

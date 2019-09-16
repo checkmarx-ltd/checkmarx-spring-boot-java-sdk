@@ -10,7 +10,7 @@ import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.cx.restclient.CxOsaService;
-import com.cx.restclient.httpClient.CxHttpClient;
+//import com.cx.restclient.httpClient.CxHttpClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +37,8 @@ public class CxServiceIT {
     private CxAuthService authService;
     @Autowired
     private CxOsaService osaService;
-    @Autowired
-    private CxHttpClient cxHttpClient;
+    //@Autowired
+    //private CxHttpClient cxHttpClient;
     @Test
     public void Login() {
         try {
