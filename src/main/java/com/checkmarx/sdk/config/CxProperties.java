@@ -27,6 +27,7 @@ public class CxProperties {
     private String excludeFolders;
     private Boolean incremental = false;
     private Boolean enableOsa = false;
+    private String gitClonePath;
     private Integer incrementalThreshold = 7;
     private Integer incrementalNumScans = 5;
     private String team;
@@ -376,6 +377,25 @@ public class CxProperties {
         else{
             return TEAM_PATH_SEPARATOR_9;
         }
+    }
+
+    public String getGitClonePath(){
+        if(this.gitClonePath == null){
+            if (System.getProperty("os.name").startsWith("Windows")) {
+                // includes: Windows 2000,  Windows 95, Windows 98, Windows NT, Windows Vista, Windows XP
+                return Constants.WINDOWS_PATH;
+            } else {
+                // everything else
+                return Constants.UNIX_PATH;
+            }
+        }
+        else {
+            return this.gitClonePath;
+        }
+    }
+
+    public void setGitClonePath(String gitClonePath) {
+        this.gitClonePath = gitClonePath;
     }
 }
 
