@@ -335,7 +335,7 @@ public class CxService implements CxClient{
                     throw new CheckmarxException("Timeout exceeded during report generation");
                 }
             }
-            Thread.sleep(cxProperties.getScanPolling());
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
@@ -1566,17 +1566,17 @@ public class CxService implements CxClient{
 
         try {
             Integer reportId = createScanReport(scanId);
-            Thread.sleep(cxProperties.getScanPolling());
+            Thread.sleep(cxProperties.getReportPolling());
             int timer = 0;
             while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
-                Thread.sleep(cxProperties.getScanPolling());
-                timer += cxProperties.getScanPolling();
+                Thread.sleep(cxProperties.getReportPolling());
+                timer += cxProperties.getReportPolling();
                 if (timer >= cxProperties.getReportTimeout()) {
                     log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
                     throw new CheckmarxException("Timeout exceeded during report generation");
                 }
             }
-            Thread.sleep(cxProperties.getScanPolling());
+            Thread.sleep(1000);
             return getXmlReportContent(reportId);
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
