@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.github.checkmarx-ts</groupId>
 	<artifactId>cx-spring-boot-sdk</artifactId>
-	<version>0.3.3-osa</version>
+	<version>0.3.4</version>
 	<name>cx-spring-boot-sdk</name>
 	<description>Checkmarx Java Spring Boot SDK</description>
 
@@ -28,11 +28,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web-services</artifactId>
 		</dependency>
-		<dependency>
+		<!--dependency>
 			<groupId>com.checkmarx</groupId>
 			<artifactId>cx-client-common</artifactId>
 			<version>8.90.5</version>
-		</dependency>
+		</dependency-->
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
