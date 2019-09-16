@@ -1005,7 +1005,7 @@ public class CxService implements CxClient{
             if(projects.getBody() != null){
                 return Arrays.asList(projects.getBody());
             }
-            return null;
+            return Collections.emptyList();
         } catch (HttpStatusCodeException e) {
             log.warn("Error occurred while retrieving projects, http error {}", e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
@@ -1757,6 +1757,30 @@ public class CxService implements CxClient{
         }
     }
 
+    /**
+     *
+     * @param ldapServerId
+     * @return
+     * @throws CheckmarxException
+     */
+    @Override
+    public List<CxTeamLdap> getTeamLdap(Integer ldapServerId) throws CheckmarxException {
+        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        try {
+            ResponseEntity<CxTeamLdap[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS),
+                    HttpMethod.GET, httpEntity, CxTeamLdap[].class);
+            if(projects.getBody() != null){
+                return Arrays.asList(projects.getBody());
+            }
+            return Collections.emptyList();
+        } catch (HttpStatusCodeException e) {
+            log.warn("Error occurred while retrieving Team LDAP Mappings, http error {}", e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("Error retrieving Team LDAP Mappings");
+        }
+
+    }
+
     static String getNameFromLDAP(String ldapGroupDn) {
         try {
             LdapName ldapName = new LdapName(ldapGroupDn);
@@ -1889,6 +1913,11 @@ public class CxService implements CxClient{
         }catch (HttpStatusCodeException e) {
             log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
         }
+    }
+
+    @Override
+    public void getRoleLdap(Integer ldapServerId) throws CheckmarxException {
+
     }
 
     @Override

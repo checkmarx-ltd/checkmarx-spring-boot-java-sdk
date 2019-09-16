@@ -254,6 +254,13 @@ public interface CxClient {
     public void mapTeamLdap(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException;
 
     /**
+     * Retrieve LDAP team mapping associations
+     * @param ldapServerId
+     * @throws CheckmarxException
+     */
+    public List<CxTeamLdap> getTeamLdap(Integer ldapServerId) throws CheckmarxException;
+
+    /**
      * Removes an LDAP team association - uses SOAP Web Service
      *
      * @param ldapServerId
@@ -293,6 +300,14 @@ public interface CxClient {
      * @throws CheckmarxException
      */
     public void mapRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException;
+
+    /**
+     * Retrieve LDAP mapping mapping associations
+     * @param ldapServerId
+     * @throws CheckmarxException
+     */
+    public void getRoleLdap(Integer ldapServerId) throws CheckmarxException;
+
     public void removeRoleLdap(Integer roleMapId) throws CheckmarxException;
 
     /**
