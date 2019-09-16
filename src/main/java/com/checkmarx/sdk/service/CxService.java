@@ -1765,7 +1765,7 @@ public class CxService implements CxClient{
      */
     @Override
     public List<CxTeamLdap> getTeamLdap(Integer ldapServerId) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             ResponseEntity<CxTeamLdap[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS),
                     HttpMethod.GET, httpEntity, CxTeamLdap[].class);
