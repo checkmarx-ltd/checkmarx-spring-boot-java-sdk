@@ -6,7 +6,6 @@ import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.*;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
-import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.utils.ScanUtils;
@@ -23,7 +22,6 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import javax.naming.InvalidNameException;
@@ -72,7 +70,6 @@ public class CxService implements CxClient{
             "URGENT", 3
     );
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
-    private static final String LOGIN = "/auth/identity/connect/token";
     private static final String TEAMS = "/auth/teams";
     private static final String TEAM = "/auth/teams/{id}";
     private static final String TEAM_LDAP = "/auth/LDAPServers/{id}/TeamMappings";
@@ -100,12 +97,11 @@ public class CxService implements CxClient{
     private static final String OSA_VULN = "Vulnerable_Library";
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
+    private final CxAuthClient authClient;
     private final RestTemplate restTemplate;
-    private String token = null;
-    private String session = null;
-    private LocalDateTime tokenExpires = null;
 
-    public CxService(CxProperties cxProperties, CxLegacyService cxLegacyService, @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
+    public CxService(CxAuthClient authClient, CxProperties cxProperties, CxLegacyService cxLegacyService, @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
+        this.authClient = authClient;
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
         this.restTemplate = restTemplate;
@@ -129,7 +125,7 @@ public class CxService implements CxClient{
                 .isPublic(isPublic)
                 .comment(comment)
                 .build();
-        HttpEntity<CxScan> requestEntity = new HttpEntity<>(scan, createAuthHeaders());
+        HttpEntity<CxScan> requestEntity = new HttpEntity<>(scan, authClient.createAuthHeaders());
 
         log.info("Creating Scan for project Id {}", projectId);
         try {
@@ -147,7 +143,7 @@ public class CxService implements CxClient{
 
     @Override
     public Integer getLastScanId(Integer projectId) {
-        HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
         log.info("Finding last Scan Id for project Id {}", projectId);
         try {
@@ -178,7 +174,7 @@ public class CxService implements CxClient{
      */
     @Override
     public JSONObject getScanData(String scanId) {
-        HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
         JSONObject scanData = new JSONObject();
         log.info("Fetching Scan data for Id {}", scanId);
         try {
@@ -196,7 +192,7 @@ public class CxService implements CxClient{
 
     @Override
     public LocalDateTime getLastScanDate(Integer projectId) {
-        HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
         log.info("Finding last Scan Id for project Id {}", projectId);
@@ -245,7 +241,7 @@ public class CxService implements CxClient{
      */
     @Override
     public Integer getScanStatus(Integer scanId) {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         log.debug("Retrieving xml status of xml Id {}", scanId);
         try {
             ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_STATUS), HttpMethod.GET, httpEntity, String.class, scanId);
@@ -273,7 +269,7 @@ public class CxService implements CxClient{
     public Integer createScanReport(Integer scanId) {
         String strJSON = "{'reportType':'XML', 'scanId':%d}";
         strJSON = String.format(strJSON, scanId);
-        HttpEntity requestEntity = new HttpEntity<>(strJSON, createAuthHeaders());
+        HttpEntity requestEntity = new HttpEntity<>(strJSON, authClient.createAuthHeaders());
 
         try {
             log.info("Creating report for xml Id {}", scanId);
@@ -300,7 +296,7 @@ public class CxService implements CxClient{
      */
     @Override
     public Integer getReportStatus(Integer reportId) {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         log.info("Retrieving report status of report Id {}", reportId);
         try {
             ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(REPORT_STATUS), HttpMethod.GET, httpEntity, String.class, reportId);
@@ -339,7 +335,7 @@ public class CxService implements CxClient{
                     throw new CheckmarxException("Timeout exceeded during report generation");
                 }
             }
-            Thread.sleep(cxProperties.getScanPolling());
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
@@ -357,7 +353,7 @@ public class CxService implements CxClient{
      */
     @Override
     public ScanResults getReportContent(Integer reportId, List<Filter> filter) throws CheckmarxException {
-        HttpHeaders headers = createAuthHeaders();
+        HttpHeaders headers = authClient.createAuthHeaders();
         headers.setContentType(MediaType.APPLICATION_XML);
         HttpEntity httpEntity = new HttpEntity<>(headers);
         String session = null;
@@ -456,7 +452,7 @@ public class CxService implements CxClient{
      */
     @Override
     public CxXMLResultsType getXmlReportContent(Integer reportId) throws CheckmarxException {
-        HttpHeaders headers = createAuthHeaders();
+        HttpHeaders headers = authClient.createAuthHeaders();
         headers.setContentType(MediaType.APPLICATION_XML);
         HttpEntity httpEntity = new HttpEntity<>(headers);
         String session = null;
@@ -966,7 +962,7 @@ public class CxService implements CxClient{
                 .owningTeam(ownerId)
                 .isPublic(true)
                 .build();
-        HttpEntity<CxCreateProject> requestEntity = new HttpEntity<>(project, createAuthHeaders());
+        HttpEntity<CxCreateProject> requestEntity = new HttpEntity<>(project, authClient.createAuthHeaders());
 
         log.info("Creating Project {} for ownerId {}", name, ownerId);
         try {
@@ -986,7 +982,7 @@ public class CxService implements CxClient{
 
     @Override
     public void deleteProject(Integer projectId) {
-        HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
         log.info("Deleting Project id {}", projectId);
         try {
@@ -1003,13 +999,13 @@ public class CxService implements CxClient{
      * @return
      */
     public List<CxProject> getProjects() throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             ResponseEntity<CxProject[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS), HttpMethod.GET, httpEntity, CxProject[].class);
             if(projects.getBody() != null){
                 return Arrays.asList(projects.getBody());
             }
-            return null;
+            return Collections.emptyList();
         } catch (HttpStatusCodeException e) {
             log.warn("Error occurred while retrieving projects, http error {}", e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
@@ -1023,7 +1019,7 @@ public class CxService implements CxClient{
      * @return
      */
     public List<CxProject> getProjects(String teamId) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         List<CxProject> teamProjects = new ArrayList<>();
         try {
             ResponseEntity<CxProject[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS), HttpMethod.GET, httpEntity, CxProject[].class);
@@ -1044,7 +1040,7 @@ public class CxService implements CxClient{
     }
 
     public Integer getProjectId(String ownerId, String name) {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS)
                     .concat("?projectName=").concat(name).concat("&teamId=").concat(ownerId), HttpMethod.GET, httpEntity, String.class);
@@ -1072,7 +1068,7 @@ public class CxService implements CxClient{
      * @return
      */
     public CxProject getProject(Integer projectId) {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             ResponseEntity<CxProject> project = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT), HttpMethod.GET, httpEntity, CxProject.class, projectId);
             return project.getBody();
@@ -1094,7 +1090,7 @@ public class CxService implements CxClient{
      * @return
      */
     public boolean scanExists(Integer projectId) {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
 
             ResponseEntity<String> scans = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_SCANS), HttpMethod.GET, httpEntity, String.class, projectId);
@@ -1136,7 +1132,7 @@ public class CxService implements CxClient{
                 .engineConfigurationId(engineConfigId)
                 .presetId(presetId)
                 .build();
-        HttpEntity<CxScanSettings> requestEntity = new HttpEntity<>(scanSettings, createAuthHeaders());
+        HttpEntity<CxScanSettings> requestEntity = new HttpEntity<>(scanSettings, authClient.createAuthHeaders());
 
         log.info("Creating ScanSettings for project Id {}", projectId);
         try {
@@ -1169,7 +1165,7 @@ public class CxService implements CxClient{
                 .build();
         log.debug("branch {}", branch);
         log.debug("project {}", projectId);
-        HttpEntity<CxProjectSource> requestEntity = new HttpEntity<>(projectSource, createAuthHeaders());
+        HttpEntity<CxProjectSource> requestEntity = new HttpEntity<>(projectSource, authClient.createAuthHeaders());
 
         try {
             log.info("Updating Source details for project Id {}", projectId);
@@ -1188,7 +1184,7 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     public void uploadProjectSource(Integer projectId, File file) throws CheckmarxException {
-        HttpHeaders headers = createAuthHeaders();
+        HttpHeaders headers = authClient.createAuthHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
@@ -1220,7 +1216,7 @@ public class CxService implements CxClient{
 
         String strJSON = "{'excludeFoldersPattern':'%s', 'excludeFilesPattern':'%s'}";
         strJSON = String.format(strJSON, excludeFolderStr, excludeFilesStr);
-        HttpEntity requestEntity = new HttpEntity<>(strJSON, createAuthHeaders());
+        HttpEntity requestEntity = new HttpEntity<>(strJSON, authClient.createAuthHeaders());
 
         try {
             log.info("Updating Project folder and file exclusion details for project Id {}", projectId);
@@ -1239,7 +1235,7 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     public String getTeamId(String teamPath) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             log.info("Retrieving Cx teams");
             ResponseEntity<CxTeam[]> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAMS), HttpMethod.GET, httpEntity, CxTeam[].class);
@@ -1271,7 +1267,7 @@ public class CxService implements CxClient{
      */
     @Override
     public String getTeamId(String parentTeamId, String teamName) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             if(cxProperties.getVersion() < 9.0){
                 log.error("Unsupported function for this version of Checkmarx");
@@ -1309,7 +1305,7 @@ public class CxService implements CxClient{
             json.put("parentId", Long.parseLong(parentTeamId));
             log.info("Creating team with name {} under parent Id {}", teamName, parentTeamId);
             try {
-                HttpEntity requestEntity = new HttpEntity<>(json.toString(), createAuthHeaders());
+                HttpEntity requestEntity = new HttpEntity<>(json.toString(), authClient.createAuthHeaders());
                 restTemplate.postForObject(cxProperties.getUrl().concat(TEAMS), requestEntity, String.class);
                 return getTeamId(parentTeamId, teamName);
             } catch (HttpStatusCodeException e) {
@@ -1326,7 +1322,7 @@ public class CxService implements CxClient{
             deleteTeamWS(teamId);
         }
         else {
-            HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+            HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
             log.debug("Deleting team with id {}", teamId);
             try {
                 ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(TEAM), HttpMethod.DELETE, httpEntity, String.class, teamId);
@@ -1347,8 +1343,10 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     public String createTeamWS(String parentTeamId, String teamName) throws CheckmarxException {
-        if(session == null){
-            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+        String session = authClient.getLegacySession();
+
+        if(authClient.getLegacySession() == null){
+            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
         }
         cxLegacyService.createTeam(session, parentTeamId, teamName);
         return getTeamId(cxProperties.getTeam().concat(cxProperties.getTeamPathSeparator()).concat(teamName));
@@ -1361,10 +1359,11 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     public void deleteTeamWS(String teamId) throws CheckmarxException {
+        String session = authClient.getLegacySession();
         if(session == null){
-            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
         }
-        cxLegacyService.deleteTeam(session, teamId);
+        cxLegacyService.deleteTeam(authClient.getLegacySession(), teamId);
     }
 
     /**
@@ -1375,7 +1374,7 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     public Integer getScanConfiguration(String configuration) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         int defaultConfigId = UNKNOWN_INT;
         try {
             log.info("Retrieving Cx engineConfigurations");
@@ -1403,7 +1402,7 @@ public class CxService implements CxClient{
     }
 
     public Integer getPresetId(String preset) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         int defaultPresetId = UNKNOWN_INT;
         try {
             log.info("Retrieving Cx presets");
@@ -1441,7 +1440,7 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     public CxScanSummary getScanSummaryByScanId(Integer scanId) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             log.debug("Retrieving scan summary for scan id: {}", scanId);
             ResponseEntity<CxScanSummary> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_SUMMARY), HttpMethod.GET, httpEntity, CxScanSummary.class, scanId);
@@ -1534,7 +1533,9 @@ public class CxService implements CxClient{
                 .comment(comment)
                 .build();
 
-        HttpEntity<CxScan> requestEntity = new HttpEntity<>(scan, createAuthHeaders());
+        HttpHeaders headers = authClient.createAuthHeaders();
+        headers.add("cxOrigin","CxFlow");
+        HttpEntity<CxScan> requestEntity = new HttpEntity<>(scan, headers);
 
         log.info("Creating Scan for project Id {}", projectId);
         try {
@@ -1565,17 +1566,17 @@ public class CxService implements CxClient{
 
         try {
             Integer reportId = createScanReport(scanId);
-            Thread.sleep(cxProperties.getScanPolling());
+            Thread.sleep(cxProperties.getReportPolling());
             int timer = 0;
             while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
-                Thread.sleep(cxProperties.getScanPolling());
-                timer += cxProperties.getScanPolling();
+                Thread.sleep(cxProperties.getReportPolling());
+                timer += cxProperties.getReportPolling();
                 if (timer >= cxProperties.getReportTimeout()) {
                     log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
                     throw new CheckmarxException("Timeout exceeded during report generation");
                 }
             }
-            Thread.sleep(cxProperties.getScanPolling());
+            Thread.sleep(1000);
             return getXmlReportContent(reportId);
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
@@ -1626,7 +1627,7 @@ public class CxService implements CxClient{
      */
     @Override
     public void deleteScan(Integer scanId) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         log.debug("Deleting scan with id {}", scanId);
         try {
             ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_STATUS), HttpMethod.DELETE, httpEntity, String.class, scanId);
@@ -1709,7 +1710,7 @@ public class CxService implements CxClient{
         if(cxProperties.getVersion() < 9.0) {
             throw new CheckmarxException("Operation only support in 9.0+");
         }
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             log.info("Retrieving Cx teams");
             ResponseEntity<CxTeam[]> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAMS), HttpMethod.GET, httpEntity, CxTeam[].class);
@@ -1748,12 +1749,36 @@ public class CxService implements CxClient{
                 body.put("ldapGroupDn", ldapGroupDn);
                 body.put("ldapGroupDisplayName", name);
 
-                HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), createAuthHeaders());
+                HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), authClient.createAuthHeaders());
                 restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP),  HttpMethod.POST, requestEntity, String.class, ldapServerId);
             }catch (HttpStatusCodeException e) {
                 log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
             }
         }
+    }
+
+    /**
+     *
+     * @param ldapServerId
+     * @return
+     * @throws CheckmarxException
+     */
+    @Override
+    public List<CxTeamLdap> getTeamLdap(Integer ldapServerId) throws CheckmarxException {
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            ResponseEntity<CxTeamLdap[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS),
+                    HttpMethod.GET, httpEntity, CxTeamLdap[].class);
+            if(projects.getBody() != null){
+                return Arrays.asList(projects.getBody());
+            }
+            return Collections.emptyList();
+        } catch (HttpStatusCodeException e) {
+            log.warn("Error occurred while retrieving Team LDAP Mappings, http error {}", e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("Error retrieving Team LDAP Mappings");
+        }
+
     }
 
     static String getNameFromLDAP(String ldapGroupDn) {
@@ -1779,7 +1804,7 @@ public class CxService implements CxClient{
         }
         else{
             Integer mapId = getLdapTeamMapId(ldapServerId, ldapGroupDn);
-            HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+            HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
             log.info("Deleting ldap team mapping id {}", mapId);
             try {
@@ -1797,7 +1822,7 @@ public class CxService implements CxClient{
             throw new CheckmarxException("Operation only support in 9.0+");
         }
         try{
-            HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+            HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
             ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP_MAPPINGS),
                     HttpMethod.GET, requestEntity, String.class, ldapServerId);
             JSONArray objs = new JSONArray(response.getBody());
@@ -1818,16 +1843,18 @@ public class CxService implements CxClient{
 
     @Override
     public void mapTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
+        String session = authClient.getLegacySession();
         if(session == null){
-            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
         }
         cxLegacyService.createLdapTeamMapping(session, ldapServerId, teamId, teamName, ldapGroupDn);
     }
 
     @Override
     public void removeTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
+        String session = authClient.getLegacySession();
         if(session == null){
-            legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
         }
         cxLegacyService.removeLdapTeamMapping(session, ldapServerId, teamId, teamName, ldapGroupDn);
     }
@@ -1837,7 +1864,7 @@ public class CxService implements CxClient{
         if(cxProperties.getVersion() < 9.0) {
             throw new CheckmarxException("Operation only support in 9.0+");
         }
-        HttpEntity httpEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             log.info("Retrieving Cx Roles");
             ResponseEntity<CxRole[]> response = restTemplate.exchange(cxProperties.getUrl().concat(ROLE), HttpMethod.GET, httpEntity, CxRole[].class);
@@ -1881,7 +1908,7 @@ public class CxService implements CxClient{
             body.put("ldapGroupDn", ldapGroupDn);
             body.put("ldapGroupDisplayName", name);
             log.debug(body.toString());
-            HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), createAuthHeaders());
+            HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), authClient.createAuthHeaders());
             restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPING),  HttpMethod.PUT, requestEntity, String.class, ldapServerId);
         }catch (HttpStatusCodeException e) {
             log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
@@ -1889,11 +1916,16 @@ public class CxService implements CxClient{
     }
 
     @Override
+    public void getRoleLdap(Integer ldapServerId) throws CheckmarxException {
+
+    }
+
+    @Override
     public void removeRoleLdap(Integer roleMapId) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
             throw new CheckmarxException("Operation only support in 9.0+");
         }
-        HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
         log.info("Deleting ldap role mapping id {}", roleMapId);
         try {
@@ -1910,7 +1942,7 @@ public class CxService implements CxClient{
             throw new CheckmarxException("Operation only support in 9.0+");
         }
         try{
-            HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+            HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
             ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPINGS),
                     HttpMethod.GET, requestEntity, String.class, ldapServerId);
             JSONArray objs = new JSONArray(response.getBody());
@@ -1929,77 +1961,18 @@ public class CxService implements CxClient{
         return UNKNOWN_INT;
     }
 
-
-    /**
-     * Get Auth Token
-     */
-    private void getAuthToken() {
-        getAuthToken(
-                cxProperties.getUsername(),
-                cxProperties.getPassword(),
-                cxProperties.getClientId(),
-                cxProperties.getClientSecret(),
-                cxProperties.getScope()
-        );
-    }
-
-    /**
-     * Get Auth Token
-     */
-    @Override
-    public String getAuthToken(String username, String password, String clientId, String clientSecret, String scope) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("username", username);
-        map.add("password", password);
-        map.add("grant_type", "password");
-        map.add("scope", cxProperties.getScope());
-        map.add("client_id", clientId);
-        if(!ScanUtils.empty(cxProperties.getClientSecret())){
-            map.add("client_secret", clientSecret);
-        }
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(map, headers);
-
-        try {
-            //get the access token
-            log.info("Logging into Checkmarx {}", cxProperties.getUrl().concat(LOGIN));
-            CxAuthResponse response = restTemplate.postForObject(cxProperties.getUrl().concat(LOGIN), requestEntity, CxAuthResponse.class);
-            if (response == null) {
-                throw new InvalidCredentialsException();
-            }
-            token = response.getAccessToken();
-            tokenExpires = LocalDateTime.now().plusSeconds(response.getExpiresIn()-500); //expire 500 seconds early
-        }
-        catch (NullPointerException | HttpStatusCodeException e) {
-            log.error("Error occurred white obtaining Access Token.  Possibly incorrect credentials");
-            log.error(ExceptionUtils.getStackTrace(e));
-            throw new InvalidCredentialsException();
-        }
-        return token;
-    }
-
-    @Override
-    public String legacyLogin(String username, String password) throws InvalidCredentialsException {
-        try{
-            session = cxLegacyService.login(username, password);
-        }catch (CheckmarxLegacyException e){
-            throw new InvalidCredentialsException();
-        }
-        return session;
-    }
-
     @Override
     public Integer getLdapServerId(String serverName) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
+            String session = authClient.getLegacySession();
             if (session == null) {
-                legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+                session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
             }
             return cxLegacyService.getLdapServerId(session, serverName);
         }
         else{
             try{
-                HttpEntity requestEntity = new HttpEntity<>(createAuthHeaders());
+                HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
                 ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(LDAP_SERVER),
                         HttpMethod.GET, requestEntity, String.class);
                 JSONArray objs = new JSONArray(response.getBody());
@@ -2018,25 +1991,7 @@ public class CxService implements CxClient{
             return UNKNOWN_INT;
         }
     }
-
-    private boolean isTokenExpired() {
-        if (tokenExpires == null) {
-            return true;
-        }
-        return LocalDateTime.now().isAfter(tokenExpires);
-    }
-
-    private HttpHeaders createAuthHeaders() {
-        //get a new access token if the current one is expired.
-        if (token == null || isTokenExpired()) {
-            getAuthToken();
-        }
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.AUTHORIZATION, "Bearer ".concat(token));
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
-        return httpHeaders;
-    }
-
+    
     private void validateScanParams(CxScanParams params) throws CheckmarxException {
         log.debug(params.toString());
         if(ScanUtils.empty(params.getProjectName())){

@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class ScanResults{
 
-    private Boolean osa;
+    private Boolean osa = false;
     private String  projectId;
     private String  team;
     private String  project;
