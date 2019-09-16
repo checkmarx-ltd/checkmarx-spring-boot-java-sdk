@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.config;
 
+//import com.cx.restclient.httpClient.CxHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,7 +9,7 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.ws.client.core.WebServiceTemplate;
-
+import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 
 @Configuration
@@ -20,8 +21,8 @@ public class CxConfig {
         this.properties = properties;
     }
 
-    @Bean(name="cxRestTemplate")
-    public RestTemplate getRestTemplate(){
+    @Bean(name = "cxRestTemplate")
+    public RestTemplate getRestTemplate() {
         RestTemplate restTemplate = new RestTemplate();
 
         HttpComponentsClientHttpRequestFactory requestFactory = new
@@ -50,11 +51,27 @@ public class CxConfig {
         if (properties != null && properties.getPortalUrl() != null && !properties.getPortalUrl().isEmpty()) {
             ws.setDefaultUri(properties.getPortalUrl());
         }
-        if(marshaller != null) {
+        if (marshaller != null) {
             ws.setMarshaller(marshaller);
             ws.setUnmarshaller(marshaller);
         }
         return ws;
     }
 
+    /*@Bean
+    public CxHttpClient getCxHttpClient() {
+        try {
+            return new CxHttpClient(
+                    properties.getBaseUrl(),
+                    properties.getUsername(),
+                    properties.getPassword(),
+                    "CxFlow",
+                    true,
+                    org.slf4j.LoggerFactory.getLogger(CxHttpClient.class)
+            );
+        }
+        catch (MalformedURLException e){
+            return null;
+        }
+    }*/
 }

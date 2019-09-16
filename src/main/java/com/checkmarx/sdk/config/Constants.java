@@ -10,6 +10,8 @@ public class Constants {
     public static final String CX_DEFAULT_PRESET = "Checkmarx Default";
     public static final String CX_DEFAULT_CONFIGURATION = "Default Configuration";
     public static final String SUMMARY_KEY = "flow-summary";
+    public static final String WINDOWS_PATH = "C:\\temp";
+    public static final String UNIX_PATH = "/tmp";
     public static final String ADO_FIELD = "/fields/";
     public static final String ADO_ISSUE_KEY = "issue-type";
     public static final String ADO_ISSUE_BODY_KEY = "ado-issue-body";
