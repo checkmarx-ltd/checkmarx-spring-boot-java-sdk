@@ -1,5 +1,6 @@
 package com.cx.restclient;
 
+import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
@@ -44,7 +45,7 @@ public class CxOsaService implements CxOsaClient {
         //config.setOsaArchiveIncludePatterns("");
         //config.getOsaRunInstall());
         config.setSourceDir(sourceDir);
-        config.setOsaRunInstall(false);
+        config.setOsaRunInstall(true);
         CxOSAClient osaClient = new CxOSAClient(cxHttpClient, log, config);
         try {
             String scanId = osaClient.createOSAScan(projectId);
@@ -66,7 +67,7 @@ public class CxOsaService implements CxOsaClient {
         //config.setOsaArchiveIncludePatterns("");
         //config.getOsaRunInstall());
         config.setSourceDir(sourceDir);
-        config.setOsaRunInstall(false);
+        config.setOsaRunInstall(true);
         CxOSAClient osaClient = new CxOSAClient(cxHttpClient, log, config);
         try {
             return osaClient.createOSAScan(projectId);
@@ -118,6 +119,9 @@ public class CxOsaService implements CxOsaClient {
         if (osaResults.getOsaLibraries() == null || osaResults.getOsaVulnerabilities() == null) {
             return results;
         }
+        if(results == null) {
+            results = new ScanResults();
+        }
         List<ScanResults.XIssue> issueList = new ArrayList<>();
 
         Map<String, Integer> severityMap = ImmutableMap.of(
@@ -125,7 +129,10 @@ public class CxOsaService implements CxOsaClient {
                 "MEDIUM", 2,
                 "HIGH", 3
         );
-        //Map<String, Integer> summary = results.getAdditionalDetails()
+        Map<String, Integer> summary = (Map<String, Integer>) results.getAdditionalDetails().get(Constants.SUMMARY_KEY);
+        if(summary == null) {
+            summary = new HashMap<>();
+        }
         Map<String, Library> libsMap = getOsaLibsMap(osaResults.getOsaLibraries());
         for (CVE o : osaResults.getOsaVulnerabilities()) {
             if (filterOsa(filter, o) && libsMap.containsKey(o.getLibraryId())) {
@@ -160,26 +167,19 @@ public class CxOsaService implements CxOsaClient {
                     issue.setOsaDetails(dList);
                     issueList.add(issue);
 
-                    /*if(!summary.containsKey(r.getSeverity())){
-                        summary.put(r.getSeverity(), 0);
+                    if(!summary.containsKey(issue.getSeverity())){
+                        summary.put(issue.getSeverity(), 0);
                     }
-                    int x = summary.get(r.getSeverity());
+                    int x = summary.get(issue.getSeverity());
                     x++;
-                    summary.put(r.getSeverity(), x);*/
+                    summary.put(issue.getSeverity(), x);
                 }
             }
         }
-        if(results == null) {
-            return ScanResults.builder()
-                    .osa(true)
-                    .xIssues(issueList)
-                    .build();
-        }
-        else {
-            results.setOsa(true);
-            results.getXIssues().addAll(issueList);
-            return results;
-        }
+        results.getAdditionalDetails().put(Constants.SUMMARY_KEY, summary);
+        results.setOsa(true);
+        results.getXIssues().addAll(issueList);
+        return results;
     }
 
     private boolean filterOsa(List<Filter> filters, CVE osa) {
