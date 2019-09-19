@@ -61,9 +61,12 @@ public class CxService implements CxClient{
     private static final Integer SCAN_STATUS_FAILED = 9;
     private static final Integer SCAN_STATUS_SOURCE_PULLING = 10;
     private static final Integer SCAN_STATUS_NONE = 1001;
-    /*report statuses TODO*/
+    /*
+    report statuses - there are only 2:
+    InProcess (1)
+    Created (2)
+    */
     public static final Integer REPORT_STATUS_CREATED = 2;
-    public static final Integer REPORT_STATUS_FINISHED = 7;
     private static final Map<String, Integer> STATUS_MAP = ImmutableMap.of(
             "TO VERIFY", 1,
             "CONFIRMED", 2,
@@ -314,6 +317,19 @@ public class CxService implements CxClient{
         return UNKNOWN_INT;
     }
 
+    private void waitForReportCreateOrFail(Integer reportId) throws CheckmarxException, InterruptedException {
+        Thread.sleep(cxProperties.getReportPolling());
+        int timer = 0;
+        while (!getReportStatus(reportId).equals(CxService.REPORT_STATUS_CREATED)) {
+            Thread.sleep(cxProperties.getReportPolling());
+            timer += cxProperties.getReportPolling();
+            if (timer >= cxProperties.getReportTimeout()) {
+                log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
+                throw new CheckmarxException("Timeout exceeded during report generation");
+            }
+        }
+    }
+
     /**
      * Retrieve the report by reportId, mapped to ScanResults DTO, applying filtering as requested
      *
@@ -325,16 +341,7 @@ public class CxService implements CxClient{
     public ScanResults getReportContentByScanId(Integer scanId, List<Filter> filter) throws CheckmarxException{
         Integer reportId = createScanReport(scanId);
         try {
-            Thread.sleep(cxProperties.getReportPolling());
-            int timer = 0;
-            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
-                Thread.sleep(cxProperties.getReportPolling());
-                timer += cxProperties.getReportPolling();
-                if (timer >= cxProperties.getReportTimeout()) {
-                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
-                    throw new CheckmarxException("Timeout exceeded during report generation");
-                }
-            }
+            waitForReportCreateOrFail(reportId);
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
@@ -1566,16 +1573,7 @@ public class CxService implements CxClient{
 
         try {
             Integer reportId = createScanReport(scanId);
-            Thread.sleep(cxProperties.getReportPolling());
-            int timer = 0;
-            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
-                Thread.sleep(cxProperties.getReportPolling());
-                timer += cxProperties.getReportPolling();
-                if (timer >= cxProperties.getReportTimeout()) {
-                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
-                    throw new CheckmarxException("Timeout exceeded during report generation");
-                }
-            }
+            waitForReportCreateOrFail(reportId);
             Thread.sleep(1000);
             return getXmlReportContent(reportId);
         } catch (InterruptedException e) {
@@ -1600,16 +1598,7 @@ public class CxService implements CxClient{
 
         try {
             Integer reportId = createScanReport(scanId);
-            Thread.sleep(cxProperties.getScanPolling());
-            int timer = 0;
-            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
-                Thread.sleep(cxProperties.getScanPolling());
-                timer += cxProperties.getScanPolling();
-                if (timer >= cxProperties.getReportTimeout()) {
-                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
-                    throw new CheckmarxException("Timeout exceeded during report generation");
-                }
-            }
+            waitForReportCreateOrFail(reportId);
             Thread.sleep(cxProperties.getScanPolling());
             return getReportContent(reportId, filters);
         } catch (InterruptedException e) {
@@ -1651,16 +1640,7 @@ public class CxService implements CxClient{
         Integer scanId = getLastScanId(projectId);
         try {
             Integer reportId = createScanReport(scanId);
-            Thread.sleep(cxProperties.getScanPolling());
-            int timer = 0;
-            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
-                Thread.sleep(cxProperties.getScanPolling());
-                timer += cxProperties.getScanPolling();
-                if (timer >= cxProperties.getReportTimeout()) {
-                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
-                    throw new CheckmarxException("Timeout exceeded during report generation");
-                }
-            }
+            waitForReportCreateOrFail(reportId);
             Thread.sleep(cxProperties.getScanPolling());
             return getXmlReportContent(reportId);
         } catch (InterruptedException e) {
@@ -1686,16 +1666,7 @@ public class CxService implements CxClient{
         Integer scanId = getLastScanId(projectId);
         try {
             Integer reportId = createScanReport(scanId);
-            Thread.sleep(cxProperties.getScanPolling());
-            int timer = 0;
-            while (getReportStatus(reportId).equals(CxService.REPORT_STATUS_FINISHED)) {
-                Thread.sleep(cxProperties.getScanPolling());
-                timer += cxProperties.getScanPolling();
-                if (timer >= cxProperties.getReportTimeout()) {
-                    log.error("Report Generation timeout.  {}", cxProperties.getReportTimeout());
-                    throw new CheckmarxException("Timeout exceeded during report generation");
-                }
-            }
+            waitForReportCreateOrFail(reportId);
             Thread.sleep(cxProperties.getScanPolling());
             return getReportContent(reportId, filters);
         } catch (InterruptedException e) {
