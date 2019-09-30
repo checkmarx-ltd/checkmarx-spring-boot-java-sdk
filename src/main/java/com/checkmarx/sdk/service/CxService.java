@@ -378,8 +378,8 @@ public class CxService implements CxClient{
             log.debug("Report length: {}", xml.length());
             log.debug("Headers: {}", resultsXML.getHeaders().toSingleValueMap().toString());
             log.info("Report downloaded for report Id {}", reportId);
-            log.debug("XML String Output: {}", xml);
-            log.debug("Base64:", Base64.getEncoder().encodeToString(resultsXML.toString().getBytes()));
+            log.trace("XML String Output: {}", xml);
+            log.trace("Base64:", Base64.getEncoder().encodeToString(resultsXML.toString().getBytes()));
             /*Remove any chars before the start xml tag*/
             xml = xml.trim().replaceFirst("^([\\W]+)<", "<");
             log.debug("Report length: {}", xml.length());
