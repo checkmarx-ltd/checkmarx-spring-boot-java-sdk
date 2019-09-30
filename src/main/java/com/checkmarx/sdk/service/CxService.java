@@ -75,12 +75,13 @@ public class CxService implements CxClient{
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
     private static final String TEAMS = "/auth/teams";
     private static final String TEAM = "/auth/teams/{id}";
-    private static final String TEAM_LDAP = "/auth/LDAPServers/{id}/TeamMappings";
+    private static final String TEAM_LDAP_MAPPINGS_UPDATE = "/auth/LDAPServers/{id}/TeamMappings";
     private static final String TEAM_LDAP_MAPPINGS = "/auth/LDAPTeamMappings?ldapServerId={id}";
-    private static final String TEAM_LDAP_MAPPING = "/auth/LDAPTeamMappings/{id}";
+    private static final String TEAM_LDAP_MAPPINGS_DELETE = "/auth/LDAPTeamMappings/{id}";
     private static final String ROLE = "/auth/Roles";
-    private static final String ROLE_MAPPING = "/auth/LDAPServers/{id}/RoleMappings";
-    private static final String ROLE_MAPPINGS = "/auth/LDAPRoleMappings?ldapServerId={id}";
+    private static final String ROLE_LDAP_MAPPING = "/auth/LDAPServers/{id}/RoleMappings";
+    private static final String ROLE_LDAP_MAPPINGS = "/auth/LDAPRoleMappings?ldapServerId={id}";
+    private static final String ROLE_LDAP_MAPPINGS_DELETE = "/auth/LDAPRoleMappings/{id}";
     private static final String LDAP_SERVER = "/auth/LDAPServers";
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
@@ -377,8 +378,8 @@ public class CxService implements CxClient{
             log.debug("Report length: {}", xml.length());
             log.debug("Headers: {}", resultsXML.getHeaders().toSingleValueMap().toString());
             log.info("Report downloaded for report Id {}", reportId);
-            log.debug("XML String Output: {}", xml);
-            log.debug("Base64:", Base64.getEncoder().encodeToString(resultsXML.toString().getBytes()));
+            log.trace("XML String Output: {}", xml);
+            log.trace("Base64:", Base64.getEncoder().encodeToString(resultsXML.toString().getBytes()));
             /*Remove any chars before the start xml tag*/
             xml = xml.trim().replaceFirst("^([\\W]+)<", "<");
             log.debug("Report length: {}", xml.length());
@@ -1714,16 +1715,26 @@ public class CxService implements CxClient{
         else{
             log.debug("Calling Access Control REST method for Team LDAP Mapping");
             try {
+                List<CxTeamLdap> teamLdaps = getTeamLdap(ldapServerId);
+                ArrayList<CxTeamLdap> teamLdapsTmp = new ArrayList<>(teamLdaps);
                 String name = getNameFromLDAP(ldapGroupDn);
-                JSONObject body = new JSONObject();
-                body.put("teamId", teamId);
-                body.put("ldapGroupDn", ldapGroupDn);
-                body.put("ldapGroupDisplayName", name);
+                CxTeamLdap ldap = new CxTeamLdap();
+                ldap.setLdapGroupDisplayName(name);
+                ldap.setLdapGroupDn(ldapGroupDn);
+                ldap.setLdapServerId(ldapServerId);
+                ldap.setTeamId(teamId);
+                if(teamLdapsTmp.contains(ldap)){
+                    log.info("team ldap mapping already exists for team id {} - {}", teamId, ldapGroupDn);
+                    return;
+                }
+                teamLdapsTmp.add(ldap);
 
-                HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), authClient.createAuthHeaders());
-                restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP),  HttpMethod.POST, requestEntity, String.class, ldapServerId);
+                HttpEntity<List<CxTeamLdap>> requestEntity = new HttpEntity<>(teamLdapsTmp, authClient.createAuthHeaders());
+                restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP_MAPPINGS_UPDATE),  HttpMethod.PUT, requestEntity, String.class, ldapServerId);
             }catch (HttpStatusCodeException e) {
-                log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
+                log.error("Error occurred while mapping ldap to a team");
+                log.error(ExceptionUtils.getStackTrace(e));
+                throw new CheckmarxException("Error occurred while mapping ldap to a team");
             }
         }
     }
@@ -1736,10 +1747,13 @@ public class CxService implements CxClient{
      */
     @Override
     public List<CxTeamLdap> getTeamLdap(Integer ldapServerId) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0) {
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
-            ResponseEntity<CxTeamLdap[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS),
-                    HttpMethod.GET, httpEntity, CxTeamLdap[].class);
+            ResponseEntity<CxTeamLdap[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP_MAPPINGS),
+                    HttpMethod.GET, httpEntity, CxTeamLdap[].class, ldapServerId);
             if(projects.getBody() != null){
                 return Arrays.asList(projects.getBody());
             }
@@ -1774,12 +1788,16 @@ public class CxService implements CxClient{
             removeTeamLdapWS(ldapServerId, teamId, teamName, ldapGroupDn);
         }
         else{
-            Integer mapId = getLdapTeamMapId(ldapServerId, ldapGroupDn);
+            Integer mapId = getLdapTeamMapId(ldapServerId, teamId, ldapGroupDn);
+            if(mapId.equals(UNKNOWN_INT)){
+                log.warn("Team mapping not found");
+                return;
+            }
             HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
             log.info("Deleting ldap team mapping id {}", mapId);
             try {
-                restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP_MAPPING), HttpMethod.DELETE, requestEntity, String.class, mapId);
+                restTemplate.exchange(cxProperties.getUrl().concat(TEAM_LDAP_MAPPINGS_DELETE), HttpMethod.DELETE, requestEntity, String.class, mapId);
             } catch (HttpStatusCodeException e) {
                 log.error("HTTP error code {} while deleting project with id {}", e.getStatusCode(), mapId);
                 log.error(ExceptionUtils.getStackTrace(e));
@@ -1788,7 +1806,7 @@ public class CxService implements CxClient{
     }
 
     @Override
-    public Integer getLdapTeamMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException {
+    public Integer getLdapTeamMapId(Integer ldapServerId, String teamId, String ldapGroupDn) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
             throw new CheckmarxException("Operation only support in 9.0+");
         }
@@ -1800,7 +1818,7 @@ public class CxService implements CxClient{
             for(int i=0; i < objs.length(); i++){
                 JSONObject obj = objs.getJSONObject(i);
                 String cn = obj.getString("ldapGroupDn");
-                if(cn.equals(ldapGroupDn)){
+                if(teamId.equals(obj.getString("teamId")) && cn.equals(ldapGroupDn)){
                     return obj.getInt("id");
                 }
             }
@@ -1851,6 +1869,33 @@ public class CxService implements CxClient{
         }
     }
 
+    /**
+     *
+     * @param ldapServerId
+     * @return
+     * @throws CheckmarxException
+     */
+    @Override
+    public List<CxRoleLdap> getRoleLdap(Integer ldapServerId) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0) {
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            ResponseEntity<CxRoleLdap[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(ROLE_LDAP_MAPPINGS),
+                    HttpMethod.GET, httpEntity, CxRoleLdap[].class, ldapServerId);
+            if(projects.getBody() != null){
+                return Arrays.asList(projects.getBody());
+            }
+            return Collections.emptyList();
+        } catch (HttpStatusCodeException e) {
+            log.warn("Error occurred while retrieving Role LDAP Mappings, http error {}", e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("Error retrieving Role LDAP Mappings");
+        }
+
+    }
+
     @Override
     public Integer getRoleId(String roleName) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
@@ -1872,23 +1917,41 @@ public class CxService implements CxClient{
             throw new CheckmarxException("Operation only support in 9.0+");
         }
         try {
-            log.info("Creating LDAP role mapping for role id {} with LDAP DN {}", roleId, ldapGroupDn);
+
+            List<CxRoleLdap> roleLdaps = getRoleLdap(ldapServerId);
+            ArrayList<CxRoleLdap> roleLapsTmp = new ArrayList<>(roleLdaps);
             String name = getNameFromLDAP(ldapGroupDn);
-            JSONObject body = new JSONObject();
-            body.put("roleId", roleId);
-            body.put("ldapGroupDn", ldapGroupDn);
-            body.put("ldapGroupDisplayName", name);
-            log.debug(body.toString());
-            HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), authClient.createAuthHeaders());
-            restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPING),  HttpMethod.PUT, requestEntity, String.class, ldapServerId);
+            CxRoleLdap ldap = new CxRoleLdap();
+            ldap.setLdapGroupDisplayName(name);
+            ldap.setLdapGroupDn(ldapGroupDn);
+            ldap.setLdapServerId(ldapServerId);
+            ldap.setRoleId(roleId);
+            if(roleLapsTmp.contains(ldap)){
+                log.info("team ldap mapping already exists for team id {} - {}", roleId, ldapGroupDn);
+                return;
+            }
+            roleLapsTmp.add(ldap);
+
+            HttpEntity<List<CxRoleLdap>> requestEntity = new HttpEntity<>(roleLapsTmp, authClient.createAuthHeaders());
+            restTemplate.exchange(cxProperties.getUrl().concat(ROLE_LDAP_MAPPING),  HttpMethod.PUT, requestEntity, String.class, ldapServerId);
         }catch (HttpStatusCodeException e) {
             log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
         }
     }
 
     @Override
-    public void getRoleLdap(Integer ldapServerId) throws CheckmarxException {
-
+    public void removeRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0){
+            throw new CheckmarxException("Operation only support in 9.0+");
+        }
+        else{
+            Integer mapId = getLdapRoleMapId(ldapServerId, roleId, ldapGroupDn);
+            if(mapId.equals(UNKNOWN_INT)){
+                log.warn("Team mapping not found");
+                return;
+            }
+            removeRoleLdap(mapId);
+        }
     }
 
     @Override
@@ -1900,7 +1963,7 @@ public class CxService implements CxClient{
 
         log.info("Deleting ldap role mapping id {}", roleMapId);
         try {
-            restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPING), HttpMethod.DELETE, requestEntity, String.class, roleMapId);
+            restTemplate.exchange(cxProperties.getUrl().concat(ROLE_LDAP_MAPPINGS_DELETE), HttpMethod.DELETE, requestEntity, String.class, roleMapId);
         } catch (HttpStatusCodeException e) {
             log.error("HTTP error code {} while deleting role mapping with id {}", e.getStatusCode(), roleMapId);
             log.error(ExceptionUtils.getStackTrace(e));
@@ -1908,19 +1971,19 @@ public class CxService implements CxClient{
     }
 
     @Override
-    public Integer getLdapRoleMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException {
+    public Integer getLdapRoleMapId(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
             throw new CheckmarxException("Operation only support in 9.0+");
         }
         try{
             HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(ROLE_MAPPINGS),
+            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(ROLE_LDAP_MAPPINGS),
                     HttpMethod.GET, requestEntity, String.class, ldapServerId);
             JSONArray objs = new JSONArray(response.getBody());
             for(int i=0; i < objs.length(); i++){
                 JSONObject obj = objs.getJSONObject(i);
                 String cn = obj.getString("ldapGroupDn");
-                if(cn.equals(ldapGroupDn)){
+                if(roleId.equals(obj.getInt("roleId")) && cn.equals(ldapGroupDn)){
                     return obj.getInt("id");
                 }
             }

@@ -1,29 +1,26 @@
 package com.checkmarx.sdk.dto.cx;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import java.util.List;
-
-public class CxTeamLdap {
+public class CxRoleLdap {
 
     @JsonProperty("id")
     public Integer id;
     @JsonProperty("ldapServerId")
     public Integer ldapServerId;
-    @JsonProperty("teamId")
-    public String teamId;
+    @JsonProperty("roleId")
+    public Integer roleId;
     @JsonProperty("ldapGroupDn")
     public String ldapGroupDn;
     @JsonProperty("ldapGroupDisplayName")
     public String ldapGroupDisplayName;
 
-    public CxTeamLdap(){}
+    public CxRoleLdap(){}
 
-    public CxTeamLdap(Integer id, Integer ldapServerId, String teamId, String ldapGroupDn, String ldapGroupDisplayName) {
+    public CxRoleLdap(Integer id, Integer ldapServerId, Integer roleId, String ldapGroupDn, String ldapGroupDisplayName) {
         this.id = id;
         this.ldapServerId = ldapServerId;
-        this.teamId = teamId;
+        this.roleId = roleId;
         this.ldapGroupDn = ldapGroupDn;
         this.ldapGroupDisplayName = ldapGroupDisplayName;
     }
@@ -44,12 +41,12 @@ public class CxTeamLdap {
         this.ldapServerId = ldapServerId;
     }
 
-    public String getTeamId() {
-        return teamId;
+    public Integer getRoleId() {
+        return roleId;
     }
 
-    public void setTeamId(String teamId) {
-        this.teamId = teamId;
+    public void setRoleId(Integer roleId) {
+        this.roleId = roleId;
     }
 
     public String getLdapGroupDn() {
@@ -68,36 +65,36 @@ public class CxTeamLdap {
         this.ldapGroupDisplayName = ldapGroupDisplayName;
     }
 
-    public CxTeamLdap id(final Integer id) {
+    public CxRoleLdap id(final Integer id) {
         this.id = id;
         return this;
     }
 
-    public CxTeamLdap ldapServerId(final Integer ldapServerId) {
+    public CxRoleLdap ldapServerId(final Integer ldapServerId) {
         this.ldapServerId = ldapServerId;
         return this;
     }
 
-    public CxTeamLdap teamId(final String teamId) {
-        this.teamId = teamId;
+    public CxRoleLdap teamId(final Integer roleId) {
+        this.roleId = roleId;
         return this;
     }
 
-    public CxTeamLdap ldapGroupDn(final String ldapGroupDn) {
+    public CxRoleLdap ldapGroupDn(final String ldapGroupDn) {
         this.ldapGroupDn = ldapGroupDn;
         return this;
     }
 
-    public CxTeamLdap ldapGroupDisplayName(final String ldapGroupDisplayName) {
+    public CxRoleLdap ldapGroupDisplayName(final String ldapGroupDisplayName) {
         this.ldapGroupDisplayName = ldapGroupDisplayName;
         return this;
     }
 
     @Override
     public boolean equals(Object obj) {
-        CxTeamLdap objTmp = (CxTeamLdap) obj;
+        CxRoleLdap objTmp = (CxRoleLdap) obj;
         if(objTmp.getLdapServerId().equals(this.ldapServerId) &&
-                objTmp.teamId.equals(this.teamId) &&
+                objTmp.roleId.equals(this.roleId) &&
                 objTmp.getLdapGroupDn().equalsIgnoreCase(this.getLdapGroupDn())){
             return true;
         }

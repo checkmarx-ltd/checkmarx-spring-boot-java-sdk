@@ -224,7 +224,7 @@ public interface CxClient {
      * @param ldapGroupDn
      * @throws CheckmarxException
      */
-    public Integer getLdapTeamMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException;
+    public Integer getLdapTeamMapId(Integer ldapServerId, String teamId, String ldapGroupDn) throws CheckmarxException;
 
     /**
      * Get teamId for given path
@@ -265,7 +265,7 @@ public interface CxClient {
      *
      * @param ldapServerId
      * @param teamId
-     * @param teamName
+     * @param teamName can be null/empty if using 9.0.  Only applicable to 8.x
      * @param ldapGroupDn
      * @throws CheckmarxException
      */
@@ -284,16 +284,23 @@ public interface CxClient {
     public Integer getRoleId(String roleName) throws CheckmarxException;
 
     /**
+     * Retrieve list of Role LDAP mappings associated with an LDAP server Id
+     * @param ldapServerId
+     * @return
+     * @throws CheckmarxException
+     */
+    public List<CxRoleLdap> getRoleLdap(Integer ldapServerId) throws CheckmarxException;
+
+    /**
      * Retrieve the Id of a role mapping associated with an LDAP Group DN
      * @param ldapServerId
      * @param ldapGroupDn
      * @return
      * @throws CheckmarxException
      */
-    public Integer getLdapRoleMapId(Integer ldapServerId, String ldapGroupDn) throws CheckmarxException;
+    public Integer getLdapRoleMapId(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException;
 
     /**
-     * TODO - Checkmarx has not implemented this functionality (POST) in REST implementation | Only PUT supported for updates
      * @param ldapServerId
      * @param roleId
      * @param ldapGroupDn
@@ -302,13 +309,20 @@ public interface CxClient {
     public void mapRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException;
 
     /**
-     * Retrieve LDAP mapping mapping associations
-     * @param ldapServerId
+     * Removes a role/ldap mapping association
+     * @param roleMapId
      * @throws CheckmarxException
      */
-    public void getRoleLdap(Integer ldapServerId) throws CheckmarxException;
-
     public void removeRoleLdap(Integer roleMapId) throws CheckmarxException;
+
+    /**
+     * Removes a role/ldap mapping association
+     * @param ldapServerId
+     * @param roleId
+     * @param ldapGroupDn
+     * @throws CheckmarxException
+     */
+    public void removeRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException;
 
     /**
      * Adds an LDAP team association - uses SOAP Web Service
