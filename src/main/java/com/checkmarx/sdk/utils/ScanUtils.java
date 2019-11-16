@@ -118,7 +118,7 @@ public class ScanUtils {
         try {
             URI uri = new URI(url);
             int port = uri.getPort();
-            hostWithProtocol = uri.getScheme() + "//"  + uri.getHost() + (port > 0 ? ":" + port : "");
+            hostWithProtocol = uri.getScheme() + "://"  + uri.getHost() + (port > 0 ? ":" + port : "");
         } catch (URISyntaxException e) {
             log.debug("Could not parse given URL" + url, e);
         }

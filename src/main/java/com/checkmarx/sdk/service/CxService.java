@@ -618,14 +618,16 @@ public class CxService implements CxClient{
             cxScanBuilder.files(cxResults.getFilesScanned());
             cxScanBuilder.loc(cxResults.getLinesOfCodeScanned());
             cxScanBuilder.scanType(cxResults.getScanType());
-            getIssues(filter, session, issueList, cxResults);
+            Map<String, Integer> summary = getIssues(filter, session, issueList, cxResults);
             cxScanBuilder.xIssues(issueList);
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
+            ScanResults results = cxScanBuilder.build();
             if (!cxProperties.getOffline() && !ScanUtils.empty(cxResults.getScanId())) {
-                CxScanSummary scanSummary = getScanSummary(Integer.valueOf(cxResults.getScanId()));
-                cxScanBuilder.scanSummary(scanSummary);
+                CxScanSummary scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                results.setScanSummary(scanSummary);
             }
-            return cxScanBuilder.build();
+            results.getAdditionalDetails().put(Constants.SUMMARY_KEY, summary);
+            return results;
 
         } catch (JAXBException e) {
             log.error("Error with XML report");
