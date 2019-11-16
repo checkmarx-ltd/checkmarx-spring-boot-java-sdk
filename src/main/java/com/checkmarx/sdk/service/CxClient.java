@@ -192,6 +192,31 @@ public interface CxClient {
     public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId);
 
     /**
+     * Get Scan Settings for an existing project
+     *
+     * @param projectId
+     * @return
+     */
+    public JSONObject getScanSetting(Integer projectId);
+
+    /**
+     * Get Preset Name based on Id
+     *
+     * @param presetId
+     * @return
+     */
+    public String getPresetName(Integer presetId);
+
+
+    /**
+     * Get Preset Id of an existing project
+     *
+     * @param projectId
+     * @return
+     */
+    public Integer getProjectPresetId(Integer projectId);
+
+    /**
      * Set Repository details for a project
      *
      * @param projectId

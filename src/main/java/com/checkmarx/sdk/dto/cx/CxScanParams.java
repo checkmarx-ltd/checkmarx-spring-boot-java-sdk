@@ -4,13 +4,16 @@ import java.util.List;
 import java.util.Map;
 
 public class CxScanParams {
+    private String teamId;
     private String teamName;
+    private Integer projectId;
     private String projectName;
     private boolean incremental = false;
     private boolean isPublic = true;
     private boolean forceScan = false;
     private List<String> fileExclude;
     private List<String> folderExclude;
+    private Integer scanPresetId;
     private String scanPreset;
     private String scanConfiguration;
     private Type sourceType = Type.GIT;
@@ -142,6 +145,30 @@ public class CxScanParams {
         this.filePath = filePath;
     }
 
+    public String getTeamId() {
+        return teamId;
+    }
+
+    public void setTeamId(String teamId) {
+        this.teamId = teamId;
+    }
+
+    public Integer getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(Integer projectId) {
+        this.projectId = projectId;
+    }
+
+    public Integer getScanPresetId() {
+        return scanPresetId;
+    }
+
+    public void setScanPresetId(Integer scanPresetId) {
+        this.scanPresetId = scanPresetId;
+    }
+
     public CxScanParams withIncremental(boolean incremental) {
         this.incremental = incremental;
         return this;
@@ -216,6 +243,22 @@ public class CxScanParams {
         this.projectName = projectName;
         return this;
     }
+
+    public CxScanParams teamId(final String teamId) {
+        this.teamId = teamId;
+        return this;
+    }
+
+    public CxScanParams projectId(final Integer projectId) {
+        this.projectId = projectId;
+        return this;
+    }
+
+    public CxScanParams scanPresetId(final Integer scanPresetId) {
+        this.scanPresetId = scanPresetId;
+        return this;
+    }
+
 
     public enum Type {
         GIT("GIT"),
