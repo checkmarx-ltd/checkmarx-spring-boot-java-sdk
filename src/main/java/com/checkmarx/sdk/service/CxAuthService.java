@@ -90,6 +90,11 @@ public class CxAuthService implements CxAuthClient{
     }
 
     @Override
+    public String getCurrentToken(){
+        return this.token;
+    }
+
+    @Override
     public String legacyLogin(String username, String password) throws InvalidCredentialsException {
         try{
             session = cxLegacyService.login(username, password);
