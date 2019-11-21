@@ -15,7 +15,7 @@ public class CxConfig implements Serializable {
     @JsonProperty("version")
     private Double version;
     @JsonProperty("active")
-    private Boolean active;
+    private Boolean active = true;
     @JsonProperty("host")
     private String host;
     @JsonProperty("credential")
@@ -32,8 +32,9 @@ public class CxConfig implements Serializable {
     private Sast sast;
     @JsonProperty("osa")
     private Osa osa;
-    @JsonIgnore
+    @JsonProperty("additionalProperties")
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+
     private final static long serialVersionUID = 2851455437649831239L;
 
     @JsonProperty("version")
@@ -136,7 +137,7 @@ public class CxConfig implements Serializable {
         this.osa = osa;
     }
 
-    @JsonAnyGetter
+    @JsonProperty("additionalProperties")
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
