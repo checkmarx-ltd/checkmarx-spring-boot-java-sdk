@@ -299,7 +299,7 @@ public class CxService implements CxClient{
      * @return
      */
     @Override
-    public Integer getReportStatus(Integer reportId) {
+    public Integer getReportStatus(Integer reportId) throws CheckmarxException{
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         log.info("Retrieving report status of report Id {}", reportId);
         try {
@@ -311,11 +311,12 @@ public class CxService implements CxClient{
         } catch (HttpStatusCodeException e) {
             log.error("HTTP Status Code of {} while getting report status for report Id {}", e.getStatusCode(), reportId);
             log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("HTTP Error ".concat(ExceptionUtils.getRootCauseMessage(e)));
         } catch (JSONException e) {
             log.error("Error processing JSON Response");
             log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("JSON Parse Error ".concat(ExceptionUtils.getRootCauseMessage(e)));
         }
-        return UNKNOWN_INT;
     }
 
     private void waitForReportCreateOrFail(Integer reportId) throws CheckmarxException, InterruptedException {
@@ -367,7 +368,12 @@ public class CxService implements CxClient{
         String session = null;
         try {
             /* login to legacy SOAP CX Client to retrieve description */
-            session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
+            if(cxProperties.getVersion() >= 9.0){
+                session = authClient.getCurrentToken();
+            }
+            else {
+                session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
+            }
         } catch (CheckmarxLegacyException e) {
             log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
         }
@@ -2165,11 +2171,13 @@ public class CxService implements CxClient{
                     throw new CheckmarxException("Timeout exceeded during scan");
                 }
             }
-            if (status.equals(CxService.SCAN_STATUS_FAILED)) {
-                throw new CheckmarxException("Scan failed");
+            if (status.equals(CxService.SCAN_STATUS_FAILED) || status.equals(CxService.SCAN_STATUS_CANCELED)) {
+                throw new CheckmarxException("Scan was cancelled or failed");
             }
         }catch (InterruptedException e){
             throw new CheckmarxException("Thread interrupted");
+        }catch (HttpStatusCodeException e){
+            throw new CheckmarxException("HTTP Error".concat(ExceptionUtils.getRootCauseMessage(e)));
         }
     }
 }
