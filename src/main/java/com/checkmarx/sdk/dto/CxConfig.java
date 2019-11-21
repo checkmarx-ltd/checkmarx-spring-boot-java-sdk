@@ -16,8 +16,8 @@ public class CxConfig implements Serializable {
     private Double version;
     @JsonProperty("active")
     private Boolean active;
-    @JsonProperty("cxHost")
-    private String cxHost;
+    @JsonProperty("host")
+    private String host;
     @JsonProperty("credential")
     private Credential credential;
     @JsonProperty("project")
@@ -58,12 +58,12 @@ public class CxConfig implements Serializable {
 
     @JsonProperty("cxHost")
     public String getCxHost() {
-        return cxHost;
+        return host;
     }
 
     @JsonProperty("cxHost")
     public void setCxHost(String cxHost) {
-        this.cxHost = cxHost;
+        this.host = cxHost;
     }
 
     @JsonProperty("credential")
