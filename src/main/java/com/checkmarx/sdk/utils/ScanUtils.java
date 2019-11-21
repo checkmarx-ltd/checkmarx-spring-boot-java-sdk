@@ -137,7 +137,15 @@ public class ScanUtils {
     }
 
     public static CxConfig getConfigAsCode(String jsonConfig){
-        //TODO config mapping to POJO
-        return null;
+        log.debug("Loading CxConfig: {}", jsonConfig);
+        CxConfig cxConfig = null;
+        ObjectMapper mapper = new ObjectMapper();
+        //if override is provided, check if chars are more than 20 in length, implying base64 encoded json
+        try {
+            cxConfig = mapper.readValue(jsonConfig, CxConfig.class);
+        }catch (IOException e){
+            log.warn("Error parsing CxConfig file: {}", ExceptionUtils.getRootCauseMessage(e));
+        }
+        return cxConfig;
     }
 }
