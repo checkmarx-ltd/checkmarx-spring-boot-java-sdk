@@ -299,7 +299,7 @@ public class CxService implements CxClient{
      * @return
      */
     @Override
-    public Integer getReportStatus(Integer reportId) {
+    public Integer getReportStatus(Integer reportId) throws CheckmarxException{
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         log.info("Retrieving report status of report Id {}", reportId);
         try {
@@ -311,11 +311,12 @@ public class CxService implements CxClient{
         } catch (HttpStatusCodeException e) {
             log.error("HTTP Status Code of {} while getting report status for report Id {}", e.getStatusCode(), reportId);
             log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("HTTP Error ".concat(ExceptionUtils.getRootCauseMessage(e)));
         } catch (JSONException e) {
             log.error("Error processing JSON Response");
             log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("JSON Parse Error ".concat(ExceptionUtils.getRootCauseMessage(e)));
         }
-        return UNKNOWN_INT;
     }
 
     private void waitForReportCreateOrFail(Integer reportId) throws CheckmarxException, InterruptedException {
@@ -367,7 +368,12 @@ public class CxService implements CxClient{
         String session = null;
         try {
             /* login to legacy SOAP CX Client to retrieve description */
-            session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
+            if(cxProperties.getVersion() >= 9.0){
+                session = authClient.getCurrentToken();
+            }
+            else {
+                session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
+            }
         } catch (CheckmarxLegacyException e) {
             log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
         }
@@ -1161,6 +1167,67 @@ public class CxService implements CxClient{
     }
 
     /**
+     * Create Scan Settings for an existing project
+     *
+     * @param projectId
+     * @return
+     */
+    public String getScanSetting(Integer projectId) {
+
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+
+        log.info("Retrieving ScanSettings for project Id {}", projectId);
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_SETTINGS.concat("/{id}")), HttpMethod.GET, requestEntity, String.class, projectId);
+            if(response.getBody() == null){
+                return null;
+            }
+            return response.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving ScanSettings for project {}, http error {}", projectId, e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return null;
+    }
+
+    @Override
+    public Integer getProjectPresetId(Integer projectId) {
+        String scanSettings = getScanSetting(projectId);
+        if(scanSettings == null){
+            return UNKNOWN_INT;
+        }
+        JSONObject scanSettingsObj = new JSONObject(scanSettings);
+        JSONObject preset = scanSettingsObj.getJSONObject("preset");
+        return preset.getInt("id");
+    }
+
+    @Override
+    public String getPresetName(Integer presetId) {
+
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+
+        log.info("Retrieving preset name for preset Id {}", presetId);
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(PRESETS.concat("/{id}")), HttpMethod.GET, requestEntity, String.class, presetId);
+            if(response.getBody() == null){
+                return null;
+            }
+            JSONObject obj = new JSONObject(response.getBody());
+            return obj.getString("name");
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving preset for preset id {}, http error {}", presetId, e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return null;
+    }
+
+    /**
      * Set Repository details for a project
      *
      * @param projectId
@@ -1500,10 +1567,22 @@ public class CxService implements CxClient{
     public Integer createScan(CxScanParams params, String comment) throws CheckmarxException{
         log.info("Creating scan...");
         validateScanParams(params);
-        String teamId = getTeamId(params.getTeamName());
-        Integer projectId = getProjectId(teamId, params.getProjectName());
+        String teamId = params.getTeamId();
+        Integer projectId = params.getProjectId();
+        if(ScanUtils.empty(teamId) || teamId.equals(UNKNOWN)) {
+            teamId = getTeamId(params.getTeamName());
+            if(teamId.equals(UNKNOWN)){
+                throw new CheckmarxException("Team does not exist: ".concat(params.getTeamName()));
+            }
+        }
+        if(projectId == null || projectId.equals(UNKNOWN_INT)) {
+            projectId = getProjectId(teamId, params.getProjectName());
+        }
         if(projectId.equals(UNKNOWN_INT)){
             projectId = createProject(teamId, params.getProjectName());
+            if(projectId.equals(UNKNOWN_INT)){
+                throw new CheckmarxException("Project was not created successfully: ".concat(params.getProjectName()));
+            }
         }
 
         Integer presetId = getPresetId(params.getScanPreset());
@@ -2092,11 +2171,13 @@ public class CxService implements CxClient{
                     throw new CheckmarxException("Timeout exceeded during scan");
                 }
             }
-            if (status.equals(CxService.SCAN_STATUS_FAILED)) {
-                throw new CheckmarxException("Scan failed");
+            if (status.equals(CxService.SCAN_STATUS_FAILED) || status.equals(CxService.SCAN_STATUS_CANCELED)) {
+                throw new CheckmarxException("Scan was cancelled or failed");
             }
         }catch (InterruptedException e){
             throw new CheckmarxException("Thread interrupted");
+        }catch (HttpStatusCodeException e){
+            throw new CheckmarxException("HTTP Error".concat(ExceptionUtils.getRootCauseMessage(e)));
         }
     }
 }

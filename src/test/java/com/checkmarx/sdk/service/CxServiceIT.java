@@ -229,6 +229,14 @@ public class CxServiceIT {
     }
 
     @Test
+    public void getPresetName() {
+        String name = service.getPresetName(1);
+        assertNotNull(name);
+        assertEquals("All", name);
+    }
+
+
+    @Test
     public void getScanSummary() {
         try{
             String teamId = service.getTeamId(properties.getTeam());

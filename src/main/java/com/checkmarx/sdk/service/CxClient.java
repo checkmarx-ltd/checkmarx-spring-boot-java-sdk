@@ -63,7 +63,7 @@ public interface CxClient {
      * @param reportId
      * @return
      */
-    Integer getReportStatus(Integer reportId);
+    Integer getReportStatus(Integer reportId) throws CheckmarxException;
 
     /**
      * Retrieve the report by scanId, mapped to ScanResults DTO, applying filtering as requested
@@ -190,6 +190,31 @@ public interface CxClient {
      * @return
      */
     public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId);
+
+    /**
+     * Get Scan Settings for an existing project (JSON String)
+     *
+     * @param projectId
+     * @return
+     */
+    public String getScanSetting(Integer projectId);
+
+    /**
+     * Get Preset Name based on Id
+     *
+     * @param presetId
+     * @return
+     */
+    public String getPresetName(Integer presetId);
+
+
+    /**
+     * Get Preset Id of an existing project
+     *
+     * @param projectId
+     * @return
+     */
+    public Integer getProjectPresetId(Integer projectId);
 
     /**
      * Set Repository details for a project

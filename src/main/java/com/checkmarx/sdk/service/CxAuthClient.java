@@ -36,5 +36,7 @@ public interface CxAuthClient {
      */
     public HttpHeaders createAuthHeaders();
 
+    public String getCurrentToken();
+
     public String getLegacySession();
 }

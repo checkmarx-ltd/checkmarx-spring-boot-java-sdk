@@ -4,12 +4,17 @@ import checkmarx.wsdl.portal.*;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
+import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.soap.client.core.SoapActionCallback;
+
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.beans.ConstructorProperties;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Checkmarx SOAP WebService Client
@@ -26,6 +31,8 @@ public class CxLegacyService {
     private static final String CX_WS_DESCRIPTION_URI = CX_WS_PREFIX + "GetResultDescription";
     private static final String CX_WS_LDAP_CONFIGURATIONS_URI = CX_WS_PREFIX + "GetLdapServersConfigurations";
     private static final String CX_WS_TEAM_LDAP_MAPPINGS_URI = CX_WS_PREFIX + "GetTeamLdapGroupsMapping";
+    private static final String CX_WS_ADD_USER = CX_WS_PREFIX + "AddNewUser";
+    private static final String CX_WS_ALL_USERS = CX_WS_PREFIX + "GetAllUsers";
     private static final String CX_WS_UPDATE_TEAM_URI = CX_WS_PREFIX + "UpdateTeam";
     private static final String CX_WS_TEAM_URI = CX_WS_PREFIX + "CreateNewTeam";
     private static final String CX_WS_DELETE_TEAM_URI = CX_WS_PREFIX + "DeleteTeam";
@@ -57,6 +64,69 @@ public class CxLegacyService {
             throw new CheckmarxLegacyException("Authentication Error");
         }
     }
+
+
+    public String getUsers(String session) throws CheckmarxLegacyException {
+        GetAllUsers request = new GetAllUsers();
+        request.setSessionID(session);
+        GetAllUsersResponse response = (GetAllUsersResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_ALL_USERS));
+        return response.getGetAllUsersResult().getUserDataList().toString();
+    }
+
+    public void addUser(String session, CxUserTypes type, String company, String companyId, String team, String teamId) {
+        AddNewUser request = new AddNewUser();
+        request.setSessionID(session);
+        UserData userData = new UserData();
+
+        userData.setIsActive(true);
+        userData.setAuditUser(false);
+        userData.setUserPreferedLanguageLCID(1033);
+        userData.setEmail("abc@whatever.com");
+        userData.setUserName("abc@whatever.com");
+        userData.setFirstName("CXDUMMY");
+        userData.setLastName("CXDUMMY");
+        userData.setPassword("#######");
+        userData.setWillExpireAfterDays("1094");
+/*        XMLGregorianCalendar time = new XMLGregorianCalendarImpl();
+        time.setYear(0001);
+        time.setMonth(01);
+        time.setDay(01);
+        time.setHour(00);
+        time.setMinute(00);
+        time.setSecond(00);
+
+        userData.setDateCreated(time);
+        userData.setLastLoginDate(time);
+  */
+        CxWSRoleWithUserPrivileges role = new CxWSRoleWithUserPrivileges();
+        role.setName("Scanner");
+        role.setID("0");
+        userData.setRoleData(role);
+
+
+        ArrayOfGroup arrayOfGroup = new ArrayOfGroup();
+        List<Group> groups = arrayOfGroup.getGroup();
+        Group group = new Group();
+        group.setGroupName(team);
+        group.setID(teamId);
+        group.setGuid(teamId);
+        group.setType(GroupType.TEAM);
+        groups.add(group);
+
+        userData.setGroupList(arrayOfGroup);
+        userData.setCompanyID(companyId);
+        userData.setCompanyName(company);
+        request.setUserData(userData);
+        request.setUserType(type);
+
+        AddNewUserResponse response = (AddNewUserResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_ADD_USER));
+        if(!response.getAddNewUserResult().isIsSuccesfull()){
+            log.error(response.getAddNewUserResult().getErrorMessage());
+        }
+
+    }
+
+
 
     void createTeam(String sessionId, String parentId, String teamName) throws CheckmarxException {
         CreateNewTeam request = new CreateNewTeam(sessionId);

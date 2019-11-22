@@ -18,7 +18,7 @@ public class CxProperties {
     private String baseUrl;
     private String url;
     private String acUrl;
-    private boolean multiTenant = false;
+    private boolean multiTenant = true;
     private String teamScript;
     private String projectScript;
     private String scanPreset = Constants.CX_DEFAULT_PRESET;

@@ -18,6 +18,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Class used to orchestrate submitting scans and retrieving results
@@ -26,10 +27,12 @@ import java.time.LocalDateTime;
 public class CxAuthService implements CxAuthClient{
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxAuthService.class);
     private static final String LOGIN = "/auth/identity/connect/token";
+    private static final String DEFAULT_TOKEN = "DEFAULT";
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
     private final RestTemplate restTemplate;
     private String token = null;
+    private Map<String, String> tokens;
     private String session = null;
     private LocalDateTime tokenExpires = null;
 
@@ -87,6 +90,11 @@ public class CxAuthService implements CxAuthClient{
             throw new InvalidCredentialsException();
         }
         return token;
+    }
+
+    @Override
+    public String getCurrentToken(){
+        return this.token;
     }
 
     @Override

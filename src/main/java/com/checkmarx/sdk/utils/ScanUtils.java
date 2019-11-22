@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.utils;
 
+import com.checkmarx.sdk.dto.CxConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -122,5 +123,29 @@ public class ScanUtils {
             log.debug("Could not parse given URL" + url, e);
         }
         return hostWithProtocol;
+    }
+
+
+    public static CxConfig getConfigAsCode(File jsonConfig){
+        try {
+            String config = new String(Files.readAllBytes(jsonConfig.toPath()));
+            return getConfigAsCode(config);
+        } catch (IOException e) {
+           log.error(ExceptionUtils.getStackTrace(e));
+            return null;
+        }
+    }
+
+    public static CxConfig getConfigAsCode(String jsonConfig){
+        log.debug("Loading CxConfig: {}", jsonConfig);
+        CxConfig cxConfig = null;
+        ObjectMapper mapper = new ObjectMapper();
+        //if override is provided, check if chars are more than 20 in length, implying base64 encoded json
+        try {
+            cxConfig = mapper.readValue(jsonConfig, CxConfig.class);
+        }catch (IOException e){
+            log.warn("Error parsing CxConfig file: {}", ExceptionUtils.getRootCauseMessage(e));
+        }
+        return cxConfig;
     }
 }
