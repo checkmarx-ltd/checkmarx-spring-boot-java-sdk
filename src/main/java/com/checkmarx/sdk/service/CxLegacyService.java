@@ -85,7 +85,7 @@ public class CxLegacyService {
         userData.setUserName("abc@whatever.com");
         userData.setFirstName("CXDUMMY");
         userData.setLastName("CXDUMMY");
-        userData.setPassword("***REMOVED***");
+        userData.setPassword("#######");
         userData.setWillExpireAfterDays("1094");
 /*        XMLGregorianCalendar time = new XMLGregorianCalendarImpl();
         time.setYear(0001);
