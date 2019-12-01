@@ -12,6 +12,7 @@ import com.checkmarx.sdk.utils.ScanUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -804,8 +805,10 @@ public class CxService implements CxClient{
                             } else {
                                 xIssueBuilder.description("");
                             }
+                            String snippet = r.getPath().getPathNode().get(0).getSnippet().getLine().getCode();
+                            snippet = StringUtils.truncate(snippet, cxProperties.getCodeSnippetLength());
                             details.put(Integer.parseInt(r.getPath().getPathNode().get(0).getLine()),
-                                    r.getPath().getPathNode().get(0).getSnippet().getLine().getCode());
+                                    snippet);
                             xIssueBuilder.similarityId(r.getPath().getSimilarityId());
                         } catch (NullPointerException e) {
                             log.warn("Problem grabbing snippet.  Snippet may not exist for finding for Node ID");
