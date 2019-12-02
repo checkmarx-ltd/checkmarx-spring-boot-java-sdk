@@ -3,7 +3,7 @@ Java Spring Boot SDK for Checkmarx
 
 ## Artifacts
 Maven artifacts are stored on Sonatype nexus repository manager (synced to maven central)
-https://oss.sonatype.org/service/local/repositories/releases/content/com/github/checkmarx-ts/cx-spring-boot-sdk/<version>/cx-spring-boot-sdk-<version>.jar
+https://oss.sonatype.org/service/local/repositories/releases/content/com/github/checkmarx-ts/cx-spring-boot-sdk/x.x.x/cx-spring-boot-sdk-x.x.x.jar
 
 _Note: Check maven version in current pom.xml_
 
