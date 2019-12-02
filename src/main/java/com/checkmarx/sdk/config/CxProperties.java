@@ -43,6 +43,7 @@ public class CxProperties {
     private Integer scanPolling = 20000;
     private Integer reportPolling = 5000;
     private Integer reportTimeout = 300000;
+    private Integer codeSnippetLength = 2500;
     private String TEAM_PATH_SEPARATOR_9 = "/";
     private String TEAM_PATH_SEPARATOR_8 = "\\";
 
@@ -365,6 +366,14 @@ public class CxProperties {
     public Boolean getEnableOsa() {
         //return enableOsa;
         return false;
+    }
+
+    public Integer getCodeSnippetLength() {
+        return codeSnippetLength;
+    }
+
+    public void setCodeSnippetLength(Integer codeSnippetLength) {
+        this.codeSnippetLength = codeSnippetLength;
     }
 
     public void setEnableOsa(Boolean enableOsa) {
