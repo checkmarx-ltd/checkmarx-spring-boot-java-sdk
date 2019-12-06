@@ -16,7 +16,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -121,11 +120,19 @@ public class CxAuthService implements CxAuthClient{
         }
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.AUTHORIZATION, "Bearer ".concat(token));
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         return httpHeaders;
     }
 
     public String getLegacySession(){
+        if(this.session == null){
+            this.session = legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+        }
+        return this.session;
+    }
+
+    public String getNewLegacySession(){
+        this.session = legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
         return this.session;
     }
 

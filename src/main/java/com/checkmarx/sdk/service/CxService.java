@@ -8,6 +8,7 @@ import com.checkmarx.sdk.dto.cx.xml.*;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.config.Constants;
+import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -373,9 +374,9 @@ public class CxService implements CxClient{
                 session = authClient.getCurrentToken();
             }
             else {
-                session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
+                session = authClient.getLegacySession();
             }
-        } catch (CheckmarxLegacyException e) {
+        } catch (InvalidCredentialsException e) {
             log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
         }
         log.info("Retrieving report contents of report Id {} in XML format", reportId);
@@ -473,8 +474,8 @@ public class CxService implements CxClient{
         String session = null;
         try {
             /* login to legacy SOAP CX Client to retrieve description */
-            session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
-        } catch (CheckmarxLegacyException e) {
+            session = authClient.getLegacySession();
+        } catch (InvalidCredentialsException e) {
             log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
         }
         log.info("Retrieving report contents of report Id {} in XML format", reportId);
@@ -485,7 +486,7 @@ public class CxService implements CxClient{
             log.debug("Headers: {}", resultsXML.getHeaders().toSingleValueMap().toString());
             log.info("Report downloaded for report Id {}", reportId);
             log.debug("XML String Output: {}", xml);
-            log.debug("Base64:", Base64.getEncoder().encodeToString(resultsXML.toString().getBytes()));
+            log.debug("Base64: {}", Base64.getEncoder().encodeToString(resultsXML.toString().getBytes()));
             /*Remove any chars before the start xml tag*/
             xml = xml.trim().replaceFirst("^([\\W]+)<", "<");
             log.debug("Report length: {}", xml.length());
@@ -600,9 +601,9 @@ public class CxService implements CxClient{
         String session = null;
         try {
             if (!cxProperties.getOffline()) {
-                session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
+                session = authClient.getLegacySession();
             }
-        } catch (CheckmarxLegacyException e) {
+        } catch (InvalidCredentialsException e) {
             log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
         }
         try {
@@ -1424,10 +1425,6 @@ public class CxService implements CxClient{
      */
     public String createTeamWS(String parentTeamId, String teamName) throws CheckmarxException {
         String session = authClient.getLegacySession();
-
-        if(authClient.getLegacySession() == null){
-            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
-        }
         cxLegacyService.createTeam(session, parentTeamId, teamName);
         return getTeamId(cxProperties.getTeam().concat(cxProperties.getTeamPathSeparator()).concat(teamName));
     }
@@ -1440,10 +1437,7 @@ public class CxService implements CxClient{
      */
     public void deleteTeamWS(String teamId) throws CheckmarxException {
         String session = authClient.getLegacySession();
-        if(session == null){
-            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
-        }
-        cxLegacyService.deleteTeam(authClient.getLegacySession(), teamId);
+        cxLegacyService.deleteTeam(session, teamId);
     }
 
     /**
@@ -1917,9 +1911,6 @@ public class CxService implements CxClient{
     @Override
     public void mapTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
         String session = authClient.getLegacySession();
-        if(session == null){
-            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
-        }
         cxLegacyService.createLdapTeamMapping(session, ldapServerId, teamId, teamName, ldapGroupDn);
     }
 
