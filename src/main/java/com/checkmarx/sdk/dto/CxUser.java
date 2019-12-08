@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class CxUser {
 
     @JsonProperty("id")
-    private Integer id;
+    private Long id;
     @JsonProperty("userName")
     private String userName;
     @JsonProperty("lastLoginDate")
@@ -44,29 +44,30 @@ public class CxUser {
     @JsonProperty("expirationDate")
     private Object expirationDate;
     @JsonProperty("allowedIpList")
-    private List<Object> allowedIpList = null;
+    private List<String> allowedIpList = null;
     @JsonProperty("localeId")
     private Integer localeId;
     private Map<String, String> teams8x; //only used for 8.x SOAP WS
     private CxUserTypes type8x; //only used for 8.x SOAP WS
     private String company8x; //only used for 8.x SOAP WS
     private String companyId8x; //only used for 8.x SOAP WS
+    private String upn; //only used for 8.x SOAP WS
     private Role8x role8x; //only used for 8.x SOAP WS
     private Integer expirationDays = 1825; //only used for 8.x SOAP WS
     private Integer languageLCID = 1033; //english - only used for 8.x SOAP WS
     private boolean auditor = false; //only used for 8.x SOAP WS
 
     @JsonProperty("id")
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
     @JsonProperty("id")
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public CxUser withId(Integer id) {
+    public CxUser withId(Long id) {
         this.id = id;
         return this;
     }
@@ -311,16 +312,16 @@ public class CxUser {
     }
 
     @JsonProperty("allowedIpList")
-    public List<Object> getAllowedIpList() {
+    public List<String> getAllowedIpList() {
         return allowedIpList;
     }
 
     @JsonProperty("allowedIpList")
-    public void setAllowedIpList(List<Object> allowedIpList) {
+    public void setAllowedIpList(List<String> allowedIpList) {
         this.allowedIpList = allowedIpList;
     }
 
-    public CxUser withAllowedIpList(List<Object> allowedIpList) {
+    public CxUser withAllowedIpList(List<String> allowedIpList) {
         this.allowedIpList = allowedIpList;
         return this;
     }
@@ -429,10 +430,21 @@ public class CxUser {
         this.languageLCID = languageLCID;
     }
 
+    public String getUpn() {
+        return upn;
+    }
+
+    public void setUpn(String upn) {
+        this.upn = upn;
+    }
+
     public enum Role8x {
 
         SCANNER("Scanner", 0),
-        REVIEWER("Reviewer", 1);
+        REVIEWER("Reviewer", 1),
+        COMPANYMANAGER("CompanyManager", 2),
+        SERVERMANAGER("ServerManager", 5);
+
 
         private final String key;
         private final Integer value;

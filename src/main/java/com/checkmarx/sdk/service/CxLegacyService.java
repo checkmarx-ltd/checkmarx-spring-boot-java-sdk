@@ -15,6 +15,7 @@ import org.springframework.ws.soap.client.core.SoapActionCallback;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.beans.ConstructorProperties;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,21 +69,56 @@ public class CxLegacyService {
     }
 
 
-    public String getUsers(String session) throws CheckmarxLegacyException {
+    public List<CxUser> getUsers(String session) throws CheckmarxLegacyException {
         GetAllUsers request = new GetAllUsers();
         request.setSessionID(session);
         GetAllUsersResponse response = (GetAllUsersResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_ALL_USERS));
-        return response.getGetAllUsersResult().getUserDataList().toString();
+        List<UserData> userData = response.getGetAllUsersResult().getUserDataList().getUserData();
+        List<CxUser> users = new ArrayList<>();
+        for(UserData u: userData){
+            users.add(mapUser(u));
+        }
+
+        return null;
     }
 
-    public void addUser(String session, CxUser user) {
-        /*
-        private Map<String, String> teams8x; //only used for 8.x SOAP WS
-        private CxUserTypes type8x; //only used for 8.x SOAP WS
-        private String company8x; //only used for 8.x SOAP WS
-        private String companyId8x; //only used for 8.x SOAP WS
-        private Role8x role8x; //only used for 8.x SOAP WS
-    */
+    private CxUser mapUser(UserData u){
+        CxUser user = new CxUser();
+        user.setId(u.getID());
+        user.setActive(u.isIsActive());
+        user.setLastLoginDate(u.getLastLoginDate().toString());
+        user.setFirstName(u.getFirstName());
+        user.setLastName(u.getLastName());
+        user.setEmail(u.getEmail());
+        user.setPhoneNumber(u.getPhone());
+        user.setCellPhoneNumber(u.getCellPhone());
+        user.setJobTitle(u.getJobTitle());
+        user.setCountry(u.getCountry());
+        //TODO expiration date?
+        user.setAllowedIpList(u.getAllowedIPs().getString());
+        //user.setType8x();
+        user.setCompanyId8x(u.getCompanyID());
+        user.setCompany8x(u.getCompanyName());
+        user.setUpn(u.getUPN());
+        Map<String, String> teams = new HashMap<>();
+        for(Group g : u.getGroupList().getGroup()){
+            teams.put(g.getID(), g.getGroupName());
+        }
+        user.setTeams8x(teams);
+        user.setRole8x(CxUser.Role8x.valueOf(u.getRoleData().getName())); //validate
+        user.setAuditor(u.isAuditUser());
+        return user;
+    }
+
+    public void addUser(String session, CxUser user) throws CheckmarxLegacyException{
+
+        if(ScanUtils.empty(user.getCompany8x()) || ScanUtils.empty(user.getCompanyId8x()) ||
+            user.getTeams8x() == null || user.getTeams8x().isEmpty()  ||
+            user.getType8x() == null || user.getRole8x() == null
+        ){
+            throw new CheckmarxLegacyException("Missing team, type, or company details from user details");
+        }
+
         AddNewUser request = new AddNewUser();
         request.setSessionID(session);
         UserData userData = new UserData();
@@ -98,6 +134,10 @@ public class CxLegacyService {
             userData.setPassword(user.getPassword());
         }
         userData.setWillExpireAfterDays(user.getExpirationDays().toString());
+        if(!ScanUtils.empty(user.getUpn())){
+            userData.setUPN(user.getUpn());
+        }
+
 /*        XMLGregorianCalendar time = new XMLGregorianCalendarImpl();
         time.setYear(0001);
         time.setMonth(01);
@@ -118,9 +158,9 @@ public class CxLegacyService {
         List<Group> groups = arrayOfGroup.getGroup();
         for (Map.Entry<String, String> entry : user.getTeams8x().entrySet()){
             Group group = new Group();
-            group.setGroupName(entry.getKey());
-            group.setID(entry.getValue());
-            group.setGuid(entry.getValue());
+            group.setGroupName(entry.getValue());
+            group.setID(entry.getKey());
+            group.setGuid(entry.getKey());
             group.setType(GroupType.TEAM);
             groups.add(group);
         }

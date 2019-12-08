@@ -3,6 +3,7 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxConfig;
 import com.checkmarx.sdk.config.CxProperties;
+import com.checkmarx.sdk.dto.CxUser;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
@@ -37,8 +38,9 @@ public class CxServiceIT {
     private CxAuthService authService;
     @Autowired
     private CxOsaService osaService;
-    //@Autowired
-    //private CxHttpClient cxHttpClient;
+    @Autowired
+    private CxUserService userService;
+
     @Test
     public void Login() {
         try {
