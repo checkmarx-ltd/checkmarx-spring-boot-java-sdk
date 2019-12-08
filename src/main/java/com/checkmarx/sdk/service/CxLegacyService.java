@@ -6,6 +6,7 @@ import com.checkmarx.sdk.dto.CxUser;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
 import com.checkmarx.sdk.utils.ScanUtils;
+import com.google.common.collect.ImmutableMap;
 import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
@@ -36,9 +37,17 @@ public class CxLegacyService {
     private static final String CX_WS_TEAM_LDAP_MAPPINGS_URI = CX_WS_PREFIX + "GetTeamLdapGroupsMapping";
     private static final String CX_WS_ADD_USER = CX_WS_PREFIX + "AddNewUser";
     private static final String CX_WS_ALL_USERS = CX_WS_PREFIX + "GetAllUsers";
+    private static final String CX_WS_GET_USER = CX_WS_PREFIX + "GetUserById";
     private static final String CX_WS_UPDATE_TEAM_URI = CX_WS_PREFIX + "UpdateTeam";
     private static final String CX_WS_TEAM_URI = CX_WS_PREFIX + "CreateNewTeam";
     private static final String CX_WS_DELETE_TEAM_URI = CX_WS_PREFIX + "DeleteTeam";
+    private static final Map<Integer, CxUser.Role8x> ROLEMAP = ImmutableMap.of(
+            0, CxUser.Role8x.SCANNER,
+            1, CxUser.Role8x.REVIEWER,
+            2, CxUser.Role8x.COMPANYMANAGER,
+            4, CxUser.Role8x.SPMANAGER,
+            5, CxUser.Role8x.SERVERMANAGER
+    );
 
     @ConstructorProperties({"properties", "ws"})
     public CxLegacyService(CxProperties properties, WebServiceTemplate ws) {
@@ -79,7 +88,16 @@ public class CxLegacyService {
             users.add(mapUser(u));
         }
 
-        return null;
+        return users;
+    }
+
+    public CxUser getUser(String session, Integer id) throws CheckmarxLegacyException {
+        GetUserById request = new GetUserById();
+        request.setSessionID(session);
+        request.setUserId(id);
+        GetUserByIdResponse response = (GetUserByIdResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_GET_USER));
+        UserData userData = response.getGetUserByIdResult().getUserData();
+        return mapUser(userData);
     }
 
     private CxUser mapUser(UserData u){
@@ -87,6 +105,7 @@ public class CxLegacyService {
         user.setId(u.getID());
         user.setActive(u.isIsActive());
         user.setLastLoginDate(u.getLastLoginDate().toString());
+        user.setUserName(u.getUserName());
         user.setFirstName(u.getFirstName());
         user.setLastName(u.getLastName());
         user.setEmail(u.getEmail());
@@ -105,7 +124,13 @@ public class CxLegacyService {
             teams.put(g.getID(), g.getGroupName());
         }
         user.setTeams8x(teams);
-        user.setRole8x(CxUser.Role8x.valueOf(u.getRoleData().getName())); //validate
+        CxUser.Role8x role = ROLEMAP.get(Integer.parseInt(u.getRoleData().getID()));
+        if(role != null) {
+            user.setRole8x(role); //validate
+        }
+        else{
+            log.warn("Uknown role id {}", u.getRoleData().getID());
+        }
         user.setAuditor(u.isAuditUser());
         return user;
     }
@@ -118,7 +143,16 @@ public class CxLegacyService {
         ){
             throw new CheckmarxLegacyException("Missing team, type, or company details from user details");
         }
-
+        if(user.getType8x().equals(CxUserTypes.SAML)){
+            String username = user.getUserName();
+            if(username.startsWith("SAML\\")){
+                username = username.replace("SAML\\","SAML#");
+            }
+            if(!username.startsWith("SAML#")){
+                username = "SAML#".concat(username);
+            }
+            user.setUserName(username);
+        }
         AddNewUser request = new AddNewUser();
         request.setSessionID(session);
         UserData userData = new UserData();
@@ -128,6 +162,7 @@ public class CxLegacyService {
         userData.setUserPreferedLanguageLCID(user.getLanguageLCID());
         userData.setEmail(user.getEmail());
         userData.setUserName(user.getUserName());
+        userData.setPassword(user.getPassword());
         userData.setFirstName(user.getFirstName());
         userData.setLastName(user.getLastName());
         if (!ScanUtils.empty(user.getPassword())) {
@@ -174,6 +209,7 @@ public class CxLegacyService {
         AddNewUserResponse response = (AddNewUserResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_ADD_USER));
         if(!response.getAddNewUserResult().isIsSuccesfull()){
             log.error(response.getAddNewUserResult().getErrorMessage());
+            throw new CheckmarxLegacyException("Error occurred while creating user: "+ response.getAddNewUserResult().getErrorMessage());
         }
 
     }

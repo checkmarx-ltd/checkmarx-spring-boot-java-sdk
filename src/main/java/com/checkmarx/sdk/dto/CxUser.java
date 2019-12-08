@@ -443,6 +443,7 @@ public class CxUser {
         SCANNER("Scanner", 0),
         REVIEWER("Reviewer", 1),
         COMPANYMANAGER("CompanyManager", 2),
+        SPMANAGER("SPManager", 4),
         SERVERMANAGER("ServerManager", 5);
 
 

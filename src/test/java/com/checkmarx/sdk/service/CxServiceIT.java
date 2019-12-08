@@ -1,5 +1,7 @@
 package com.checkmarx.sdk.service;
 
+import checkmarx.wsdl.portal.CxUserTypes;
+import checkmarx.wsdl.portal.Group;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxConfig;
 import com.checkmarx.sdk.config.CxProperties;
@@ -21,7 +23,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -89,19 +93,6 @@ public class CxServiceIT {
             Integer id = service.getRoleId("Admin");
             assertNotNull(id);
             assertTrue(id > 0);
-        } catch (CheckmarxException e) {
-            if(properties.getVersion() >= 9.0 ) {
-                fail("Unexpected CheckmarxException");
-            }
-        }
-    }
-
-
-    @Test
-    public void getTeams() {
-        try {
-            List<CxTeam> teams = service.getTeams();
-            assertNotNull(teams);
         } catch (CheckmarxException e) {
             if(properties.getVersion() >= 9.0 ) {
                 fail("Unexpected CheckmarxException");
@@ -290,6 +281,65 @@ public class CxServiceIT {
         }
     }
 
+    @Test
+    public void getTeams() {
+        try {
+            List<CxTeam> teams = service.getTeams();
+            assertNotNull(teams);
+            assertTrue(teams.size() > 0);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
+
+    @Test
+    public void getUsers() {
+        try {
+            List<CxUser> users = userService.getUsers();
+            assertNotNull(users);
+            assertTrue(users.size() > 0);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
+
+    @Test
+    public void getUser() {
+        try {
+            CxUser user = userService.getUser(2);
+            assertNotNull(user);
+            assertNotNull(user.getUserName());
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
+
+/*
+    @Test
+    public void addUser() {
+        try {
+            CxUser user = new CxUser()
+                    .withActive(true)
+                    .withUserName("mytestuser")
+                    .withFirstName("My")
+                    .withLastName("TestUser")
+                    .withEmail("my@testuser.com")
+                    .withPassword("XXXXXXXXX")
+                    //.withType8x(CxUserTypes.APPLICATION)
+                    .withType8x(CxUserTypes.SAML)
+                    .withCompany8x("Checkmarx")
+                    .withCompanyId8x("4cff234f-7124-46fb-8349-f77a05ff49f4")
+                    .withRole8x(CxUser.Role8x.SCANNER);
+
+            Map<String, String> teams = new HashMap<>();
+            teams.put("4636590d-f677-40fe-a876-4459279b8fec","Automation");
+            user.setTeams8x(teams);
+            userService.addUser(user);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
+*/
     //TESTS FOR LDAP - test instance does not include LDAP
 /* CxPrivateCloud does not have LDAP configuration to test with
      @Test
