@@ -1757,9 +1757,6 @@ public class CxService implements CxClient{
 
     @Override
     public List<CxTeam> getTeams() throws CheckmarxException {
-        if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
-        }
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             log.info("Retrieving Cx teams");
