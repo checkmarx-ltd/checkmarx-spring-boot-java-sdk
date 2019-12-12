@@ -41,6 +41,4 @@ public interface CxAuthClient {
 
     public String getLegacySession();
 
-    public String getNewLegacySession();
-
 }
