@@ -304,7 +304,7 @@ public class CxServiceIT {
         }
     }
 
-    @Test
+    /*@Test
     public void getUser() {
         try {
             CxUser user = userService.getUser(2);
@@ -313,7 +313,7 @@ public class CxServiceIT {
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
         }
-    }
+    }*/
 
     /*
     @Test
@@ -342,7 +342,7 @@ public class CxServiceIT {
     }
     */
 
-    @Test
+    /*@Test
     public void getCompanyId(){
         try {
             String id = userService.getCompanyId("Checkmarx");
@@ -351,7 +351,7 @@ public class CxServiceIT {
         } catch (CheckmarxException e) {
             fail("Unexpected Exception");
         }
-    }
+    }*/
 
     //TESTS FOR LDAP - test instance does not include LDAP
 /* CxPrivateCloud does not have LDAP configuration to test with
