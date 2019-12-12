@@ -438,6 +438,11 @@ public class CxUser {
         this.upn = upn;
     }
 
+    public CxUser withUpn(String upn) {
+        this.upn = upn;
+        return this;
+    }
+
     public enum Role8x {
 
         SCANNER("Scanner", 0),

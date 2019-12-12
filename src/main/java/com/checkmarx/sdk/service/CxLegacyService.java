@@ -7,13 +7,10 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.google.common.collect.ImmutableMap;
-import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.soap.client.core.SoapActionCallback;
-
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.beans.ConstructorProperties;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,11 +33,13 @@ public class CxLegacyService {
     private static final String CX_WS_LDAP_CONFIGURATIONS_URI = CX_WS_PREFIX + "GetLdapServersConfigurations";
     private static final String CX_WS_TEAM_LDAP_MAPPINGS_URI = CX_WS_PREFIX + "GetTeamLdapGroupsMapping";
     private static final String CX_WS_ADD_USER = CX_WS_PREFIX + "AddNewUser";
+    private static final String CX_WS_UPDATE_USER = CX_WS_PREFIX + "UpdateUserData";
     private static final String CX_WS_ALL_USERS = CX_WS_PREFIX + "GetAllUsers";
     private static final String CX_WS_GET_USER = CX_WS_PREFIX + "GetUserById";
     private static final String CX_WS_UPDATE_TEAM_URI = CX_WS_PREFIX + "UpdateTeam";
     private static final String CX_WS_TEAM_URI = CX_WS_PREFIX + "CreateNewTeam";
     private static final String CX_WS_DELETE_TEAM_URI = CX_WS_PREFIX + "DeleteTeam";
+    private static final String CX_WS_GET_COMPANIES_TEAM_URI = CX_WS_PREFIX + "GetAllCompanies";
     private static final Map<Integer, CxUser.Role8x> ROLEMAP = ImmutableMap.of(
             0, CxUser.Role8x.SCANNER,
             1, CxUser.Role8x.REVIEWER,
@@ -77,11 +76,36 @@ public class CxLegacyService {
         }
     }
 
+    /**
+     * @param session
+     * @param company
+     * @return
+     * @throws CheckmarxLegacyException
+     */
+    public String getCompany(String session, String company) throws CheckmarxLegacyException {
+        GetAllCompanies request = new GetAllCompanies();
+        request.setSessionID(session);
+        GetAllCompaniesResponse response = (GetAllCompaniesResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_GET_COMPANIES_TEAM_URI));
+        if(!response.getGetAllCompaniesResult().isIsSuccesfull()) {
+            throw new CheckmarxLegacyException("Error getting Companies: "+ response.getGetAllCompaniesResult().getErrorMessage());
+        }
+        List<TeamData> teams = response.getGetAllCompaniesResult().getTeamDataList().getTeamData();
+        for(TeamData t: teams){
+            String team = t.getCompany().getGroupName();
+            if(team.equalsIgnoreCase(company)){
+                return t.getCompany().getGuid();
+            }
+        }
+        throw new CheckmarxLegacyException("Company not found");
+    }
 
     public List<CxUser> getUsers(String session) throws CheckmarxLegacyException {
         GetAllUsers request = new GetAllUsers();
         request.setSessionID(session);
         GetAllUsersResponse response = (GetAllUsersResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_ALL_USERS));
+        if(!response.getGetAllUsersResult().isIsSuccesfull()) {
+            throw new CheckmarxLegacyException("Error getting Users: "+ response.getGetAllUsersResult().getErrorMessage());
+        }
         List<UserData> userData = response.getGetAllUsersResult().getUserDataList().getUserData();
         List<CxUser> users = new ArrayList<>();
         for(UserData u: userData){
@@ -96,6 +120,9 @@ public class CxLegacyService {
         request.setSessionID(session);
         request.setUserId(id);
         GetUserByIdResponse response = (GetUserByIdResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_GET_USER));
+        if(!response.getGetUserByIdResult().isIsSuccesfull()) {
+            throw new CheckmarxLegacyException("Error user by Id: "+ response.getGetUserByIdResult().getErrorMessage());
+        }
         UserData userData = response.getGetUserByIdResult().getUserData();
         return mapUser(userData);
     }
@@ -143,6 +170,9 @@ public class CxLegacyService {
         ){
             throw new CheckmarxLegacyException("Missing team, type, or company details from user details");
         }
+        if(user.getType8x().equals(CxUserTypes.LDAP) && ScanUtils.empty(user.getUpn())){
+            throw new CheckmarxLegacyException("Missing upn, which is required for LDAP user");
+        }
         if(user.getType8x().equals(CxUserTypes.SAML)){
             String username = user.getUserName();
             if(username.startsWith("SAML\\")){
@@ -162,7 +192,6 @@ public class CxLegacyService {
         userData.setUserPreferedLanguageLCID(user.getLanguageLCID());
         userData.setEmail(user.getEmail());
         userData.setUserName(user.getUserName());
-        userData.setPassword(user.getPassword());
         userData.setFirstName(user.getFirstName());
         userData.setLastName(user.getLastName());
         if (!ScanUtils.empty(user.getPassword())) {
@@ -211,7 +240,72 @@ public class CxLegacyService {
             log.error(response.getAddNewUserResult().getErrorMessage());
             throw new CheckmarxLegacyException("Error occurred while creating user: "+ response.getAddNewUserResult().getErrorMessage());
         }
+    }
 
+    public void updateUser(String session, CxUser user) throws CheckmarxLegacyException{
+
+        if(ScanUtils.empty(user.getCompany8x()) || ScanUtils.empty(user.getCompanyId8x()) ||
+                user.getTeams8x() == null || user.getTeams8x().isEmpty()  ||
+                user.getRole8x() == null
+        ){
+            throw new CheckmarxLegacyException("Missing team, type, or company details from user details");
+        }
+        UpdateUserData request = new UpdateUserData();
+        request.setSessionID(session);
+        UserData userData = new UserData();
+        userData.setID(user.getId());
+        userData.setIsActive(user.getActive());
+        userData.setAuditUser(user.isAuditor());
+        userData.setUserPreferedLanguageLCID(user.getLanguageLCID());
+        userData.setEmail(user.getEmail());
+        if(!ScanUtils.empty(user.getPassword())) {
+            userData.setPassword(user.getPassword());
+        }
+        userData.setFirstName(user.getFirstName());
+        userData.setLastName(user.getLastName());
+        if (!ScanUtils.empty(user.getPassword())) {
+            userData.setPassword(user.getPassword());
+        }
+        if(user.getExpirationDays() != null && user.getExpirationDays() > 0){
+            userData.setWillExpireAfterDays(user.getExpirationDays().toString());
+        }
+
+        CxWSRoleWithUserPrivileges role = new CxWSRoleWithUserPrivileges();
+        role.setName(user.getRole8x().getKey());
+        role.setID(user.getRole8x().getValue().toString());
+        userData.setRoleData(role);
+
+        ArrayOfGroup arrayOfGroup = new ArrayOfGroup();
+        List<Group> groups = arrayOfGroup.getGroup();
+        for (Map.Entry<String, String> entry : user.getTeams8x().entrySet()){
+            Group group = new Group();
+            group.setGroupName(entry.getValue());
+            group.setID(entry.getKey());
+            group.setGuid(entry.getKey());
+            group.setType(GroupType.TEAM);
+            groups.add(group);
+        }
+
+        userData.setGroupList(arrayOfGroup);
+        userData.setCompanyID(user.getCompanyId8x());
+        userData.setCompanyName(user.getCompany8x());
+        request.setUserData(userData);
+
+        UpdateUserDataResponse response = (UpdateUserDataResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_UPDATE_USER));
+        if(!response.getUpdateUserDataResult().isIsSuccesfull()){
+            log.error(response.getUpdateUserDataResult().getErrorMessage());
+            throw new CheckmarxLegacyException("Error occurred while updating user: "+ response.getUpdateUserDataResult().getErrorMessage());
+        }
+    }
+
+    public void deleteUser(String session, Integer userId) throws CheckmarxLegacyException {
+        DeleteUser request = new DeleteUser();
+        request.setSessionID(session);
+        request.setUserID(userId);
+        DeleteUserResponse response = (DeleteUserResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_GET_USER));
+        if(!response.getDeleteUserResult().isIsSuccesfull()) {
+            throw new CheckmarxLegacyException("Error deleting user with Id: "+ response.getDeleteUserResult().getErrorMessage());
+        }
     }
 
     void createTeam(String sessionId, String parentId, String teamName) throws CheckmarxException {
