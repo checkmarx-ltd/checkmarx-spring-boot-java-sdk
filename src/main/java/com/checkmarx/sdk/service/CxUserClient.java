@@ -13,8 +13,12 @@ import java.util.List;
  */
 public interface CxUserClient {
     public List<CxUser> getUsers() throws CheckmarxException;
+
     public CxUser getUser(Integer id) throws CheckmarxException;
+
     public void addUser(CxUser user) throws CheckmarxException;
+
     public void updateUser(CxUser user) throws CheckmarxException;
+
     public void deleteUser(Integer id) throws CheckmarxException;
 }

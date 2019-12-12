@@ -46,12 +46,26 @@ public class CxUserService implements CxUserClient{
 
     @Override
     public void updateUser(CxUser user) throws CheckmarxException{
-
+        if(cxProperties.getVersion() < 9.0){
+            String session = authClient.getLegacySession();
+            cxLegacyService.updateUser(session, user);
+        }
+        else{
+            log.warn("getUser for 9.0 has not been implemented");
+            throw new CheckmarxException("Operation not supported in 9.x");
+        }
     }
 
     @Override
     public void deleteUser(Integer id) throws CheckmarxException {
-
+        if(cxProperties.getVersion() < 9.0){
+            String session = authClient.getLegacySession();
+            cxLegacyService.deleteUser(session, id);
+        }
+        else{
+            log.warn("deleteUser for 9.0 has not been implemented");
+            throw new CheckmarxException("Operation not supported in 9.x");
+        }
     }
 
     @Override
@@ -59,6 +73,17 @@ public class CxUserService implements CxUserClient{
         if(cxProperties.getVersion() < 9.0){
             String session = authClient.getLegacySession();
             cxLegacyService.addUser(session, user);
+        }
+        else{
+            log.warn("getUsers for 9.0 has not been implemented");
+            throw new CheckmarxException("Operation not supported in 9.x");
+        }
+    }
+
+    public String getCompanyId(String company) throws CheckmarxException{
+        if(cxProperties.getVersion() < 9.0){
+            String session = authClient.getLegacySession();
+            return cxLegacyService.getCompany(session, company);
         }
         else{
             log.warn("getUsers for 9.0 has not been implemented");
