@@ -62,6 +62,7 @@ public class CxServiceTest {
 
     @Test
     public void getReportContent() {
+        properties.setOffline(true);
         File file = new File(
                 getClass().getClassLoader().getResource("ScanReport.xml").getFile()
         );

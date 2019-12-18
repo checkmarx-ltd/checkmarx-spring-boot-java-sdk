@@ -541,18 +541,21 @@ public class CxService implements CxClient{
         Map<String, Object> additionalDetails = new HashMap<String, Object>();
         additionalDetails.put("scanId", cxResults.getScanId());
         additionalDetails.put("scanStartDate", cxResults.getScanStart());
-        JSONObject jsonObject = getScanData(cxResults.getScanId());
-        if (jsonObject != null) {
-            additionalDetails.put("scanRisk", String.valueOf(jsonObject.getInt("scanRisk")));
-            additionalDetails.put("scanRiskSeverity", String.valueOf(jsonObject.getInt("scanRiskSeverity")));
-            JSONObject scanState = jsonObject.getJSONObject("scanState");
-            if (scanState != null) {
-                additionalDetails.put("numFailedLoc", String.valueOf(scanState.getInt("failedLinesOfCode")));
+        if(!cxProperties.getOffline()) {
+            JSONObject jsonObject = getScanData(cxResults.getScanId());
+            if (jsonObject != null) {
+                additionalDetails.put("scanRisk", String.valueOf(jsonObject.getInt("scanRisk")));
+                additionalDetails.put("scanRiskSeverity", String.valueOf(jsonObject.getInt("scanRiskSeverity")));
+                JSONObject scanState = jsonObject.getJSONObject("scanState");
+                if (scanState != null) {
+                    additionalDetails.put("numFailedLoc", String.valueOf(scanState.getInt("failedLinesOfCode")));
+                }
             }
+
+            // Add custom field values if requested
+            Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
+            additionalDetails.put("customFields", customFields);
         }
-        // Add custom field values if requested
-        Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
-        additionalDetails.put("customFields", customFields);
         return additionalDetails;
     }
 
