@@ -8,6 +8,7 @@ import com.checkmarx.sdk.dto.cx.xml.*;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.config.Constants;
+import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -373,9 +374,9 @@ public class CxService implements CxClient{
                 session = authClient.getCurrentToken();
             }
             else {
-                session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
+                session = authClient.getLegacySession();
             }
-        } catch (CheckmarxLegacyException e) {
+        } catch (InvalidCredentialsException e) {
             log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
         }
         log.info("Retrieving report contents of report Id {} in XML format", reportId);
@@ -470,13 +471,6 @@ public class CxService implements CxClient{
         HttpHeaders headers = authClient.createAuthHeaders();
         headers.setContentType(MediaType.APPLICATION_XML);
         HttpEntity httpEntity = new HttpEntity<>(headers);
-        String session = null;
-        try {
-            /* login to legacy SOAP CX Client to retrieve description */
-            session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
-        } catch (CheckmarxLegacyException e) {
-            log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
-        }
         log.info("Retrieving report contents of report Id {} in XML format", reportId);
         try {
             ResponseEntity<String> resultsXML = restTemplate.exchange(cxProperties.getUrl().concat(REPORT_DOWNLOAD), HttpMethod.GET, httpEntity, String.class, reportId);
@@ -485,7 +479,7 @@ public class CxService implements CxClient{
             log.debug("Headers: {}", resultsXML.getHeaders().toSingleValueMap().toString());
             log.info("Report downloaded for report Id {}", reportId);
             log.debug("XML String Output: {}", xml);
-            log.debug("Base64:", Base64.getEncoder().encodeToString(resultsXML.toString().getBytes()));
+            log.debug("Base64: {}", Base64.getEncoder().encodeToString(resultsXML.toString().getBytes()));
             /*Remove any chars before the start xml tag*/
             xml = xml.trim().replaceFirst("^([\\W]+)<", "<");
             log.debug("Report length: {}", xml.length());
@@ -499,8 +493,6 @@ public class CxService implements CxClient{
             xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
             xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
             xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
-            List<ScanResults.XIssue> xIssueList = new ArrayList<>();
-            CxXMLResultsType cxResults;
             try {
                 XMLStreamReader xsr = xif.createXMLStreamReader(xmlStream);
                 Unmarshaller unmarshaller = jc.createUnmarshaller();
@@ -549,18 +541,21 @@ public class CxService implements CxClient{
         Map<String, Object> additionalDetails = new HashMap<String, Object>();
         additionalDetails.put("scanId", cxResults.getScanId());
         additionalDetails.put("scanStartDate", cxResults.getScanStart());
-        JSONObject jsonObject = getScanData(cxResults.getScanId());
-        if (jsonObject != null) {
-            additionalDetails.put("scanRisk", String.valueOf(jsonObject.getInt("scanRisk")));
-            additionalDetails.put("scanRiskSeverity", String.valueOf(jsonObject.getInt("scanRiskSeverity")));
-            JSONObject scanState = jsonObject.getJSONObject("scanState");
-            if (scanState != null) {
-                additionalDetails.put("numFailedLoc", String.valueOf(scanState.getInt("failedLinesOfCode")));
+        if(!cxProperties.getOffline()) {
+            JSONObject jsonObject = getScanData(cxResults.getScanId());
+            if (jsonObject != null) {
+                additionalDetails.put("scanRisk", String.valueOf(jsonObject.getInt("scanRisk")));
+                additionalDetails.put("scanRiskSeverity", String.valueOf(jsonObject.getInt("scanRiskSeverity")));
+                JSONObject scanState = jsonObject.getJSONObject("scanState");
+                if (scanState != null) {
+                    additionalDetails.put("numFailedLoc", String.valueOf(scanState.getInt("failedLinesOfCode")));
+                }
             }
+
+            // Add custom field values if requested
+            Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
+            additionalDetails.put("customFields", customFields);
         }
-        // Add custom field values if requested
-        Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
-        additionalDetails.put("customFields", customFields);
         return additionalDetails;
     }
 
@@ -600,9 +595,9 @@ public class CxService implements CxClient{
         String session = null;
         try {
             if (!cxProperties.getOffline()) {
-                session = cxLegacyService.login(cxProperties.getUsername(), cxProperties.getPassword());
+                session = authClient.getLegacySession();
             }
-        } catch (CheckmarxLegacyException e) {
+        } catch (InvalidCredentialsException e) {
             log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
         }
         try {
@@ -779,7 +774,11 @@ public class CxService implements CxClient{
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
                 for (ResultType r : q.getResult()) {
-                    if (r.getFalsePositive().equalsIgnoreCase("FALSE") && checkFilter(r, filter)) {
+                    if (checkFilter(r, filter)) {
+                        boolean falsePositive = false;
+                        if(!r.getFalsePositive().equalsIgnoreCase("FALSE")){
+                            falsePositive = true;
+                        }
                         /*Map issue details*/
                         xIssueBuilder.cwe(q.getCweId());
                         xIssueBuilder.language(q.getLanguage());
@@ -793,7 +792,7 @@ public class CxService implements CxClient{
                         Map<String, Object> additionalDetails = getAdditionalIssueDetails(q, r);
                         xIssueBuilder.additionalDetails(additionalDetails);
 
-                        Map<Integer, String> details = new HashMap<>();
+                        Map<Integer, ScanResults.IssueDetails> details = new HashMap<>();
                         try {
                             /* Call the CX SOAP Service to get Issue Description*/
                             if (session != null) {
@@ -807,17 +806,19 @@ public class CxService implements CxClient{
                             }
                             String snippet = r.getPath().getPathNode().get(0).getSnippet().getLine().getCode();
                             snippet = StringUtils.truncate(snippet, cxProperties.getCodeSnippetLength());
+                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails().codeSnippet(snippet).falsePositive(falsePositive);
                             details.put(Integer.parseInt(r.getPath().getPathNode().get(0).getLine()),
-                                    snippet);
+                                    issueDetails);
                             xIssueBuilder.similarityId(r.getPath().getSimilarityId());
                         } catch (NullPointerException e) {
                             log.warn("Problem grabbing snippet.  Snippet may not exist for finding for Node ID");
                             /*Defaulting to initial line number with no snippet*/
-                            details.put(Integer.parseInt(r.getLine()), null);
+                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails().codeSnippet(null).falsePositive(falsePositive);
+                            details.put(Integer.parseInt(r.getLine()), issueDetails);
                         }
                         xIssueBuilder.details(details);
                         ScanResults.XIssue issue = xIssueBuilder.build();
-                        checkForDuplicateIssue(cxIssueList, r, details, issue, summary);
+                        checkForDuplicateIssue(cxIssueList, r, details, falsePositive, issue, summary);
                     }
                 }
             }
@@ -931,23 +932,35 @@ public class CxService implements CxClient{
         return status.isEmpty() || status.contains(Integer.parseInt(r.getState()));
     }
 
-    private void checkForDuplicateIssue(List<ScanResults.XIssue> cxIssueList, ResultType r, Map<Integer, String> details, ScanResults.XIssue issue, Map<String, Integer> summary) {
+    private void checkForDuplicateIssue(List<ScanResults.XIssue> cxIssueList, ResultType r, Map<Integer, ScanResults.IssueDetails> details,
+                                        boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
         if (cxIssueList.contains(issue)) {
             /*Get existing issue of same vuln+filename*/
             ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
             /*If no reference exists for this particular line, append it to the details (line+snippet)*/
             if (!existingIssue.getDetails().containsKey(Integer.parseInt(r.getLine()))) {
-                try {
-                    existingIssue.getDetails().put(Integer.parseInt(r.getPath().getPathNode().get(0).getLine()),
-                            r.getPath().getPathNode().get(0).getSnippet().getLine().getCode());
-                } catch (NullPointerException e) {
-                    details.put(Integer.parseInt(r.getLine()), null);
-                }finally {
+                if(falsePositive) {
+                    issue.falsePositiveIncrement();
+                }
+                else{
                     if(!summary.containsKey(r.getSeverity())){
                         summary.put(r.getSeverity(), 0);
                     }
                     int x = summary.get(r.getSeverity());
                     x++;
+                    summary.put(r.getSeverity(), x);
+                }
+                existingIssue.getDetails().putAll(details);
+            }
+            else { //reference exists, ensure fp flag is maintained
+                ScanResults.IssueDetails existingDetails = existingIssue.getDetails().get(Integer.parseInt(r.getLine()));
+                ScanResults.IssueDetails newDetails = details.get(Integer.parseInt(r.getLine()));
+                if(newDetails.isFalsePositive() && !existingDetails.isFalsePositive()){
+                    existingDetails.setFalsePositive(true);
+                    issue.falsePositiveIncrement();
+                    //bump down the count for the severity
+                    int x = summary.get(r.getSeverity());
+                    x--;
                     summary.put(r.getSeverity(), x);
                 }
             }
@@ -956,13 +969,18 @@ public class CxService implements CxClient{
             results.addAll((List<Map<String, Object>>)issue.getAdditionalDetails().get("results"));
 
         } else {
-            cxIssueList.add(issue);
-            if(!summary.containsKey(r.getSeverity())){
-                summary.put(r.getSeverity(), 0);
+            if(falsePositive) {
+                issue.falsePositiveIncrement();
             }
-            int x = summary.get(r.getSeverity());
-            x++;
-            summary.put(r.getSeverity(), x);
+            else{
+                if(!summary.containsKey(r.getSeverity())){
+                    summary.put(r.getSeverity(), 0);
+                }
+                int x = summary.get(r.getSeverity());
+                x++;
+                summary.put(r.getSeverity(), x);
+            }
+            cxIssueList.add(issue);
         }
     }
 
@@ -1424,10 +1442,6 @@ public class CxService implements CxClient{
      */
     public String createTeamWS(String parentTeamId, String teamName) throws CheckmarxException {
         String session = authClient.getLegacySession();
-
-        if(authClient.getLegacySession() == null){
-            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
-        }
         cxLegacyService.createTeam(session, parentTeamId, teamName);
         return getTeamId(cxProperties.getTeam().concat(cxProperties.getTeamPathSeparator()).concat(teamName));
     }
@@ -1440,10 +1454,7 @@ public class CxService implements CxClient{
      */
     public void deleteTeamWS(String teamId) throws CheckmarxException {
         String session = authClient.getLegacySession();
-        if(session == null){
-            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
-        }
-        cxLegacyService.deleteTeam(authClient.getLegacySession(), teamId);
+        cxLegacyService.deleteTeam(session, teamId);
     }
 
     /**
@@ -1763,9 +1774,6 @@ public class CxService implements CxClient{
 
     @Override
     public List<CxTeam> getTeams() throws CheckmarxException {
-        if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
-        }
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             log.info("Retrieving Cx teams");
@@ -1917,9 +1925,6 @@ public class CxService implements CxClient{
     @Override
     public void mapTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
         String session = authClient.getLegacySession();
-        if(session == null){
-            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
-        }
         cxLegacyService.createLdapTeamMapping(session, ldapServerId, teamId, teamName, ldapGroupDn);
     }
 

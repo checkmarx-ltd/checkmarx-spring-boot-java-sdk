@@ -32,6 +32,7 @@ public interface CxAuthClient {
 
     /**
      * Create REST API Headers for Authentication (JWT/OIDC)
+     *
      * @return
      */
     public HttpHeaders createAuthHeaders();
@@ -39,4 +40,5 @@ public interface CxAuthClient {
     public String getCurrentToken();
 
     public String getLegacySession();
+
 }

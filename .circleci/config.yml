@@ -13,11 +13,20 @@ jobs:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
       - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
-      - run: mvn -s .circleci/maven.settings.xml clean verify
+      - run: chmod u+x mvnw
+      - run: ./mvnw -s .circleci/maven.settings.xml clean verify
+      - run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout > target/version.txt
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
+      - store_artifacts:
+          path: target/*.jar
+      - persist_to_workspace:
+          root: .
+          paths:
+            - target/*.jar
+            - target/version.txt
 
   deploy:
     docker:
@@ -32,11 +41,26 @@ jobs:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
       - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
-      - run: mvn -s .circleci/maven.settings.xml clean deploy -DskipTests
+      - run: chmod u+x mvnw
+      - run: ./mvnw -s .circleci/maven.settings.xml clean deploy -DskipTests
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
+
+  publish-github-release:
+    docker:
+      - image: circleci/golang:1.9
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go get github.com/tcnksm/ghr
+            VERSION=$(cat ./target/version.txt)
+            rm ./target/version.txt
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -n ${VERSION} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./target/
 
 workflows:
   version: 2
@@ -44,6 +68,12 @@ workflows:
     jobs:
       - build
       - deploy:
+          filters:
+            branches:
+              only: master
+          requires:
+            - build
+      - publish-github-release:
           filters:
             branches:
               only: master
