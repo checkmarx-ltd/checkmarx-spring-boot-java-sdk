@@ -23,7 +23,6 @@ public class ScanResults{
     private Map<String, Object> additionalDetails;
     private CxScanSummary scanSummary;
 
-    @ConstructorProperties({"osa", "projectId", "team", "project", "link", "files", "loc", "scanType", "xIssues", "additionalDetails", "scanSummary"})
     public ScanResults(Boolean osa, String projectId, String team, String project, String link, String files, String loc, String scanType,
                        List<XIssue> xIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary) {
         this.osa = osa;
@@ -155,15 +154,13 @@ public class ScanResults{
         private String link;
         private String filename;
         private String gitUrl;
+        private int falsePositiveCount = 0;
         private List<OsaDetails> osaDetails;
-        private Map<Integer, String>  details;
+        private Map<Integer, IssueDetails>  details;
         private Map<String, Object> additionalDetails;
-        private CxScanSummary scanSummary;
 
-        @ConstructorProperties({"vulnerability", "similarityId", "cwe", "cve", "description", "language",
-                "severity", "link", "filename", "gitUrl", "osaDetails", "details", "additionalDetails", "scanSummary"})
         XIssue(String vulnerability, String similarityId, String cwe, String cve, String description, String language,
-               String severity, String link, String filename, String gitUrl, List<OsaDetails> osaDetails, Map<Integer, String> details,
+               String severity, String link, String filename, String gitUrl, List<OsaDetails> osaDetails, Map<Integer, IssueDetails> details,
                Map<String, Object> additionalDetails) {
             this.vulnerability = vulnerability;
             this.similarityId = similarityId;
@@ -200,6 +197,10 @@ public class ScanResults{
             int result = vulnerability.hashCode();
             result = 5225 * result + filename.hashCode();
             return result;
+        }
+
+        public boolean isAllFalsePositive(){
+            return this.getDetails().size() <= this.getFalsePositiveCount();
         }
 
         public String getSimilarityId() {
@@ -250,7 +251,7 @@ public class ScanResults{
             return this.osaDetails;
         }
 
-        public Map<Integer, String> getDetails() {
+        public Map<Integer, IssueDetails> getDetails() {
             return this.details;
         }
 
@@ -298,7 +299,7 @@ public class ScanResults{
             this.osaDetails = osaDetails;
         }
 
-        public void setDetails(Map<Integer, String> details) {
+        public void setDetails(Map<Integer, IssueDetails> details) {
             this.details = details;
         }
 
@@ -306,8 +307,12 @@ public class ScanResults{
             this.additionalDetails = additionalDetails;
         }
 
-        public void setScanSummary(CxScanSummary scanSummary) {
-            this.scanSummary = scanSummary;
+        public void falsePositiveIncrement(){
+            this.falsePositiveCount++;
+        }
+
+        public int getFalsePositiveCount(){
+            return this.falsePositiveCount;
         }
 
         public static class XIssueBuilder {
@@ -321,7 +326,7 @@ public class ScanResults{
             private String link;
             private String file;
             private List<OsaDetails> osaDetails;
-            private Map<Integer, String> details;
+            private Map<Integer, IssueDetails> details;
             private Map<String, Object> additionalDetails;
 
             XIssueBuilder() {
@@ -377,7 +382,7 @@ public class ScanResults{
                 return this;
             }
 
-            public XIssue.XIssueBuilder details(Map<Integer, String> details) {
+            public XIssue.XIssueBuilder details(Map<Integer, IssueDetails> details) {
                 this.details = details;
                 return this;
             }
@@ -395,6 +400,39 @@ public class ScanResults{
                 return "ScanResults.XIssue.XIssueBuilder(simiarlityId="+ this.similarityId +",vulnerability=" + this.vulnerability + ", cwe=" + this.cwe + ", cve=" + this.cve + ", description=" + this.description + ", language=" + this.language + ", severity=" + this.severity + ", link=" + this.link + ", filename=" + this.file + ", osaDetails=" + this.osaDetails + ", details=" + this.details + ", additionalDetails=" + this.additionalDetails + ")";
             }
         }
+    }
+
+    public static class IssueDetails{
+        private boolean falsePositive = false;
+        private String codeSnippet;
+
+        public boolean isFalsePositive() {
+            return falsePositive;
+        }
+
+        public void setFalsePositive(boolean falsePositive) {
+            this.falsePositive = falsePositive;
+        }
+
+        public String getCodeSnippet() {
+            return codeSnippet;
+        }
+
+        public void setCodeSnippet(String codeSnippet) {
+            this.codeSnippet = codeSnippet;
+        }
+
+        public IssueDetails falsePositive(final boolean falsePositive) {
+            this.falsePositive = falsePositive;
+            return this;
+        }
+
+        public IssueDetails codeSnippet(final String codeSnippet) {
+            this.codeSnippet = codeSnippet;
+            return this;
+        }
+
+
     }
 
     public static class OsaDetails {
