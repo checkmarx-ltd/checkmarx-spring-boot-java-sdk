@@ -48,7 +48,6 @@ public class CxLegacyService {
             5, CxUser.Role8x.SERVERMANAGER
     );
 
-    @ConstructorProperties({"properties", "ws"})
     public CxLegacyService(CxProperties properties, WebServiceTemplate ws) {
         this.properties = properties;
         this.ws = ws;
@@ -164,7 +163,7 @@ public class CxLegacyService {
 
     public void addUser(String session, CxUser user) throws CheckmarxLegacyException{
 
-        if(ScanUtils.empty(user.getCompany8x()) || ScanUtils.empty(user.getCompanyId8x()) ||
+        if(ScanUtils.empty(user.getCompany8x()) ||
             user.getTeams8x() == null || user.getTeams8x().isEmpty()  ||
             user.getType8x() == null || user.getRole8x() == null
         ){
@@ -213,6 +212,9 @@ public class CxLegacyService {
         userData.setDateCreated(time);
         userData.setLastLoginDate(time);
   */
+        if(ScanUtils.empty(user.getCompanyId8x())){
+            user.setCompanyId8x(getCompany(session, user.getCompany8x()));
+        }
         CxWSRoleWithUserPrivileges role = new CxWSRoleWithUserPrivileges();
         role.setName(user.getRole8x().getKey());
         role.setID(user.getRole8x().getValue().toString());
