@@ -60,9 +60,6 @@ checkmarx:
   url: ${checkmarx.base-url}/cxrestapi
 #WSDL Config
   portal-url: ${checkmarx.base-url}/cxwebinterface/Portal/CxWebService.asmx
-  sdk-url: ${checkmarx.base-url}/cxwebinterface/SDK/CxSDKWebService.asmx
-  portal-wsdl: ${checkmarx.base-url}/Portal/CxWebService.asmx?wsdl
-  sdk-wsdl: ${checkmarx.base-url}/SDK/CxSDKWebService.asmx?wsdl
 ```
 
 These values can be injected at runtime by using environment variables and/or command line parameters.  See the following: https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html

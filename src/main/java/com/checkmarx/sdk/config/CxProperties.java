@@ -49,12 +49,6 @@ public class CxProperties {
 
     private String portalUrl;
 
-    private String sdkUrl;
-
-    private String portalWsdl;
-
-    private String sdkWsdl;
-
     private String portalPackage = "checkmarx.wsdl.portal";
 
     private String htmlStrip = "<style>.cxtaghighlight{color: rgb(101, 170, 235);font-weight:bold;}</style>";
@@ -141,18 +135,6 @@ public class CxProperties {
 
     public String getPortalUrl() {
         return this.portalUrl;
-    }
-
-    public String getSdkUrl() {
-        return this.sdkUrl;
-    }
-
-    public String getPortalWsdl() {
-        return this.portalWsdl;
-    }
-
-    public String getSdkWsdl() {
-        return this.sdkWsdl;
     }
 
     public String getPortalPackage() {
@@ -253,18 +235,6 @@ public class CxProperties {
 
     public void setPortalUrl(String portalUrl) {
         this.portalUrl = portalUrl;
-    }
-
-    public void setSdkUrl(String sdkUrl) {
-        this.sdkUrl = sdkUrl;
-    }
-
-    public void setPortalWsdl(String portalWsdl) {
-        this.portalWsdl = portalWsdl;
-    }
-
-    public void setSdkWsdl(String sdkWsdl) {
-        this.sdkWsdl = sdkWsdl;
     }
 
     public void setPortalPackage(String portalPackage) {
