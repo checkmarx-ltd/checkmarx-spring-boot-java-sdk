@@ -43,16 +43,11 @@ public class CxProperties {
     private Integer scanPolling = 20000;
     private Integer reportPolling = 5000;
     private Integer reportTimeout = 300000;
+    private Integer codeSnippetLength = 2500;
     private String TEAM_PATH_SEPARATOR_9 = "/";
     private String TEAM_PATH_SEPARATOR_8 = "\\";
 
     private String portalUrl;
-
-    private String sdkUrl;
-
-    private String portalWsdl;
-
-    private String sdkWsdl;
 
     private String portalPackage = "checkmarx.wsdl.portal";
 
@@ -140,18 +135,6 @@ public class CxProperties {
 
     public String getPortalUrl() {
         return this.portalUrl;
-    }
-
-    public String getSdkUrl() {
-        return this.sdkUrl;
-    }
-
-    public String getPortalWsdl() {
-        return this.portalWsdl;
-    }
-
-    public String getSdkWsdl() {
-        return this.sdkWsdl;
     }
 
     public String getPortalPackage() {
@@ -254,18 +237,6 @@ public class CxProperties {
         this.portalUrl = portalUrl;
     }
 
-    public void setSdkUrl(String sdkUrl) {
-        this.sdkUrl = sdkUrl;
-    }
-
-    public void setPortalWsdl(String portalWsdl) {
-        this.portalWsdl = portalWsdl;
-    }
-
-    public void setSdkWsdl(String sdkWsdl) {
-        this.sdkWsdl = sdkWsdl;
-    }
-
     public void setPortalPackage(String portalPackage) {
         this.portalPackage = portalPackage;
     }
@@ -365,6 +336,14 @@ public class CxProperties {
     public Boolean getEnableOsa() {
         //return enableOsa;
         return false;
+    }
+
+    public Integer getCodeSnippetLength() {
+        return codeSnippetLength;
+    }
+
+    public void setCodeSnippetLength(Integer codeSnippetLength) {
+        this.codeSnippetLength = codeSnippetLength;
     }
 
     public void setEnableOsa(Boolean enableOsa) {

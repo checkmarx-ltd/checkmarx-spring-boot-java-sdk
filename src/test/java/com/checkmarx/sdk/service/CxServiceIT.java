@@ -1,8 +1,11 @@
 package com.checkmarx.sdk.service;
 
+import checkmarx.wsdl.portal.CxUserTypes;
+import checkmarx.wsdl.portal.Group;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxConfig;
 import com.checkmarx.sdk.config.CxProperties;
+import com.checkmarx.sdk.dto.CxUser;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
@@ -11,6 +14,7 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.cx.restclient.CxOsaService;
 //import com.cx.restclient.httpClient.CxHttpClient;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +24,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -37,8 +43,9 @@ public class CxServiceIT {
     private CxAuthService authService;
     @Autowired
     private CxOsaService osaService;
-    //@Autowired
-    //private CxHttpClient cxHttpClient;
+    @Autowired
+    private CxUserService userService;
+
     @Test
     public void Login() {
         try {
@@ -87,19 +94,6 @@ public class CxServiceIT {
             Integer id = service.getRoleId("Admin");
             assertNotNull(id);
             assertTrue(id > 0);
-        } catch (CheckmarxException e) {
-            if(properties.getVersion() >= 9.0 ) {
-                fail("Unexpected CheckmarxException");
-            }
-        }
-    }
-
-
-    @Test
-    public void getTeams() {
-        try {
-            List<CxTeam> teams = service.getTeams();
-            assertNotNull(teams);
         } catch (CheckmarxException e) {
             if(properties.getVersion() >= 9.0 ) {
                 fail("Unexpected CheckmarxException");
@@ -287,6 +281,77 @@ public class CxServiceIT {
             fail("Unexpected CheckmarxException");
         }
     }
+
+    @Test
+    public void getTeams() {
+        try {
+            List<CxTeam> teams = service.getTeams();
+            assertNotNull(teams);
+            assertTrue(teams.size() > 0);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
+
+    @Test
+    public void getUsers() {
+        try {
+            List<CxUser> users = userService.getUsers();
+            assertNotNull(users);
+            assertTrue(users.size() > 0);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
+
+    /*@Test
+    public void getUser() {
+        try {
+            CxUser user = userService.getUser(2);
+            assertNotNull(user);
+            assertNotNull(user.getUserName());
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }*/
+
+    /*
+    @Test
+    public void addUser() {
+        try {
+            CxUser user = new CxUser()
+                    .withActive(true)
+                    .withUserName("mytestuser4")
+                    .withFirstName("My")
+                    .withLastName("TestUser4")
+                    .withEmail("my4@testuser.com")
+                    .withPassword("XXXXXXX")
+                    .withType8x(CxUserTypes.SAML)
+                    //.withType8x(CxUserTypes.APPLICATION)
+                    .withCompany8x("Checkmarx")
+                    .withCompanyId8x("343e6316-58b6-4f32-bb18-8ec582f0b578")
+                    .withRole8x(CxUser.Role8x.SCANNER);
+
+            Map<String, String> teams = new HashMap<>();
+            teams.put("9c4fc7ae-3e41-4c88-ad1d-59e8032e2923","Custodela");
+            user.setTeams8x(teams);
+            userService.addUser(user);
+        }catch (CheckmarxException e){
+            fail("Unexpected CheckmarxException");
+        }
+    }
+    */
+
+    /*@Test
+    public void getCompanyId(){
+        try {
+            String id = userService.getCompanyId("Checkmarx");
+            assertNotNull(id);
+            assertNotEquals(id, "");
+        } catch (CheckmarxException e) {
+            fail("Unexpected Exception");
+        }
+    }*/
 
     //TESTS FOR LDAP - test instance does not include LDAP
 /* CxPrivateCloud does not have LDAP configuration to test with

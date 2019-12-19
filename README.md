@@ -3,7 +3,7 @@ Java Spring Boot SDK for Checkmarx
 
 ## Artifacts
 Maven artifacts are stored on Sonatype nexus repository manager (synced to maven central)
-https://oss.sonatype.org/service/local/repositories/releases/content/com/github/checkmarx-ts/cx-spring-boot-sdk/<version>/cx-spring-boot-sdk-<version>.jar
+https://oss.sonatype.org/service/local/repositories/releases/content/com/github/checkmarx-ts/cx-spring-boot-sdk/x.x.x/cx-spring-boot-sdk-x.x.x.jar
 
 _Note: Check maven version in current pom.xml_
 
@@ -60,9 +60,6 @@ checkmarx:
   url: ${checkmarx.base-url}/cxrestapi
 #WSDL Config
   portal-url: ${checkmarx.base-url}/cxwebinterface/Portal/CxWebService.asmx
-  sdk-url: ${checkmarx.base-url}/cxwebinterface/SDK/CxSDKWebService.asmx
-  portal-wsdl: ${checkmarx.base-url}/Portal/CxWebService.asmx?wsdl
-  sdk-wsdl: ${checkmarx.base-url}/SDK/CxSDKWebService.asmx?wsdl
 ```
 
 These values can be injected at runtime by using environment variables and/or command line parameters.  See the following: https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html

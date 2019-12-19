@@ -16,7 +16,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -28,6 +27,7 @@ public class CxAuthService implements CxAuthClient{
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxAuthService.class);
     private static final String LOGIN = "/auth/identity/connect/token";
     private static final String DEFAULT_TOKEN = "DEFAULT";
+    private static final Integer LEGACY_SESSION_TIME = 5;
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
     private final RestTemplate restTemplate;
@@ -35,6 +35,7 @@ public class CxAuthService implements CxAuthClient{
     private Map<String, String> tokens;
     private String session = null;
     private LocalDateTime tokenExpires = null;
+    private LocalDateTime sessionTokenExpires = null;
 
     public CxAuthService(CxProperties cxProperties, CxLegacyService cxLegacyService, @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
         this.cxProperties = cxProperties;
@@ -114,6 +115,13 @@ public class CxAuthService implements CxAuthClient{
         return LocalDateTime.now().isAfter(tokenExpires);
     }
 
+    private boolean isSessionTokenExpired() {
+        if (sessionTokenExpires == null) {
+            return true;
+        }
+        return LocalDateTime.now().isAfter(sessionTokenExpires);
+    }
+
     public HttpHeaders createAuthHeaders() {
         //get a new access token if the current one is expired.
         if (token == null || isTokenExpired()) {
@@ -121,12 +129,16 @@ public class CxAuthService implements CxAuthClient{
         }
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.AUTHORIZATION, "Bearer ".concat(token));
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         return httpHeaders;
     }
 
     public String getLegacySession(){
+        if(this.session == null || isSessionTokenExpired()){ //refresh session
+            this.session = legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+            sessionTokenExpires = LocalDateTime.now().plusHours(LEGACY_SESSION_TIME);
+
+        }
         return this.session;
     }
-
 }
