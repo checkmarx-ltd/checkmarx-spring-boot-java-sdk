@@ -806,14 +806,20 @@ public class CxService implements CxClient{
                             }
                             String snippet = r.getPath().getPathNode().get(0).getSnippet().getLine().getCode();
                             snippet = StringUtils.truncate(snippet, cxProperties.getCodeSnippetLength());
-                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails().codeSnippet(snippet).falsePositive(falsePositive);
+                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
+                                    .codeSnippet(snippet)
+                                    .comment(r.getRemark())
+                                    .falsePositive(falsePositive);
                             details.put(Integer.parseInt(r.getPath().getPathNode().get(0).getLine()),
                                     issueDetails);
                             xIssueBuilder.similarityId(r.getPath().getSimilarityId());
                         } catch (NullPointerException e) {
                             log.warn("Problem grabbing snippet.  Snippet may not exist for finding for Node ID");
                             /*Defaulting to initial line number with no snippet*/
-                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails().codeSnippet(null).falsePositive(falsePositive);
+                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
+                                    .codeSnippet(null)
+                                    .comment(r.getRemark())
+                                    .falsePositive(falsePositive);
                             details.put(Integer.parseInt(r.getLine()), issueDetails);
                         }
                         xIssueBuilder.details(details);

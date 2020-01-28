@@ -405,7 +405,7 @@ public class ScanResults{
     public static class IssueDetails{
         private boolean falsePositive = false;
         private String codeSnippet;
-
+        private String comment;
         public boolean isFalsePositive() {
             return falsePositive;
         }
@@ -422,6 +422,14 @@ public class ScanResults{
             this.codeSnippet = codeSnippet;
         }
 
+        public String getComment() {
+            return comment;
+        }
+
+        public void setComment(String comment) {
+            this.comment = comment;
+        }
+
         public IssueDetails falsePositive(final boolean falsePositive) {
             this.falsePositive = falsePositive;
             return this;
@@ -432,6 +440,10 @@ public class ScanResults{
             return this;
         }
 
+        public IssueDetails comment(final String comment) {
+            this.comment = comment;
+            return this;
+        }
 
     }
 
