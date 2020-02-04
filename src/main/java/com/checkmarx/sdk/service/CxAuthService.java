@@ -32,9 +32,10 @@ public class CxAuthService implements CxAuthClient{
     private final CxLegacyService cxLegacyService;
     private final RestTemplate restTemplate;
     private String token = null;
-    private Map<String, String> tokens;
+    private String soapToken = null;
     private String session = null;
     private LocalDateTime tokenExpires = null;
+    private LocalDateTime soapTokenExpires = null;
     private LocalDateTime sessionTokenExpires = null;
 
     public CxAuthService(CxProperties cxProperties, CxLegacyService cxLegacyService, @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
@@ -55,6 +56,13 @@ public class CxAuthService implements CxAuthClient{
                 cxProperties.getClientSecret(),
                 cxProperties.getScope()
         );
+    }
+
+    /**
+     * Get SOAP Auth Token
+     */
+    private void getSoapAuthToken() {
+        getSoapAuthToken(cxProperties.getUsername(),cxProperties.getPassword());
     }
 
     /**
@@ -93,9 +101,55 @@ public class CxAuthService implements CxAuthClient{
         return token;
     }
 
+    /**
+     * Get Auth Token specific to SOAP API Calls
+     */
+    @Override
+    public String getSoapAuthToken(String username, String password) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.add("username", username);
+        map.add("password", password);
+        map.add("grant_type", "password");
+        map.add("scope", cxProperties.getSoapScope());
+        map.add("client_id", cxProperties.getSoapClientId());
+        if(!ScanUtils.empty(cxProperties.getSoapClientSecret())){
+            map.add("client_secret", cxProperties.getSoapClientSecret());
+        }
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(map, headers);
+
+        try {
+            //get the access token
+            log.info("Logging into Checkmarx for SOAP token {}", cxProperties.getUrl().concat(LOGIN));
+            CxAuthResponse response = restTemplate.postForObject(cxProperties.getUrl().concat(LOGIN), requestEntity, CxAuthResponse.class);
+            if (response == null) {
+                throw new InvalidCredentialsException();
+            }
+            soapToken = response.getAccessToken();
+            soapTokenExpires = LocalDateTime.now().plusSeconds(response.getExpiresIn()-500); //expire 500 seconds early
+        }
+        catch (NullPointerException | HttpStatusCodeException e) {
+            log.error("Error occurred white obtaining Access Token.  Possibly incorrect credentials");
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new InvalidCredentialsException();
+        }
+        return soapToken;
+    }
+
+
     @Override
     public String getCurrentToken(){
         return this.token;
+    }
+
+    @Override
+    public String getCurrentSoapToken(){
+        //get a new access token if the current one is expired.
+        if (soapToken == null || isSoapTokenExpired()) {
+            getSoapAuthToken();
+        }
+        return this.soapToken;
     }
 
     @Override
@@ -113,6 +167,13 @@ public class CxAuthService implements CxAuthClient{
             return true;
         }
         return LocalDateTime.now().isAfter(tokenExpires);
+    }
+
+    private boolean isSoapTokenExpired() {
+        if (soapTokenExpires == null) {
+            return true;
+        }
+        return LocalDateTime.now().isAfter(soapTokenExpires);
     }
 
     private boolean isSessionTokenExpired() {
@@ -134,11 +195,16 @@ public class CxAuthService implements CxAuthClient{
     }
 
     public String getLegacySession(){
-        if(this.session == null || isSessionTokenExpired()){ //refresh session
-            this.session = legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
-            sessionTokenExpires = LocalDateTime.now().plusHours(LEGACY_SESSION_TIME);
-
+        if(cxProperties.getVersion() >= 9.0){
+            return getCurrentSoapToken();
         }
-        return this.session;
+        else {
+            if (this.session == null || isSessionTokenExpired()) { //refresh session
+                this.session = legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+                sessionTokenExpires = LocalDateTime.now().plusHours(LEGACY_SESSION_TIME);
+
+            }
+            return this.session;
+        }
     }
 }

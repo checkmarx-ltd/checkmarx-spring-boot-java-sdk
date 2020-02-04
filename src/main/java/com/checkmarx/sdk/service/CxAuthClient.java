@@ -21,6 +21,15 @@ public interface CxAuthClient {
     public String getAuthToken(String username, String password, String clientId, String clientSecret, String scope) throws InvalidCredentialsException;
 
     /**
+     * Authenictate with Checkmarx and Creates a JWT/OIDC for access token for Checkmarx SOAP based resource (9.0 onward)
+     *
+     * @param username
+     * @param password
+     * @return
+     */
+    public String getSoapAuthToken(String username, String password) throws InvalidCredentialsException;
+
+    /**
      * Authenictate with Checkmarx and Creates a session to access Checkmarx Legacy SOAP based resource
      *
      * @param username
@@ -38,6 +47,8 @@ public interface CxAuthClient {
     public HttpHeaders createAuthHeaders();
 
     public String getCurrentToken();
+
+    public String getCurrentSoapToken();
 
     public String getLegacySession();
 
