@@ -509,7 +509,7 @@ public class CxLegacyService {
             TransportContext context = TransportContextHolder.getTransportContext();
             HttpUrlConnection connection = (HttpUrlConnection) context.getConnection();
             try {
-                if(!ScanUtils.empty(token)) {
+                if(!ScanUtils.empty(token) && properties.getVersion() >= 9.0) {
                     connection.addRequestHeader(HttpHeaders.AUTHORIZATION, "Bearer ".concat(token));
                 }
             }catch (IOException e){
