@@ -7,11 +7,20 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
+import org.springframework.ws.client.core.WebServiceMessageCallback;
 import org.springframework.ws.client.core.WebServiceTemplate;
+import org.springframework.ws.soap.SoapMessage;
 import org.springframework.ws.soap.client.core.SoapActionCallback;
+import org.springframework.ws.transport.context.TransportContext;
+import org.springframework.ws.transport.context.TransportContextHolder;
+import org.springframework.ws.transport.http.HttpUrlConnection;
+
 import java.beans.ConstructorProperties;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +72,9 @@ public class CxLegacyService {
     public String login(String username, String password) throws CheckmarxLegacyException {
         LoginV2 request = new LoginV2();
         request.setApplicationCredentials(new Credentials(username, password));
+        if(properties.getVersion() >= 9.0){
+            return "-1";
+        }
         LoginV2Response response = (LoginV2Response) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_LOGIN_URI));
         try {
             if(!response.getLoginV2Result().isIsSuccesfull())
@@ -354,7 +366,7 @@ public class CxLegacyService {
         log.debug("Retrieving description for {} / {} ", scanId, pathId);
 
         GetResultDescriptionResponse response = (GetResultDescriptionResponse)
-                ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_DESCRIPTION_URI));
+                ws.marshalSendAndReceive(ws.getDefaultUri(), request, getWSCallback(CX_WS_DESCRIPTION_URI, session));
         try{
             if(!response.getGetResultDescriptionResult().isIsSuccesfull()){
                 log.error(response.getGetResultDescriptionResult().getErrorMessage());
@@ -488,6 +500,22 @@ public class CxLegacyService {
             log.warn("Error occurred getting ldap server configurations");
             throw new CheckmarxException("Error occurred while getting ldap server configurations");
         }
+    }
+
+    private WebServiceMessageCallback getWSCallback(String callbackUri, String token){
+        return message -> {
+            SoapMessage soapMessage = (SoapMessage) message;
+            soapMessage.setSoapAction(callbackUri);
+            TransportContext context = TransportContextHolder.getTransportContext();
+            HttpUrlConnection connection = (HttpUrlConnection) context.getConnection();
+            try {
+                if(!ScanUtils.empty(token) && properties.getVersion() >= 9.0) {
+                    connection.addRequestHeader(HttpHeaders.AUTHORIZATION, "Bearer ".concat(token));
+                }
+            }catch (IOException e){
+                log.warn("Problem adding SOAP WS http header: {}", ExceptionUtils.getStackTrace(e));
+            }
+        };
     }
 
 }

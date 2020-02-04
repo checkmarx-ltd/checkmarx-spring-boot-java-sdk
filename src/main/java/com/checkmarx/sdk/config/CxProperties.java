@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.config;
 
+import com.checkmarx.sdk.utils.ScanUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -13,8 +14,11 @@ public class CxProperties {
     private String username;
     private String password;
     private String clientId = "resource_owner_client";
+    private String soapClientId = "resource_owner_sast_client";
     private String clientSecret;
+    private String soapClientSecret;
     private String scope = "sast_rest_api";
+    private String soapScope = "sast_api";
     private String baseUrl;
     private String url;
     private String acUrl;
@@ -348,6 +352,33 @@ public class CxProperties {
 
     public void setEnableOsa(Boolean enableOsa) {
         this.enableOsa = enableOsa;
+    }
+
+    public String getSoapClientId() {
+        return soapClientId;
+    }
+
+    public void setSoapClientId(String soapClientId) {
+        this.soapClientId = soapClientId;
+    }
+
+    public String getSoapClientSecret() {
+        if(ScanUtils.empty(soapClientSecret)){
+            return clientSecret; //default to clientSecret that was provided
+        }
+        return soapClientSecret;
+    }
+
+    public void setSoapClientSecret(String soapClientSecret) {
+        this.soapClientSecret = soapClientSecret;
+    }
+
+    public String getSoapScope() {
+        return soapScope;
+    }
+
+    public void setSoapScope(String soapScope) {
+        this.soapScope = soapScope;
     }
 
     public String getTeamPathSeparator(){
