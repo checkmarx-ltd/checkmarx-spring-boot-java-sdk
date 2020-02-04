@@ -370,12 +370,7 @@ public class CxService implements CxClient{
         String session = null;
         try {
             /* login to legacy SOAP CX Client to retrieve description */
-            if(cxProperties.getVersion() >= 9.0){
-                session = authClient.getCurrentToken();
-            }
-            else {
-                session = authClient.getLegacySession();
-            }
+            session = authClient.getLegacySession();
         } catch (InvalidCredentialsException e) {
             log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
         }
