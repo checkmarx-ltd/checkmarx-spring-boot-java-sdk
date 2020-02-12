@@ -70,7 +70,7 @@ public class CxService implements CxClient{
     */
     public static final Integer REPORT_STATUS_CREATED = 2;
     private static final Map<String, Integer> STATUS_MAP = ImmutableMap.of(
-            "TO VERIFY", 1,
+            "TO VERIFY", 0,
             "CONFIRMED", 2,
             "URGENT", 3
     );
