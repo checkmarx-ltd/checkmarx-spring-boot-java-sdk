@@ -139,6 +139,7 @@ public class ScanResults{
         this.output = output;
     }
 
+    @Override
     public String toString() {
         return "ScanResults(osa=" + this.getOsa()  + ", link=" + this.getLink() + ", files=" + this.getFiles() + ", loc=" + this.getLoc() + ", scanType=" + this.getScanType() + ", xIssues=" + this.getXIssues() + ")";
     }
@@ -396,6 +397,7 @@ public class ScanResults{
                 return new XIssue(vulnerability, similarityId, cwe, cve, description, language, severity, link, file, "", osaDetails, details, additionalDetails);
             }
 
+            @Override
             public String toString() {
                 return "ScanResults.XIssue.XIssueBuilder(simiarlityId="+ this.similarityId +",vulnerability=" + this.vulnerability + ", cwe=" + this.cwe + ", cve=" + this.cve + ", description=" + this.description + ", language=" + this.language + ", severity=" + this.severity + ", link=" + this.link + ", filename=" + this.file + ", osaDetails=" + this.osaDetails + ", details=" + this.details + ", additionalDetails=" + this.additionalDetails + ")";
             }
@@ -562,6 +564,7 @@ public class ScanResults{
                 return new OsaDetails(cve, description, recommendation, severity, url, version);
             }
 
+            @Override
             public String toString() {
                 return "ScanResults.OsaDetails.OsaDetailsBuilder(cve=" + this.cve + ", description=" + this.description + ", recommendation=" + this.recommendation + ", severity=" + this.severity + ", url=" + this.url + ", version=" + this.version + ")";
             }
@@ -644,6 +647,7 @@ public class ScanResults{
             return new ScanResults(osa, projectId, team, project, link, files, loc, scanType, xIssues, additionalDetails, scanSummary);
         }
 
+        @Override
         public String toString() {
             return "ScanResults.ScanResultsBuilder(osa=" + this.osa + ", link=" + this.link + ", files=" + this.files + ", loc=" + this.loc + ", scanType=" + this.scanType + ", xIssues=" + this.xIssues + ", additionalDetails=" + this.additionalDetails + ")";
         }
