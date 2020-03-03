@@ -308,12 +308,12 @@ public class ScanResults{
             this.additionalDetails = additionalDetails;
         }
 
-        public void falsePositiveIncrement(){
-            this.falsePositiveCount++;
-        }
-
         public int getFalsePositiveCount(){
             return this.falsePositiveCount;
+        }
+
+        public void setFalsePositiveCount(int falsePositiveCount) {
+            this.falsePositiveCount = falsePositiveCount;
         }
 
         public static class XIssueBuilder {

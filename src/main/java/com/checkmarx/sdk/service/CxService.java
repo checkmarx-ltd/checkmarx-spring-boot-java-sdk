@@ -941,7 +941,7 @@ public class CxService implements CxClient{
             /*If no reference exists for this particular line, append it to the details (line+snippet)*/
             if (!existingIssue.getDetails().containsKey(Integer.parseInt(r.getLine()))) {
                 if(falsePositive) {
-                    issue.falsePositiveIncrement();
+                    existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount()+1));
                 }
                 else{
                     if(!summary.containsKey(r.getSeverity())){
@@ -958,7 +958,7 @@ public class CxService implements CxClient{
                 ScanResults.IssueDetails newDetails = details.get(Integer.parseInt(r.getLine()));
                 if(newDetails.isFalsePositive() && !existingDetails.isFalsePositive()){
                     existingDetails.setFalsePositive(true);
-                    issue.falsePositiveIncrement();
+                    existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount()+1));
                     //bump down the count for the severity
                     int x = summary.get(r.getSeverity());
                     x--;
@@ -971,7 +971,7 @@ public class CxService implements CxClient{
 
         } else {
             if(falsePositive) {
-                issue.falsePositiveIncrement();
+                issue.setFalsePositiveCount((issue.getFalsePositiveCount()+1));
             }
             else{
                 if(!summary.containsKey(r.getSeverity())){
