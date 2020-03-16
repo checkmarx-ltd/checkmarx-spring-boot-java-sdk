@@ -5,6 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
+import javax.annotation.PostConstruct;
+
 
 @Component
 @ConfigurationProperties(prefix = "checkmarx")
@@ -407,6 +409,13 @@ public class CxProperties {
 
     public void setGitClonePath(String gitClonePath) {
         this.gitClonePath = gitClonePath;
+    }
+
+    @PostConstruct
+    private void initTeam(){
+        if(!team.startsWith(getTeamPathSeparator())){
+            this.team = getTeamPathSeparator().concat(this.team);
+        }
     }
 }
 
