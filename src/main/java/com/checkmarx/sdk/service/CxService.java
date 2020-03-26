@@ -72,7 +72,8 @@ public class CxService implements CxClient{
     private static final Map<String, Integer> STATUS_MAP = ImmutableMap.of(
             "TO VERIFY", 0,
             "CONFIRMED", 2,
-            "URGENT", 3
+            "URGENT", 3,
+            "PROPOSED NOT EXPLOITABLE",4
     );
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
     private static final String TEAMS = "/auth/teams";
