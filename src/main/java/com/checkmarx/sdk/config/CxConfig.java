@@ -1,6 +1,8 @@
 package com.checkmarx.sdk.config;
 
 //import com.cx.restclient.httpClient.CxHttpClient;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +28,7 @@ public class CxConfig {
         RestTemplate restTemplate = new RestTemplate();
 
         HttpComponentsClientHttpRequestFactory requestFactory = new
-                HttpComponentsClientHttpRequestFactory(HttpClients.createDefault());
+                HttpComponentsClientHttpRequestFactory(HttpClientBuilder.create().useSystemProperties().build());
         requestFactory.setConnectTimeout(properties.getHttpConnectionTimeout());
         requestFactory.setReadTimeout(properties.getHttpReadTimeout());
         restTemplate.setRequestFactory(requestFactory);
