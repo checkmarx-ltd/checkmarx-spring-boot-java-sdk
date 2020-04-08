@@ -413,7 +413,7 @@ public class CxProperties {
 
     @PostConstruct
     private void initTeam(){
-        if(!team.startsWith(getTeamPathSeparator())){
+        if(team != null && !team.startsWith(getTeamPathSeparator())){
             this.team = getTeamPathSeparator().concat(this.team);
         }
     }
