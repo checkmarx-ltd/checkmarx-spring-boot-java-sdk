@@ -227,6 +227,15 @@ public interface CxClient {
     public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException;
 
     /**
+     * Update details for a project
+     *
+     * @param project
+     * @throws CheckmarxException
+     */
+    public void updateProjectDetails(CxProject project) throws CheckmarxException;
+
+
+    /**
      * Upload file (zip of source) for a project
      *
      * @param projectId

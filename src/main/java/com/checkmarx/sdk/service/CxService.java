@@ -1277,6 +1277,28 @@ public class CxService implements CxClient{
     }
 
     /**
+     * Update name and/or owning team for a project
+     *
+     * @param cxProject
+     * @throws CheckmarxException
+     */
+    public void updateProjectDetails(CxProject cxProject) throws CheckmarxException {
+        String strJSON = "{'name':'%s','owningTeam':'%s'}";
+        strJSON = String.format(strJSON, cxProject.getName(), cxProject.getTeamId());
+
+        HttpEntity requestEntity = new HttpEntity<>(strJSON, authClient.createAuthHeaders());
+
+        try {
+            log.info("Updating details for project {} with id {}", cxProject.getName(), cxProject.getId());
+            restTemplate.exchange(cxProperties.getUrl().concat(PROJECT), HttpMethod.PATCH, requestEntity, String.class, cxProject.getId());
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.error("Error occurred while updating details for project {}.", cxProject.getName());
+            throw new CheckmarxException("Error occurred while updating project details: " + e.getLocalizedMessage());
+        }
+    }
+
+    /**
      * Upload file (zip of source) for a project
      *
      * @param projectId
