@@ -70,9 +70,10 @@ public class CxService implements CxClient{
     */
     public static final Integer REPORT_STATUS_CREATED = 2;
     private static final Map<String, Integer> STATUS_MAP = ImmutableMap.of(
-            "TO VERIFY", 1,
+            "TO VERIFY", 0,
             "CONFIRMED", 2,
-            "URGENT", 3
+            "URGENT", 3,
+            "PROPOSED NOT EXPLOITABLE",4
     );
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
     private static final String TEAMS = "/auth/teams";
@@ -370,12 +371,7 @@ public class CxService implements CxClient{
         String session = null;
         try {
             /* login to legacy SOAP CX Client to retrieve description */
-            if(cxProperties.getVersion() >= 9.0){
-                session = authClient.getCurrentToken();
-            }
-            else {
-                session = authClient.getLegacySession();
-            }
+            session = authClient.getLegacySession();
         } catch (InvalidCredentialsException e) {
             log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
         }
@@ -806,14 +802,20 @@ public class CxService implements CxClient{
                             }
                             String snippet = r.getPath().getPathNode().get(0).getSnippet().getLine().getCode();
                             snippet = StringUtils.truncate(snippet, cxProperties.getCodeSnippetLength());
-                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails().codeSnippet(snippet).falsePositive(falsePositive);
+                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
+                                    .codeSnippet(snippet)
+                                    .comment(r.getRemark())
+                                    .falsePositive(falsePositive);
                             details.put(Integer.parseInt(r.getPath().getPathNode().get(0).getLine()),
                                     issueDetails);
                             xIssueBuilder.similarityId(r.getPath().getSimilarityId());
                         } catch (NullPointerException e) {
                             log.warn("Problem grabbing snippet.  Snippet may not exist for finding for Node ID");
                             /*Defaulting to initial line number with no snippet*/
-                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails().codeSnippet(null).falsePositive(falsePositive);
+                            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
+                                    .codeSnippet(null)
+                                    .comment(r.getRemark())
+                                    .falsePositive(falsePositive);
                             details.put(Integer.parseInt(r.getLine()), issueDetails);
                         }
                         xIssueBuilder.details(details);
@@ -940,7 +942,7 @@ public class CxService implements CxClient{
             /*If no reference exists for this particular line, append it to the details (line+snippet)*/
             if (!existingIssue.getDetails().containsKey(Integer.parseInt(r.getLine()))) {
                 if(falsePositive) {
-                    issue.falsePositiveIncrement();
+                    existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount()+1));
                 }
                 else{
                     if(!summary.containsKey(r.getSeverity())){
@@ -957,7 +959,7 @@ public class CxService implements CxClient{
                 ScanResults.IssueDetails newDetails = details.get(Integer.parseInt(r.getLine()));
                 if(newDetails.isFalsePositive() && !existingDetails.isFalsePositive()){
                     existingDetails.setFalsePositive(true);
-                    issue.falsePositiveIncrement();
+                    existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount()+1));
                     //bump down the count for the severity
                     int x = summary.get(r.getSeverity());
                     x--;
@@ -970,7 +972,7 @@ public class CxService implements CxClient{
 
         } else {
             if(falsePositive) {
-                issue.falsePositiveIncrement();
+                issue.setFalsePositiveCount((issue.getFalsePositiveCount()+1));
             }
             else{
                 if(!summary.containsKey(r.getSeverity())){
