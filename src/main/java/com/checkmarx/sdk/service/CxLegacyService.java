@@ -46,8 +46,9 @@ public class CxLegacyService {
     private static final String CX_WS_ALL_USERS = CX_WS_PREFIX + "GetAllUsers";
     private static final String CX_WS_GET_USER = CX_WS_PREFIX + "GetUserById";
     private static final String CX_WS_UPDATE_TEAM_URI = CX_WS_PREFIX + "UpdateTeam";
-    private static final String CX_WS_TEAM_URI = CX_WS_PREFIX + "CreateNewTeam";
+    private static final String CX_WS_CREATE_TEAM_URI = CX_WS_PREFIX + "CreateNewTeam";
     private static final String CX_WS_DELETE_TEAM_URI = CX_WS_PREFIX + "DeleteTeam";
+    private static final String CX_WS_MOVE_TEAM_URI = CX_WS_PREFIX + "MoveTeam";
     private static final String CX_WS_GET_COMPANIES_TEAM_URI = CX_WS_PREFIX + "GetAllCompanies";
     private static final Map<Integer, CxUser.Role8x> ROLEMAP = ImmutableMap.of(
             0, CxUser.Role8x.SCANNER,
@@ -329,7 +330,7 @@ public class CxLegacyService {
         log.info("Creating team {} ({})", teamName, parentId);
 
         try {
-            CreateNewTeamResponse response = (CreateNewTeamResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_TEAM_URI));
+            CreateNewTeamResponse response = (CreateNewTeamResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_CREATE_TEAM_URI));
             if(!response.getCreateNewTeamResult().isIsSuccesfull()){
                 log.error("Error occurred while creating Team {} with parentId {}", teamName, parentId);
                 throw new CheckmarxException("Error occurred during team creation");
@@ -355,6 +356,25 @@ public class CxLegacyService {
         }catch(NullPointerException e){
             log.error("Error occurred while deleting Team id {}", teamId);
             throw new CheckmarxException("Error occurred during team deletion");
+        }
+    }
+
+    void moveTeam(String sessionId, String teamId, String newParentId) throws CheckmarxException {
+        MoveTeam request = new MoveTeam();
+        request.setSessionID(sessionId);
+        request.setSourceID(teamId);
+        request.setDestenationID(newParentId);
+        log.info("Moving team {} to under {}", teamId, newParentId);
+
+        try {
+            MoveTeamResponse response = (MoveTeamResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_MOVE_TEAM_URI));
+            if(!response.getMoveTeamResult().isIsSuccesfull()){
+                log.error("Error occurred while moving team {} under parentId {}", teamId, newParentId);
+                throw new CheckmarxException("Error occurred during team move");
+            }
+        } catch(NullPointerException e){
+            log.error("Error occurred while moving team {} under parentId {}", teamId, newParentId);
+            throw new CheckmarxException("Error occurred during team move");
         }
     }
 
@@ -422,7 +442,7 @@ public class CxLegacyService {
         }
     }
 
-    private void updateTeam(String session, String teamId, String teamName, ArrayOfCxWSLdapGroupMapping ldapArray) throws CheckmarxException {
+    void updateTeam(String session, String teamId, String teamName, ArrayOfCxWSLdapGroupMapping ldapArray) throws CheckmarxException {
         UpdateTeam updateTeamReq = new UpdateTeam();
         updateTeamReq.setSessionID(session);
         updateTeamReq.setLdapGroupMappings(ldapArray);
