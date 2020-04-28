@@ -7,17 +7,22 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
-
-import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @Import(CxConfig.class)
@@ -28,8 +33,13 @@ public class CxServiceTest {
     private CxProperties properties;
     @Autowired
     private CxService service;
-    @Autowired
-    private CxAuthService authService;
+    @MockBean
+    private CxLegacyService cxLegacyService;
+    @MockBean
+    private CxAuthClient authClient;
+    @Qualifier("cxRestTemplate")
+    @MockBean
+    private RestTemplate restTemplate;
 
 
     @Test
@@ -112,6 +122,28 @@ public class CxServiceTest {
 
     @Test
     public void createProject() {
+    }
+
+    @Test
+    public void branchProject() {
+        when(
+                this.restTemplate.postForObject(any(String.class), any(Object.class), any(), any(Object.class))
+        ).thenReturn("{\"id\": 123456, \"link\": {\"rel\": \"self\", \"uri\": \"/projects/123456\"}}");
+
+        Integer branchedProjectId = service.branchProject(123455, "foo");
+        assertEquals(branchedProjectId, Integer.valueOf(123456));
+
+        when(
+                this.restTemplate.postForObject(any(String.class), any(Object.class), any(), any(Object.class))
+        ).thenReturn("Invalid JSON response");
+        branchedProjectId = service.branchProject(123455, "foo");
+        assertEquals(branchedProjectId, Integer.valueOf(-1));
+
+        when(
+                this.restTemplate.postForObject(any(String.class), any(Object.class), any(), any(Object.class))
+        ).thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
+        branchedProjectId = service.branchProject(123455, "foo");
+        assertEquals(branchedProjectId, Integer.valueOf(-1));
     }
 
     @Test
