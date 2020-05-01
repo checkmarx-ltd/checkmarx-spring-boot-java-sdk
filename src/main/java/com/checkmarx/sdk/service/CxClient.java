@@ -141,6 +141,15 @@ public interface CxClient {
     public void deleteProject(Integer projectId);
 
     /**
+     * Branch an existing project
+     *
+     * @param projectId Id of the existing project to branch
+     * @param name Name for the new branched project
+     * @return Id of the new branched project, or -1 if branch request was unsuccessful
+     */
+    public Integer branchProject(Integer projectId, String name);
+
+    /**
      * Get All Projects in Checkmarx
      *
      * @return
