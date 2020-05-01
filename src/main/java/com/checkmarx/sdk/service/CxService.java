@@ -5,7 +5,6 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.*;
-import com.checkmarx.sdk.exception.CheckmarxLegacyException;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
@@ -88,6 +87,7 @@ public class CxService implements CxClient{
     private static final String LDAP_SERVER = "/auth/LDAPServers";
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
+    private static final String PROJECT_BRANCH = "/projects/{id}/branch";
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
     private static final String PROJECT_SOURCE_FILE = "/projects/{id}/sourceCode/attachments";
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
@@ -1030,6 +1030,30 @@ public class CxService implements CxClient{
             log.error("HTTP error code {} while deleting project with id {}", e.getStatusCode(), projectId);
             log.error(ExceptionUtils.getStackTrace(e));
         }
+    }
+
+    @Override
+    public Integer branchProject(Integer projectId, String name) {
+        String request = new JSONObject().put("name", name).toString();
+        HttpEntity<String> requestEntity = new HttpEntity<>(request, authClient.createAuthHeaders());
+        log.info("Creating branched project with name '{}' from existing project with ID {}", name, projectId);
+        try {
+            String response = restTemplate.postForObject(cxProperties.getUrl().concat(PROJECT_BRANCH), requestEntity, String.class, projectId);
+            if (response != null) {
+                JSONObject obj = new JSONObject(response);
+                String id = obj.get("id").toString();
+                return Integer.parseInt(id);
+            } else {
+                log.error("CX Response for branch project request with name '{}' from existing project with ID {} was null", name, projectId);
+            }
+        } catch (HttpStatusCodeException e) {
+            log.error("HTTP error code {} while creating branched project with name '{}' from existing project with ID {}", e.getStatusCode(), name, projectId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response while creating branched project with name '{}' from existing project with ID {}", name, projectId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return UNKNOWN_INT;
     }
 
     /**
