@@ -28,11 +28,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web-services</artifactId>
 		</dependency>
-		<!--dependency>
+		<dependency>
 			<groupId>com.checkmarx</groupId>
 			<artifactId>cx-client-common</artifactId>
-			<version>8.90.5</version>
-		</dependency-->
+			<version>2020.1.13.SCA-SNAPSHOT</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
@@ -72,6 +72,11 @@
 			<groupId>org.springframework.ws</groupId>
 			<artifactId>spring-ws-core</artifactId>
 			<version>3.0.8.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.12</version>
 		</dependency>
 	</dependencies>
 
