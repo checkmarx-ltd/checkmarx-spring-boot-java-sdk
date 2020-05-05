@@ -1,9 +1,9 @@
 package com.cx.restclient;
 
-import com.checkmarx.sdk.config.CxScaProperties;
+import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.sca.SCAParams;
 import com.checkmarx.sdk.exception.SCARuntimeException;
-import com.checkmarx.sdk.service.CxScaClient;
+import com.checkmarx.sdk.service.ScaClient;
 import com.cx.restclient.configuration.CxScanConfig;
 import com.cx.restclient.dto.DependencyScanResults;
 import com.cx.restclient.dto.DependencyScannerType;
@@ -22,9 +22,9 @@ import java.net.URL;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class CxScaService implements CxScaClient {
+public class ScaClientImpl implements ScaClient {
 
-    private final CxScaProperties cxScaProperties;
+    private final ScaProperties scaProperties;
 
     @Override
     public DependencyScanResults createScanFromRemoteRepo(SCAParams scaParams) throws IOException {
@@ -56,12 +56,12 @@ public class CxScaService implements CxScaClient {
 
     private SCAConfig getSCAConfig() {
         SCAConfig scaConfig = new SCAConfig();
-        scaConfig.setWebAppUrl(cxScaProperties.getAppUrl());
-        scaConfig.setApiUrl(cxScaProperties.getApiUrl());
-        scaConfig.setAccessControlUrl(cxScaProperties.getAccessControlUrl());
-        scaConfig.setTenant(cxScaProperties.getTenant());
-        scaConfig.setUsername(cxScaProperties.getUsername());
-        scaConfig.setPassword(cxScaProperties.getPassword());
+        scaConfig.setWebAppUrl(scaProperties.getAppUrl());
+        scaConfig.setApiUrl(scaProperties.getApiUrl());
+        scaConfig.setAccessControlUrl(scaProperties.getAccessControlUrl());
+        scaConfig.setTenant(scaProperties.getTenant());
+        scaConfig.setUsername(scaProperties.getUsername());
+        scaConfig.setPassword(scaProperties.getPassword());
 
         return scaConfig;
     }
@@ -83,14 +83,14 @@ public class CxScaService implements CxScaClient {
 
     private void validateScaParameters(String projectName, String remoteRepoUrl) {
         String scanCreationError = "SCA scan cannot be initiated";
-        isEmptyParameterValidation(cxScaProperties.getAppUrl(), String.format("SCA application URL wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(cxScaProperties.getApiUrl(), String.format("SCA API URL wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(cxScaProperties.getAccessControlUrl(), String.format("SCA Access Control URL wasn't provided. %s", scanCreationError));
+        isEmptyParameterValidation(scaProperties.getAppUrl(), String.format("SCA application URL wasn't provided. %s", scanCreationError));
+        isEmptyParameterValidation(scaProperties.getApiUrl(), String.format("SCA API URL wasn't provided. %s", scanCreationError));
+        isEmptyParameterValidation(scaProperties.getAccessControlUrl(), String.format("SCA Access Control URL wasn't provided. %s", scanCreationError));
         isEmptyParameterValidation(projectName, String.format("Project name wasn't provided. %s", scanCreationError));
         isEmptyParameterValidation(remoteRepoUrl, String.format("Remote Repository URL wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(cxScaProperties.getTenant(), String.format("SCA tenant wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(cxScaProperties.getUsername(), String.format("Username wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(cxScaProperties.getPassword(), String.format("password wasn't provided. %s", scanCreationError));
+        isEmptyParameterValidation(scaProperties.getTenant(), String.format("SCA tenant wasn't provided. %s", scanCreationError));
+        isEmptyParameterValidation(scaProperties.getUsername(), String.format("Username wasn't provided. %s", scanCreationError));
+        isEmptyParameterValidation(scaProperties.getPassword(), String.format("password wasn't provided. %s", scanCreationError));
     }
 
     private void isEmptyParameterValidation(String parameter, String messageError) {

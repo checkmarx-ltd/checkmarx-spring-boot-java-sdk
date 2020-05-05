@@ -5,7 +5,7 @@ import com.cx.restclient.dto.DependencyScanResults;
 
 import java.io.IOException;
 
-public interface CxScaClient {
+public interface ScaClient {
 
     /**
      * Create new SCA scan for a new/existing project with a remote repository source

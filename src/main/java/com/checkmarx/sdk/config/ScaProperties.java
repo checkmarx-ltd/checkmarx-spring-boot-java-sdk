@@ -11,7 +11,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @Getter
 @Setter
-public class CxScaProperties {
+public class ScaProperties {
 
     private String appUrl;
     private String apiUrl;
