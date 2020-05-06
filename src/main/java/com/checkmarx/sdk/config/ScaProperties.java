@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 @Setter
 public class ScaProperties {
     public static final String CONFIG_PREFIX = "sca";
+
     private String appUrl;
     private String apiUrl;
     private String accessControlUrl;

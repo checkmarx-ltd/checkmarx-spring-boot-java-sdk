@@ -12,6 +12,8 @@ import javax.annotation.PostConstruct;
 @ConfigurationProperties(prefix = "checkmarx")
 @Validated
 public class CxProperties {
+    public static final String CONFIG_PREFIX = "sast";
+
     private Double version = 8.9;
     private String username;
     private String password;
