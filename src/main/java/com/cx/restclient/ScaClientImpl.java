@@ -1,6 +1,7 @@
 package com.cx.restclient;
 
 import com.checkmarx.sdk.config.ScaProperties;
+import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.sca.SCAParams;
 import com.checkmarx.sdk.dto.sca.SCAResults;
 import com.checkmarx.sdk.exception.SCARuntimeException;
@@ -18,49 +19,75 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.util.EnumMap;
+import java.util.Map;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class ScaClientImpl implements ScaClient {
+    private static final String ERROR_PREFIX = "SCA scan cannot be initiated.";
 
     private final ScaProperties scaProperties;
 
     @Override
     public SCAResults scanRemoteRepo(SCAParams scaParams) throws IOException {
-        String projectName = scaParams.getProjectName();
-        String remoteRepoUrl = scaParams.getRemoteRepoUrl();
+        validate(scaParams);
 
-        validateScaParameters(projectName, remoteRepoUrl);
-        String remoteRepoSafeUrl = getRemoteRepoSafeUrl(remoteRepoUrl);
+        // remoteRepoUrl may contain a userinfo part (username:password). However, URL.toString() result doesn't include
+        // userinfo, so this sensitive data won't be logged.
+        log.info("Creating new SCA scan for project '{}' with remote repository URL: {}",
+                scaParams.getProjectName(), scaParams.getRemoteRepoUrl());
 
-        log.info("Creating new SCA scan for project '{}' with remote repository URL: {}", projectName, remoteRepoSafeUrl);
+        CxScanConfig scanConfig = getScanConfig(scaParams);
 
-        CxScanConfig cxScanConfig = initScaConfig(projectName);
-        cxScanConfig.getScaConfig().setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
-        RemoteRepositoryInfo remoteRepoInfo = createRemoteRepoInfo(remoteRepoUrl);
-        cxScanConfig.getScaConfig().setRemoteRepositoryInfo(remoteRepoInfo);
+        DependencyScanResults scanResults = executeScan(scanConfig);
 
-        DependencyScanResults scanResults = createScanAndGetResults(cxScanConfig);
-        SCASummaryResults scaResults = scanResults.getScaResults().getSummary();
-        return SCAResults.builder()
-                .totalPackages(scaResults.getTotalPackages())
+        return toScaResults(scanResults.getScaResults());
+    }
+
+    private SCAResults toScaResults(com.cx.restclient.sca.dto.SCAResults scaResults) {
+        if (scaResults == null) {
+            throw new SCARuntimeException("SCA results are missing.");
+        }
+
+        SCASummaryResults summary = scaResults.getSummary();
+        if (summary == null) {
+            throw new SCARuntimeException("SCA results don't contain a summary.");
+        }
+
+        SCAResults.SCAResultsBuilder builder = SCAResults.builder();
+        builder.webReportLink(scaResults.getWebReportLink());
+
+        Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summary);
+
+        return builder.totalPackages(summary.getTotalPackages())
+                .directPackages(summary.getDirectPackages())
+                .totalOutdatedPackages(summary.getTotalOutdatedPackages())
+                .riskScore(summary.getRiskScore())
+                .findingCounts(findingCountsPerSeverity)
                 .build();
     }
 
-    private CxScanConfig initScaConfig(String projectName) {
+    private Map<Filter.Severity, Integer> getFindingCountMap(SCASummaryResults summary) {
+        EnumMap<Filter.Severity, Integer> result = new EnumMap<>(Filter.Severity.class);
+        result.put(Filter.Severity.HIGH, summary.getHighVulnerabilityCount());
+        result.put(Filter.Severity.MEDIUM, summary.getMediumVulnerabilityCount());
+        result.put(Filter.Severity.LOW, summary.getLowVulnerabilityCount());
+        return result;
+    }
+
+    private CxScanConfig getScanConfig(SCAParams scaParams) {
         CxScanConfig cxScanConfig = new CxScanConfig();
         cxScanConfig.setDependencyScannerType(DependencyScannerType.SCA);
         cxScanConfig.setSastEnabled(false);
-        cxScanConfig.setProjectName(projectName);
-        cxScanConfig.setScaConfig(getSCAConfig());
+        cxScanConfig.setProjectName(scaParams.getProjectName());
+        cxScanConfig.setScaConfig(getSCAConfig(scaParams));
 
         return cxScanConfig;
     }
 
-    private SCAConfig getSCAConfig() {
+    private SCAConfig getSCAConfig(SCAParams scaParams) {
         SCAConfig scaConfig = new SCAConfig();
         scaConfig.setWebAppUrl(scaProperties.getAppUrl());
         scaConfig.setApiUrl(scaProperties.getApiUrl());
@@ -68,18 +95,16 @@ public class ScaClientImpl implements ScaClient {
         scaConfig.setTenant(scaProperties.getTenant());
         scaConfig.setUsername(scaProperties.getUsername());
         scaConfig.setPassword(scaProperties.getPassword());
+        scaConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
+
+        RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
+        remoteRepoInfo.setUrl(scaParams.getRemoteRepoUrl());
+        scaConfig.setRemoteRepositoryInfo(remoteRepoInfo);
 
         return scaConfig;
     }
 
-    private RemoteRepositoryInfo createRemoteRepoInfo(String remoteRepoUrl) throws MalformedURLException {
-        RemoteRepositoryInfo remoteRepositoryInfo = new RemoteRepositoryInfo();
-        remoteRepositoryInfo.setUrl(new URL(remoteRepoUrl));
-
-        return remoteRepositoryInfo;
-    }
-
-    private DependencyScanResults createScanAndGetResults(CxScanConfig cxScanConfig) throws IOException {
+    private DependencyScanResults executeScan(CxScanConfig cxScanConfig) throws IOException {
         CxShragaClient client = new CxShragaClient(cxScanConfig, log);
         client.init();
         client.createDependencyScan();
@@ -87,34 +112,31 @@ public class ScaClientImpl implements ScaClient {
         return client.waitForDependencyScanResults();
     }
 
-    private void validateScaParameters(String projectName, String remoteRepoUrl) {
-        String scanCreationError = "SCA scan cannot be initiated";
-        isEmptyParameterValidation(scaProperties.getAppUrl(), String.format("SCA application URL wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(scaProperties.getApiUrl(), String.format("SCA API URL wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(scaProperties.getAccessControlUrl(), String.format("SCA Access Control URL wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(projectName, String.format("Project name wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(remoteRepoUrl, String.format("Remote Repository URL wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(scaProperties.getTenant(), String.format("SCA tenant wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(scaProperties.getUsername(), String.format("Username wasn't provided. %s", scanCreationError));
-        isEmptyParameterValidation(scaProperties.getPassword(), String.format("password wasn't provided. %s", scanCreationError));
+    private void validate(SCAParams scaParams) {
+        validateNotNull(scaParams);
+        validateNotEmpty(scaProperties.getAppUrl(), "SCA application URL");
+        validateNotEmpty(scaProperties.getApiUrl(), "SCA API URL");
+        validateNotEmpty(scaProperties.getAccessControlUrl(), "SCA Access Control URL");
+        validateNotEmpty(scaParams.getProjectName(), "Project name");
+        validateNotEmpty(scaProperties.getTenant(), "SCA tenant");
+        validateNotEmpty(scaProperties.getUsername(), "Username");
+        validateNotEmpty(scaProperties.getPassword(), "Password");
     }
 
-    private void isEmptyParameterValidation(String parameter, String messageError) {
-        if (StringUtils.isEmpty(parameter)) {
-            throw new SCARuntimeException(messageError);
+    private void validateNotNull(SCAParams scaParams) {
+        if (scaParams == null) {
+            throw new SCARuntimeException(String.format("%s SCA parameters weren't provided.", ERROR_PREFIX));
+        }
+
+        if (scaParams.getRemoteRepoUrl() == null) {
+            throw new SCARuntimeException(String.format("%s Repository URL wasn't provided.", ERROR_PREFIX));
         }
     }
 
-    private String getRemoteRepoSafeUrl(String remoteRepoUrl) {
-        /*
-            Removes the attached personal access token in case it's a private remote repo case
-         */
-        String separator = "@";
-
-        if (remoteRepoUrl.contains(separator)) {
-            return "https://" + remoteRepoUrl.split(separator)[1];
-        } else {
-            return remoteRepoUrl;
+    private void validateNotEmpty(String parameter, String parameterDescr) {
+        if (StringUtils.isEmpty(parameter)) {
+            String message = String.format("%s %s wasn't provided", ERROR_PREFIX, parameterDescr);
+            throw new SCARuntimeException(message);
         }
     }
 }
