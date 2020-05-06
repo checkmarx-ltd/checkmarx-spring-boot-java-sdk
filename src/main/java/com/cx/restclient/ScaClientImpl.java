@@ -2,6 +2,7 @@ package com.cx.restclient;
 
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.sca.SCAParams;
+import com.checkmarx.sdk.dto.sca.SCAResults;
 import com.checkmarx.sdk.exception.SCARuntimeException;
 import com.checkmarx.sdk.service.ScaClient;
 import com.cx.restclient.configuration.CxScanConfig;
@@ -9,6 +10,7 @@ import com.cx.restclient.dto.DependencyScanResults;
 import com.cx.restclient.dto.DependencyScannerType;
 import com.cx.restclient.sca.dto.RemoteRepositoryInfo;
 import com.cx.restclient.sca.dto.SCAConfig;
+import com.cx.restclient.sca.dto.SCASummaryResults;
 import com.cx.restclient.sca.dto.SourceLocationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +29,7 @@ public class ScaClientImpl implements ScaClient {
     private final ScaProperties scaProperties;
 
     @Override
-    public DependencyScanResults createScanFromRemoteRepo(SCAParams scaParams) throws IOException {
+    public SCAResults scanRemoteRepo(SCAParams scaParams) throws IOException {
         String projectName = scaParams.getProjectName();
         String remoteRepoUrl = scaParams.getRemoteRepoUrl();
 
@@ -41,7 +43,11 @@ public class ScaClientImpl implements ScaClient {
         RemoteRepositoryInfo remoteRepoInfo = createRemoteRepoInfo(remoteRepoUrl);
         cxScanConfig.getScaConfig().setRemoteRepositoryInfo(remoteRepoInfo);
 
-        return createScanAndGetResults(cxScanConfig);
+        DependencyScanResults scanResults = createScanAndGetResults(cxScanConfig);
+        SCASummaryResults scaResults = scanResults.getScaResults().getSummary();
+        return SCAResults.builder()
+                .totalPackages(scaResults.getTotalPackages())
+                .build();
     }
 
     private CxScanConfig initScaConfig(String projectName) {

@@ -7,12 +7,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 @Component
-@ConfigurationProperties(prefix = "sca")
+@ConfigurationProperties(prefix = ScaProperties.CONFIG_PREFIX)
 @Validated
 @Getter
 @Setter
 public class ScaProperties {
-
+    public static final String CONFIG_PREFIX = "sca";
     private String appUrl;
     private String apiUrl;
     private String accessControlUrl;

@@ -1,7 +1,7 @@
 package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.dto.sca.SCAParams;
-import com.cx.restclient.dto.DependencyScanResults;
+import com.checkmarx.sdk.dto.sca.SCAResults;
 
 import java.io.IOException;
 
@@ -9,8 +9,7 @@ public interface ScaClient {
 
     /**
      * Create new SCA scan for a new/existing project with a remote repository source
-     * @return  Scan results object
-     * @throws IOException
+     * @return scan results
      */
-    DependencyScanResults createScanFromRemoteRepo(SCAParams scaParams) throws IOException;
+    SCAResults scanRemoteRepo(SCAParams scaParams) throws IOException;
 }
