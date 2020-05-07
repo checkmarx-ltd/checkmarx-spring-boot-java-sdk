@@ -13,4 +13,5 @@ public class SCAResults {
     private double riskScore;
     private Map<Filter.Severity, Integer> findingCounts;
     private String webReportLink;
+    private String scanId;
 }

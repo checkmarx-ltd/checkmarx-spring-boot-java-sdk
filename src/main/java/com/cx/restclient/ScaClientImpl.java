@@ -46,22 +46,19 @@ public class ScaClientImpl implements ScaClient {
         return toScaResults(scanResults.getScaResults());
     }
 
+    /**
+     * Convert Common Client representation of SCA results into an object from this SDK.
+     */
     private SCAResults toScaResults(com.cx.restclient.sca.dto.SCAResults scaResults) {
-        if (scaResults == null) {
-            throw new SCARuntimeException("SCA results are missing.");
-        }
+        validateNotNull(scaResults);
 
         SCASummaryResults summary = scaResults.getSummary();
-        if (summary == null) {
-            throw new SCARuntimeException("SCA results don't contain a summary.");
-        }
-
-        SCAResults.SCAResultsBuilder builder = SCAResults.builder();
-        builder.webReportLink(scaResults.getWebReportLink());
-
         Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summary);
 
-        return builder.totalPackages(summary.getTotalPackages())
+        return SCAResults.builder()
+                .webReportLink(scaResults.getWebReportLink())
+                .scanId(scaResults.getScanId())
+                .totalPackages(summary.getTotalPackages())
                 .directPackages(summary.getDirectPackages())
                 .totalOutdatedPackages(summary.getTotalOutdatedPackages())
                 .riskScore(summary.getRiskScore())
@@ -77,6 +74,9 @@ public class ScaClientImpl implements ScaClient {
         return result;
     }
 
+    /**
+     * Convert scaParams to an object that is used by underlying logic in Common Client.
+     */
     private CxScanConfig getScanConfig(SCAParams scaParams) {
         CxScanConfig cxScanConfig = new CxScanConfig();
         cxScanConfig.setDependencyScannerType(DependencyScannerType.SCA);
@@ -130,6 +130,17 @@ public class ScaClientImpl implements ScaClient {
 
         if (scaParams.getRemoteRepoUrl() == null) {
             throw new SCARuntimeException(String.format("%s Repository URL wasn't provided.", ERROR_PREFIX));
+        }
+    }
+
+    private void validateNotNull(com.cx.restclient.sca.dto.SCAResults scaResults) {
+        if (scaResults == null) {
+            throw new SCARuntimeException("SCA results are missing.");
+        }
+
+        SCASummaryResults summary = scaResults.getSummary();
+        if (summary == null) {
+            throw new SCARuntimeException("SCA results don't contain a summary.");
         }
     }
 
