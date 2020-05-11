@@ -1,21 +1,18 @@
 package com.checkmarx.sdk.dto.sca;
 
-import com.checkmarx.sdk.dto.Filter;
-import lombok.Builder;
+import com.cx.restclient.sca.dto.report.Finding;
+import com.cx.restclient.sca.dto.report.Package;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Map;
+import java.util.List;
 
-@Builder
 @Getter
 @Setter
 public class SCAResults {
-    private int totalPackages;
-    private int directPackages;
-    private int totalOutdatedPackages;
-    private double riskScore;
-    private Map<Filter.Severity, Integer> findingCounts;
-    private String webReportLink;
     private String scanId;
+    private Summary summary;
+    private String webReportLink;
+    private List<Finding> findings;
+    private List<Package> packages;
 }

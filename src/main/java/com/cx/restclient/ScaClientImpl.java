@@ -16,6 +16,7 @@ import com.cx.restclient.sca.dto.report.SCASummaryResults;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -55,15 +56,10 @@ public class ScaClientImpl implements ScaClient {
         SCASummaryResults summary = scaResults.getSummary();
         Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summary);
 
-        return SCAResults.builder()
-                .webReportLink(scaResults.getWebReportLink())
-                .scanId(scaResults.getScanId())
-                .totalPackages(summary.getTotalPackages())
-                .directPackages(summary.getDirectPackages())
-                .totalOutdatedPackages(summary.getTotalOutdatedPackages())
-                .riskScore(summary.getRiskScore())
-                .findingCounts(findingCountsPerSeverity)
-                .build();
+        ModelMapper mapper = new ModelMapper();
+        SCAResults result = mapper.map(scaResults, SCAResults.class);
+        result.getSummary().setFindingCounts(findingCountsPerSeverity);
+        return result;
     }
 
     private Map<Filter.Severity, Integer> getFindingCountMap(SCASummaryResults summary) {
