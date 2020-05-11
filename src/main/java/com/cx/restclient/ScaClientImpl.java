@@ -11,8 +11,8 @@ import com.cx.restclient.dto.DependencyScanResults;
 import com.cx.restclient.dto.DependencyScannerType;
 import com.cx.restclient.sca.dto.RemoteRepositoryInfo;
 import com.cx.restclient.sca.dto.SCAConfig;
-import com.cx.restclient.sca.dto.SCASummaryResults;
 import com.cx.restclient.sca.dto.SourceLocationType;
+import com.cx.restclient.sca.dto.report.SCASummaryResults;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -36,8 +36,6 @@ public class ScaClientImpl implements ScaClient {
     public SCAResults scanRemoteRepo(SCAParams scaParams) throws IOException {
         validate(scaParams);
 
-        // remoteRepoUrl may contain a userinfo part (username:password). However, URL.toString() result doesn't include
-        // userinfo, so this sensitive data won't be logged.
         log.info("Creating new SCA scan for project '{}' with remote repository URL: {}",
                 scaParams.getProjectName(), getSafeRemoteRepoUrl(scaParams.getRemoteRepoUrl()));
 
@@ -153,6 +151,10 @@ public class ScaClientImpl implements ScaClient {
         }
     }
 
+    /**
+     * Removes the userinfo part of the input URL (if present), so that the URL may be logged safely.
+     * The URL may contain userinfo when a private repo is scanned.
+     */
     private String getSafeRemoteRepoUrl(URL url) throws MalformedURLException {
         return new URL(url.getProtocol(), url.getHost(), url.getFile()).toString();
     }
