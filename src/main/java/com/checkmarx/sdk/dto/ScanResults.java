@@ -1,6 +1,10 @@
 package com.checkmarx.sdk.dto;
 
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
+import com.checkmarx.sdk.dto.sca.SCAResults;
+import org.modelmapper.Conditions;
+import org.modelmapper.ModelMapper;
+
 import java.beans.ConstructorProperties;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +16,7 @@ public class ScanResults{
 
     private Boolean osa = false;
     private String  projectId;
+    private Integer SastScanId;
     private String  team;
     private String  project;
     private String  link;
@@ -22,9 +27,10 @@ public class ScanResults{
     private String output;
     private Map<String, Object> additionalDetails;
     private CxScanSummary scanSummary;
+    private SCAResults scaResults;
 
     public ScanResults(Boolean osa, String projectId, String team, String project, String link, String files, String loc, String scanType,
-                       List<XIssue> xIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary) {
+                       List<XIssue> xIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary, SCAResults scaResults) {
         this.osa = osa;
         this.projectId = projectId;
         this.team = team;
@@ -36,9 +42,26 @@ public class ScanResults{
         this.xIssues = xIssues;
         this.additionalDetails = additionalDetails;
         this.scanSummary = scanSummary;
+        this.scaResults = scaResults;
     }
 
     public ScanResults() {
+    }
+
+    public Integer getSastScanId() {
+        return SastScanId;
+    }
+
+    public void setSastScanId(Integer sastScanId) {
+        SastScanId = sastScanId;
+    }
+
+    public SCAResults getScaResults() {
+        return scaResults;
+    }
+
+    public void setScaResults(SCAResults scaResults) {
+        this.scaResults = scaResults;
     }
 
     public static ScanResultsBuilder builder() {
@@ -142,6 +165,13 @@ public class ScanResults{
     @Override
     public String toString() {
         return "ScanResults(osa=" + this.getOsa()  + ", link=" + this.getLink() + ", files=" + this.getFiles() + ", loc=" + this.getLoc() + ", scanType=" + this.getScanType() + ", xIssues=" + this.getXIssues() + ")";
+    }
+
+    public void mergeResultsWith(ScanResults scanResultsToMerge) {
+        ModelMapper modelMapper = new ModelMapper();
+        modelMapper.getConfiguration().setPropertyCondition(Conditions.isNotNull());
+
+        modelMapper.map(scanResultsToMerge, this);
     }
 
     public static class XIssue{
@@ -583,6 +613,7 @@ public class ScanResults{
         private List<XIssue> xIssues;
         private Map<String, Object> additionalDetails;
         private CxScanSummary scanSummary;
+        private SCAResults scaResults;
 
         ScanResultsBuilder() {
         }
@@ -643,8 +674,13 @@ public class ScanResults{
             return this;
         }
 
+        public ScanResults.ScanResultsBuilder scaResults(SCAResults scaResults) {
+            this.scaResults = scaResults;
+            return this;
+        }
+
         public ScanResults build() {
-            return new ScanResults(osa, projectId, team, project, link, files, loc, scanType, xIssues, additionalDetails, scanSummary);
+            return new ScanResults(osa, projectId, team, project, link, files, loc, scanType, xIssues, additionalDetails, scanSummary, scaResults);
         }
 
         @Override
