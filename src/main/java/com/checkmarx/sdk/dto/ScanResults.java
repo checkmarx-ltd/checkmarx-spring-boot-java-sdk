@@ -2,6 +2,8 @@ package com.checkmarx.sdk.dto;
 
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
 import com.checkmarx.sdk.dto.sca.SCAResults;
+import org.modelmapper.Conditions;
+import org.modelmapper.ModelMapper;
 
 import java.beans.ConstructorProperties;
 import java.util.List;
@@ -14,6 +16,7 @@ public class ScanResults{
 
     private Boolean osa = false;
     private String  projectId;
+    private Integer SastScanId;
     private String  team;
     private String  project;
     private String  link;
@@ -43,6 +46,22 @@ public class ScanResults{
     }
 
     public ScanResults() {
+    }
+
+    public Integer getSastScanId() {
+        return SastScanId;
+    }
+
+    public void setSastScanId(Integer sastScanId) {
+        SastScanId = sastScanId;
+    }
+
+    public SCAResults getScaResults() {
+        return scaResults;
+    }
+
+    public void setScaResults(SCAResults scaResults) {
+        this.scaResults = scaResults;
     }
 
     public static ScanResultsBuilder builder() {
@@ -146,6 +165,13 @@ public class ScanResults{
     @Override
     public String toString() {
         return "ScanResults(osa=" + this.getOsa()  + ", link=" + this.getLink() + ", files=" + this.getFiles() + ", loc=" + this.getLoc() + ", scanType=" + this.getScanType() + ", xIssues=" + this.getXIssues() + ")";
+    }
+
+    public void mergeResultsWith(ScanResults scanResultsToMerge) {
+        ModelMapper modelMapper = new ModelMapper();
+        modelMapper.getConfiguration().setPropertyCondition(Conditions.isNotNull());
+
+        modelMapper.map(scanResultsToMerge, this);
     }
 
     public static class XIssue{
