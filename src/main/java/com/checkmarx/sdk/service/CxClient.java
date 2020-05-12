@@ -141,6 +141,15 @@ public interface CxClient {
     public void deleteProject(Integer projectId);
 
     /**
+     * Branch an existing project
+     *
+     * @param projectId Id of the existing project to branch
+     * @param name Name for the new branched project
+     * @return Id of the new branched project, or -1 if branch request was unsuccessful
+     */
+    public Integer branchProject(Integer projectId, String name);
+
+    /**
      * Get All Projects in Checkmarx
      *
      * @return
@@ -227,6 +236,15 @@ public interface CxClient {
     public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException;
 
     /**
+     * Update details for a project
+     *
+     * @param project
+     * @throws CheckmarxException
+     */
+    public void updateProjectDetails(CxProject project) throws CheckmarxException;
+
+
+    /**
      * Upload file (zip of source) for a project
      *
      * @param projectId
@@ -263,7 +281,7 @@ public interface CxClient {
     /**
      * Fetches all teams
      *
-     * @return  a List containing the Teams in Checkmarx
+     * @return  a List containing the Teams in Checkmarx; versions prior to 9.0 return full name and ID only
      * @throws CheckmarxException
      */
     public List<CxTeam> getTeams() throws CheckmarxException;
@@ -390,6 +408,26 @@ public interface CxClient {
      * @throws CheckmarxException
      */
     public String createTeam(String parentTeamId, String teamName) throws CheckmarxException;
+
+    /**
+     * Move team to under given newParentId - Will use REST API to create team for version 9.0+
+     *
+     * @param teamId - Id of the team to be moved
+     * @param newParentTeamId - id of the new parent team
+     * @return void
+     * @throws CheckmarxException
+     */
+    public void moveTeam(String teamId, String newParentTeamId) throws CheckmarxException;
+
+    /**
+     * Rename team (path is unaffected; only the actual name)
+     *
+     * @param teamId - Id of the team to be renamed
+     * @param newTeamName - new team name
+     * @return void
+     * @throws CheckmarxException
+     */
+    public void renameTeam(String teamId, String newTeamName) throws CheckmarxException;
 
     /**
      * Create team under given parentId - Will use REST API to create team for version 9.0+

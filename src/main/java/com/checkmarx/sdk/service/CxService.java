@@ -5,7 +5,6 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.*;
-import com.checkmarx.sdk.exception.CheckmarxLegacyException;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
@@ -88,6 +87,7 @@ public class CxService implements CxClient{
     private static final String LDAP_SERVER = "/auth/LDAPServers";
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
+    private static final String PROJECT_BRANCH = "/projects/{id}/branch";
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
     private static final String PROJECT_SOURCE_FILE = "/projects/{id}/sourceCode/attachments";
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
@@ -1032,6 +1032,30 @@ public class CxService implements CxClient{
         }
     }
 
+    @Override
+    public Integer branchProject(Integer projectId, String name) {
+        String request = new JSONObject().put("name", name).toString();
+        HttpEntity<String> requestEntity = new HttpEntity<>(request, authClient.createAuthHeaders());
+        log.info("Creating branched project with name '{}' from existing project with ID {}", name, projectId);
+        try {
+            String response = restTemplate.postForObject(cxProperties.getUrl().concat(PROJECT_BRANCH), requestEntity, String.class, projectId);
+            if (response != null) {
+                JSONObject obj = new JSONObject(response);
+                String id = obj.get("id").toString();
+                return Integer.parseInt(id);
+            } else {
+                log.error("CX Response for branch project request with name '{}' from existing project with ID {} was null", name, projectId);
+            }
+        } catch (HttpStatusCodeException e) {
+            log.error("HTTP error code {} while creating branched project with name '{}' from existing project with ID {}", e.getStatusCode(), name, projectId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response while creating branched project with name '{}' from existing project with ID {}", name, projectId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return UNKNOWN_INT;
+    }
+
     /**
      * Get All Projects in Checkmarx
      *
@@ -1277,6 +1301,28 @@ public class CxService implements CxClient{
     }
 
     /**
+     * Update name and/or owning team for a project
+     *
+     * @param cxProject
+     * @throws CheckmarxException
+     */
+    public void updateProjectDetails(CxProject cxProject) throws CheckmarxException {
+        String strJSON = "{'name':'%s','owningTeam':'%s'}";
+        strJSON = String.format(strJSON, cxProject.getName(), cxProject.getTeamId());
+
+        HttpEntity requestEntity = new HttpEntity<>(strJSON, authClient.createAuthHeaders());
+
+        try {
+            log.info("Updating details for project {} with id {}", cxProject.getName(), cxProject.getId());
+            restTemplate.exchange(cxProperties.getUrl().concat(PROJECT), HttpMethod.PATCH, requestEntity, String.class, cxProject.getId());
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.error("Error occurred while updating details for project {}.", cxProject.getName());
+            throw new CheckmarxException("Error occurred while updating project details: " + e.getLocalizedMessage());
+        }
+    }
+
+    /**
      * Upload file (zip of source) for a project
      *
      * @param projectId
@@ -1330,16 +1376,14 @@ public class CxService implements CxClient{
     /**
      * Get teamId for given path
      *
-     * @param teamPath
-     * @return
+     * @param teamPath Fully qualified name/path of the team to lookup
+     * @return TeamID of the team, or UNKNOWN (-1)
      * @throws CheckmarxException
      */
     public String getTeamId(String teamPath) throws CheckmarxException {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
-            log.info("Retrieving Cx teams");
-            ResponseEntity<CxTeam[]> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAMS), HttpMethod.GET, httpEntity, CxTeam[].class);
-            CxTeam[] teams = response.getBody();
+            List<CxTeam> teams = getTeams();
             if (teams == null) {
                 throw new CheckmarxException("Error obtaining Team Id");
             }
@@ -1357,25 +1401,53 @@ public class CxService implements CxClient{
         return UNKNOWN;
     }
 
+    /**
+     * Get fully qualified team name for a given id
+     *
+     * @param teamId TeamID to lookup
+     * @return Fully qualified team name/path
+     * @throws CheckmarxException
+     */
+    public String getTeamName(String teamId) throws CheckmarxException {
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            List<CxTeam> teams = getTeams();
+            if (teams == null) {
+                throw new CheckmarxException("Error retrieving Cx teams from the server");
+            }
+            for (CxTeam team : teams) {
+                if (team.getId().equals(teamId)) {
+                    log.info("Found team {} with ID {}", team.getFullName(), teamId);
+                    return team.getFullName();
+                }
+            }
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving Teams");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        log.info("No team was found for {}", teamId);
+        return UNKNOWN;
+    }
+
+
 
     /**
      * Get a team Id based on the name and the Parent Team Id
-     * @param parentTeamId
-     * @param teamName
-     * @return
+     * @param parentTeamId Parent team's TeamID
+     * @param teamName Short name of the team to lookup
+     * @return TeamID or UNKNOWN
      * @throws CheckmarxException
      */
     @Override
     public String getTeamId(String parentTeamId, String teamName) throws CheckmarxException {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
+            // Versions prior to 9.0 do not return parent ID with the Team list
             if(cxProperties.getVersion() < 9.0){
                 log.error("Unsupported function for this version of Checkmarx");
                 return null;
             }
-            log.info("Retrieving Cx teams");
-            ResponseEntity<CxTeam[]> response = restTemplate.exchange(cxProperties.getUrl().concat(TEAMS), HttpMethod.GET, httpEntity, CxTeam[].class);
-            CxTeam[] teams = response.getBody();
+            List<CxTeam> teams = getTeams();
             if (teams == null) {
                 throw new CheckmarxException("Error obtaining Team Id");
             }
@@ -1434,6 +1506,32 @@ public class CxService implements CxClient{
         }
     }
 
+    @Override
+    public void moveTeam(String teamId, String newParentTeamId) throws CheckmarxException {
+        // fail if ids are equal or invalid
+        if(teamId.equals(newParentTeamId) || teamId.equals(UNKNOWN) || newParentTeamId.equals(UNKNOWN)) {
+            log.info("Invalid parameters: teamId {}, newParentTeamId {}", teamId, newParentTeamId);
+            return;
+        }
+
+        if(cxProperties.getVersion() < 9.0){
+            moveTeamWS(teamId, newParentTeamId);
+        }
+        else {
+            log.error("Not implemented in v9.0 yet");
+        }
+    }
+
+    @Override
+    public void renameTeam(String teamId, String newTeamName) throws CheckmarxException {
+        if(cxProperties.getVersion() < 9.0){
+            renameTeamWS(teamId, newTeamName);
+        }
+        else {
+            log.error("Not implemented in v9.0 yet");
+        }
+    }
+
     /**
      * Create team under given parentId
      *
@@ -1457,6 +1555,80 @@ public class CxService implements CxClient{
     public void deleteTeamWS(String teamId) throws CheckmarxException {
         String session = authClient.getLegacySession();
         cxLegacyService.deleteTeam(session, teamId);
+    }
+
+    /**
+     * Move team under the new parentId using SOAP
+     *
+     * @param newParentTeamId Id of the new parent team
+     * @param teamId Id of the team to be moved
+     * @return void
+     * @throws CheckmarxException
+     */
+    public void moveTeamWS(String teamId, String newParentTeamId) throws CheckmarxException {
+        String session = authClient.getLegacySession();
+
+        if(authClient.getLegacySession() == null){
+            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+        }
+
+        cxLegacyService.moveTeam(session, teamId, newParentTeamId);
+
+        // The SOAP API does not seem to move subteams properly; find all children of the teamId and move them individually
+        ArrayList<CxTeam> subteams = new ArrayList<CxTeam>();
+        List<CxTeam> teams = getTeams();
+
+        // find team name; don't call getTeamName, as it results in an unecessary call to geTeams()
+        String teamName = "";
+        if (teams == null) {
+            throw new CheckmarxException("Error retrieving Cx teams from the server");
+        }
+        for (CxTeam team : teams) {
+            if (team.getId().equals(teamId)) {
+                teamName = team.getFullName();
+                log.debug("Found team {} with ID {}", teamName, teamId);
+                break;
+            }
+        }
+
+        if(!teamName.isEmpty()) {
+            for (CxTeam team : teams) {
+                String subteamName = team.getFullName();
+                log.debug("Checking subteam {}", subteamName);
+                if (!subteamName.equals(teamName) && subteamName.contains(teamName)) {
+                    log.debug("Found subteam {}", team.getFullName());
+                    subteams.add(team);
+                }
+            }
+        }
+
+        // move subteams, if any
+        if(!subteams.isEmpty()) {
+            log.info("Moving {} subteams", subteams.size());
+            for (CxTeam subteam : subteams) {
+                log.debug("Moving subteam {}", subteam.getFullName());
+                cxLegacyService.moveTeam(session, subteam.getId(), teamId);
+            }
+        }
+    }
+
+    /**
+     * Rename team (path is unaffected; only the actual name) using SOAP
+     *
+     * @param teamId - Id of the team to be renamed
+     * @param newTeamName - new team name
+     * @return void
+     * @throws CheckmarxException
+     */
+    public void renameTeamWS(String teamId, String newTeamName) throws CheckmarxException {
+        String session = authClient.getLegacySession();
+
+        if(authClient.getLegacySession() == null){
+            session = authClient.legacyLogin(cxProperties.getUsername(), cxProperties.getPassword());
+        }
+
+        log.info("Renaming team {} to {}", teamId, newTeamName);
+        cxLegacyService.updateTeam(session, teamId, newTeamName, null);
     }
 
     /**

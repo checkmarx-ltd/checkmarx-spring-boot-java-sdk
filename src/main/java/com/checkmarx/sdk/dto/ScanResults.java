@@ -231,6 +231,9 @@ public class ScanResults{
         }
 
         public boolean isAllFalsePositive(){
+            if(this.getDetails() == null){
+                return false;
+            }
             return this.getDetails().size() <= this.getFalsePositiveCount();
         }
 
