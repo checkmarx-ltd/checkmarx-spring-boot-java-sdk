@@ -31,7 +31,7 @@
 		<dependency>
 			<groupId>com.checkmarx</groupId>
 			<artifactId>cx-client-common</artifactId>
-			<version>2020.1.13.SCA-SNAPSHOT</version>
+			<version>2020.2.10.SCA</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
