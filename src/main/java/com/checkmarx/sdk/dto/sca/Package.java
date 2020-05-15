@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.dto.sca;
 
 import com.cx.restclient.sca.dto.report.DependencyPath;
+import com.cx.restclient.sca.dto.report.PackageSeverity;
 import com.cx.restclient.sca.dto.report.PackageUsage;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,7 +28,7 @@ public class Package {
     public String releaseDate;
     public String confidenceLevel;
     public double riskScore;
-    public String severity;
+    public PackageSeverity severity;
     public List<String> locations = new ArrayList<>();
     public List<DependencyPath> dependencyPaths = new ArrayList<>();
     public String packageRepository;

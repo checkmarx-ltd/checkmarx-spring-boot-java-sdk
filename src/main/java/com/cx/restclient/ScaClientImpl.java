@@ -20,8 +20,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -37,11 +35,7 @@ public class ScaClientImpl implements ScaClient {
     public SCAResults scanRemoteRepo(SCAParams scaParams) throws IOException {
         validate(scaParams);
 
-        log.info("Creating new SCA scan for project '{}' with remote repository URL: {}",
-                scaParams.getProjectName(), getSafeRemoteRepoUrl(scaParams.getRemoteRepoUrl()));
-
         CxScanConfig scanConfig = getScanConfig(scaParams);
-
         DependencyScanResults scanResults = executeScan(scanConfig);
 
         return toScaResults(scanResults.getScaResults());
@@ -50,14 +44,14 @@ public class ScaClientImpl implements ScaClient {
     /**
      * Convert Common Client representation of SCA results into an object from this SDK.
      */
-    private SCAResults toScaResults(com.cx.restclient.sca.dto.SCAResults scaResults) {
-        validateNotNull(scaResults);
+    private SCAResults toScaResults(com.cx.restclient.sca.dto.SCAResults scaResultsFromCommonClient) {
+        validateNotNull(scaResultsFromCommonClient);
 
-        SCASummaryResults summary = scaResults.getSummary();
+        SCASummaryResults summary = scaResultsFromCommonClient.getSummary();
         Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summary);
 
         ModelMapper mapper = new ModelMapper();
-        SCAResults result = mapper.map(scaResults, SCAResults.class);
+        SCAResults result = mapper.map(scaResultsFromCommonClient, SCAResults.class);
         result.getSummary().setFindingCounts(findingCountsPerSeverity);
         return result;
     }
@@ -145,13 +139,5 @@ public class ScaClientImpl implements ScaClient {
             String message = String.format("%s %s wasn't provided", ERROR_PREFIX, parameterDescr);
             throw new SCARuntimeException(message);
         }
-    }
-
-    /**
-     * Removes the userinfo part of the input URL (if present), so that the URL may be logged safely.
-     * The URL may contain userinfo when a private repo is scanned.
-     */
-    private String getSafeRemoteRepoUrl(URL url) throws MalformedURLException {
-        return new URL(url.getProtocol(), url.getHost(), url.getFile()).toString();
     }
 }
