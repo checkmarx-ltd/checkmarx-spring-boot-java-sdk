@@ -1,4 +1,6 @@
 checkmarx:
+  version: 9.0
+  scope: access_control_api sast_rest_api
   username: xxxxx
   password: xxxxx
   client-secret: 014DF517-39D1-4453-B7B3-9930C563627C
