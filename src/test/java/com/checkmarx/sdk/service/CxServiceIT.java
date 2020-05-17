@@ -156,7 +156,7 @@ public class CxServiceIT {
     public void createAndDeleteProject() {
         try {
             String teamId = service.getTeamId(properties.getTeam());
-            Integer projectId = service.createProject(teamId, "CxSDK-ToDelete-Test");
+            Integer projectId = service.createProject(teamId, "CxSDK-ToDelete-Test-9.0-1");
             assertNotNull(projectId);
             assertTrue(projectId > 0);
             service.deleteProject(projectId);
