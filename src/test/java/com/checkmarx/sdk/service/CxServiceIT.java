@@ -152,7 +152,8 @@ public class CxServiceIT {
     public void getCustomFields() {
     }
 
-    @Test
+    //TODO enable once access to cxprivatecloud is fixed
+    /*@Test
     public void createAndDeleteProject() {
         try {
             String teamId = service.getTeamId(properties.getTeam());
@@ -163,7 +164,7 @@ public class CxServiceIT {
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
         }
-    }
+    }*/
 
     @Test
     public void getProject() {
