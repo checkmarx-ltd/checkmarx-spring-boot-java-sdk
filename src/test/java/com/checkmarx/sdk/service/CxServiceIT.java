@@ -152,6 +152,7 @@ public class CxServiceIT {
     public void getCustomFields() {
     }
 
+    //TODO enable once access to cxprivatecloud is fixed
     /*@Test
     public void createAndDeleteProject() {
         try {
@@ -163,7 +164,7 @@ public class CxServiceIT {
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
         }
-    }*/ TODO enable once access to cxprivate cloud is fixed
+    }*/
 
     @Test
     public void getProject() {
