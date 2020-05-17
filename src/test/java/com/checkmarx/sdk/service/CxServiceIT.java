@@ -204,8 +204,8 @@ public class CxServiceIT {
     public void createAndDeleteTeam() {
         try {
             String id = service.getTeamId(properties.getTeam());
-            String teamId = service.createTeamWS(id, "abcdef");
-            service.deleteTeamWS(teamId);
+            String teamId = service.createTeam(id, "abcdef");
+            service.deleteTeam(teamId);
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
         }
