@@ -8,7 +8,7 @@ checkmarx:
   multi-tenant: true
   configuration: Default Configuration
   scan-preset: Checkmarx Default
-  team: /CxServer/SP\America/cxts
+  team: /CxServer/SP/America/cxts
   url: ${checkmarx.base-url}/cxrestapi
   #preserve-xml: true
   #incremental: true
