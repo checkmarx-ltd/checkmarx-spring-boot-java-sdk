@@ -126,7 +126,7 @@ public class CxServiceIT {
     public void getLastScanDate() {
         try {
             String teamId = service.getTeamId(properties.getTeam());
-            Integer projectId = service.getProjectId(teamId, "CxSBSDK-IT");
+            Integer projectId = service.getProjectId(teamId, "Riches");
             LocalDateTime dateTime = service.getLastScanDate(projectId);
             assertNotNull(dateTime);
         }catch (CheckmarxException e){
@@ -139,7 +139,7 @@ public class CxServiceIT {
     public void getLastScanId() {
         try {
             String teamId = service.getTeamId(properties.getTeam());
-            Integer projectId = service.getProjectId(teamId, "CxSBSDK-IT");
+            Integer projectId = service.getProjectId(teamId, "Riches");
             Integer id = service.getLastScanId(projectId);
             assertNotNull(id);
             assertTrue(id > 0);
@@ -235,7 +235,7 @@ public class CxServiceIT {
     public void getScanSummary() {
         try{
             String teamId = service.getTeamId(properties.getTeam());
-            Integer projectId = service.getProjectId(teamId, "CxSBSDK-IT");
+            Integer projectId = service.getProjectId(teamId, "Riches");
             CxScanSummary summary = service.getScanSummary(projectId);
             assertNotNull(summary);
             assertNotNull(summary.getStatisticsCalculationDate());
@@ -266,7 +266,7 @@ public class CxServiceIT {
         try {
             List<Filter> filters = new ArrayList<>();
             filters.add(new Filter(Filter.Type.SEVERITY, "High"));
-            ScanResults results = service.getLatestScanResults(properties.getTeam(), "CxSBSDK-IT", filters);
+            ScanResults results = service.getLatestScanResults(properties.getTeam(), "Riches", filters);
             assertNotNull(results);
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
@@ -276,7 +276,7 @@ public class CxServiceIT {
     @Test
     public void getXmlReportContent() {
         try {
-            CxXMLResultsType results = service.getLatestScanReport(properties.getTeam(), "CxSBSDK-IT");
+            CxXMLResultsType results = service.getLatestScanReport(properties.getTeam(), "Riches");
             assertNotNull(results);
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
