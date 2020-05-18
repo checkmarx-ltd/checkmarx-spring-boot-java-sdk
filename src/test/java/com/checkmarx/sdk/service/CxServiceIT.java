@@ -153,24 +153,24 @@ public class CxServiceIT {
     }
 
     //TODO enable once access to cxprivatecloud is fixed
-    /*@Test
+    @Test
     public void createAndDeleteProject() {
         try {
             String teamId = service.getTeamId(properties.getTeam());
-            Integer projectId = service.createProject(teamId, "CxSDK-ToDelete-Test-9.0-1");
+            Integer projectId = service.createProject(teamId, "CxSDK-ToDelete-Test");
             assertNotNull(projectId);
             assertTrue(projectId > 0);
             service.deleteProject(projectId);
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
         }
-    }*/
+    }
 
     @Test
     public void getProject() {
         try{
             String teamId = service.getTeamId(properties.getTeam());
-            Integer projectId = service.getProjectId(teamId, "CxSBSDK-IT");
+            Integer projectId = service.getProjectId(teamId, "Riches");
             CxProject project = service.getProject(projectId);
             assertNotNull(project);
             assertNotEquals("-1", project.getId());
