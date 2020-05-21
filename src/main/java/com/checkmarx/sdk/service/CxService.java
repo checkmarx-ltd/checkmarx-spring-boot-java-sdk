@@ -1755,20 +1755,13 @@ public class CxService implements CxClient{
     public Integer createScan(CxScanParams params, String comment) throws CheckmarxException{
         log.info("Creating scan...");
         validateScanParams(params);
-        String teamId = params.getTeamId();
-        Integer projectId = params.getProjectId();
-        if(ScanUtils.empty(teamId) || teamId.equals(UNKNOWN)) {
-            teamId = getTeamId(params.getTeamName());
-            if(teamId.equals(UNKNOWN)){
-                throw new CheckmarxException("Team does not exist: ".concat(params.getTeamName()));
-            }
-        }
-        if(projectId == null || projectId.equals(UNKNOWN_INT)) {
-            projectId = getProjectId(teamId, params.getProjectName());
-        }
-        if(projectId.equals(UNKNOWN_INT)){
+        String teamId = determineTeamId(params);
+        Integer projectId = determineProjectId(params, teamId);
+
+        boolean projectExistedBeforeScan = !projectId.equals(UNKNOWN_INT);
+        if (!projectExistedBeforeScan) {
             projectId = createProject(teamId, params.getProjectName());
-            if(projectId.equals(UNKNOWN_INT)){
+            if (projectId.equals(UNKNOWN_INT)) {
                 throw new CheckmarxException("Project was not created successfully: ".concat(params.getProjectName()));
             }
         }
@@ -1777,7 +1770,7 @@ public class CxService implements CxClient{
         Integer engineId = getScanConfiguration(params.getScanConfiguration());
         createScanSetting(projectId, presetId, engineId);
 
-        switch (params.getSourceType()){
+        switch (params.getSourceType()) {
             case GIT:
                 setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
                 break;
@@ -1785,7 +1778,7 @@ public class CxService implements CxClient{
                 uploadProjectSource(projectId, new File(params.getFilePath()));
                 break;
         }
-        if(params.isIncremental() && !projectId.equals(UNKNOWN_INT)) {
+        if(params.isIncremental() && !projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
             if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
                 log.debug("Last scanDate: {}", scanDate);
@@ -1827,6 +1820,25 @@ public class CxService implements CxClient{
         }
         log.info("...Finished creating scan");
         return UNKNOWN_INT;
+    }
+
+    private Integer determineProjectId(CxScanParams params, String teamId) {
+        Integer projectId = params.getProjectId();
+        if(projectId == null || projectId.equals(UNKNOWN_INT)) {
+            projectId = getProjectId(teamId, params.getProjectName());
+        }
+        return projectId;
+    }
+
+    private String determineTeamId(CxScanParams params) throws CheckmarxException {
+        String teamId = params.getTeamId();
+        if(ScanUtils.empty(teamId) || teamId.equals(UNKNOWN)) {
+            teamId = getTeamId(params.getTeamName());
+            if(teamId.equals(UNKNOWN)){
+                throw new CheckmarxException("Team does not exist: ".concat(params.getTeamName()));
+            }
+        }
+        return teamId;
     }
 
     /**
