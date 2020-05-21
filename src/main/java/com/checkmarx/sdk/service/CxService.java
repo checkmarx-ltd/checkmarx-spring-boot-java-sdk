@@ -1184,10 +1184,7 @@ public class CxService implements CxClient{
     /**
      * Create Scan Settings
      *
-     * @param projectId
-     * @param presetId
-     * @param engineConfigId
-     * @return
+     * @return Scan setting ID.
      */
     public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId) {
         CxScanSettings scanSettings = CxScanSettings.builder()
@@ -1214,10 +1211,9 @@ public class CxService implements CxClient{
     }
 
     /**
-     * Create Scan Settings for an existing project
+     * Get Scan Settings for an existing project.
      *
-     * @param projectId
-     * @return
+     * @return JSON string that includes preset and engine configuration info.
      */
     public String getScanSetting(Integer projectId) {
 
@@ -1226,9 +1222,6 @@ public class CxService implements CxClient{
         log.info("Retrieving ScanSettings for project Id {}", projectId);
         try {
             ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_SETTINGS.concat("/{id}")), HttpMethod.GET, requestEntity, String.class, projectId);
-            if(response.getBody() == null){
-                return null;
-            }
             return response.getBody();
         } catch (HttpStatusCodeException e) {
             log.error("Error occurred while retrieving ScanSettings for project {}, http error {}", projectId, e.getStatusCode());
@@ -1767,8 +1760,8 @@ public class CxService implements CxClient{
         }
 
         Integer presetId = getPresetId(params.getScanPreset());
-        Integer engineId = getScanConfiguration(params.getScanConfiguration());
-        createScanSetting(projectId, presetId, engineId);
+        Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
+        createScanSetting(projectId, presetId, engineConfigurationId);
 
         switch (params.getSourceType()) {
             case GIT:
