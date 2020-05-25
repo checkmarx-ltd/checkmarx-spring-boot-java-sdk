@@ -9,7 +9,9 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.utils.ScanUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.StringUtils;
@@ -93,6 +95,7 @@ public class CxService implements CxClient{
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
     private static final String PRESETS = "/sast/presets";
     private static final String SCAN_CONFIGURATIONS = "/sast/engineConfigurations";
+    private static final String SCAN_CONFIGURATION = SCAN_CONFIGURATIONS + "/{id}";
     private static final String SCAN_SETTINGS = "/sast/scanSettings";
     private static final String SCAN = "/sast/scans";
     private static final String SCAN_SUMMARY = "/sast/scans/{id}/resultsStatistics";
@@ -106,8 +109,12 @@ public class CxService implements CxClient{
     private final CxLegacyService cxLegacyService;
     private final CxAuthClient authClient;
     private final RestTemplate restTemplate;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public CxService(CxAuthClient authClient, CxProperties cxProperties, CxLegacyService cxLegacyService, @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
+    public CxService(CxAuthClient authClient,
+                     CxProperties cxProperties,
+                     CxLegacyService cxLegacyService,
+                     @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
         this.authClient = authClient;
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
@@ -650,7 +657,6 @@ public class CxService implements CxClient{
             throw new CheckmarxException("Files not provided for processing of OSA results");
         }
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             List<ScanResults.XIssue> issueList = new ArrayList<>();
 
             //convert json string to object
@@ -1234,14 +1240,30 @@ public class CxService implements CxClient{
     }
 
     @Override
+    public CxScanSettings getScanSettingsDto(int projectId) {
+        String jsonResponse = getScanSetting(projectId);
+        CxScanSettings result = null;
+        try {
+            JsonNode response = objectMapper.readTree(jsonResponse);
+
+            result = CxScanSettings.builder()
+                    .projectId(projectId)
+                    .presetId(response.at("/preset/id").asInt())
+                    .engineConfigurationId(response.at("/engineConfiguration/id").asInt())
+                    .build();
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing scan settings response.", e);
+        }
+        return result;
+    }
+
+    @Override
     public Integer getProjectPresetId(Integer projectId) {
-        String scanSettings = getScanSetting(projectId);
+        CxScanSettings scanSettings = getScanSettingsDto(projectId);
         if(scanSettings == null){
             return UNKNOWN_INT;
         }
-        JSONObject scanSettingsObj = new JSONObject(scanSettings);
-        JSONObject preset = scanSettingsObj.getJSONObject("preset");
-        return preset.getInt("id");
+        return scanSettings.getPresetId();
     }
 
     @Override
@@ -1625,10 +1647,9 @@ public class CxService implements CxClient{
     }
 
     /**
-     * Get scan configuration Id
+     * Get scan configuration Id by name.
      *
-     * @param configuration
-     * @return
+     * @param configuration configuration name
      * @throws CheckmarxException
      */
     public Integer getScanConfiguration(String configuration) throws CheckmarxException {
@@ -1641,10 +1662,11 @@ public class CxService implements CxClient{
             if (engines == null) {
                 throw new CheckmarxException("Error obtaining Scan configurations");
             }
-            for(CxScanEngine engine: engines){
+            log.debug("Engine configurations found: {}.", engines.length);
+            for (CxScanEngine engine : engines) {
                 String engineName = engine.getName();
                 int engineId = engine.getId();
-                if(engineName.equalsIgnoreCase(configuration)){
+                if (engineName.equalsIgnoreCase(configuration)) {
                     log.info("Found xml/engine configuration {} with ID {}", configuration, engineId);
                     return engineId;
                 }
@@ -1657,6 +1679,31 @@ public class CxService implements CxClient{
             log.error(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException("Error obtaining Configuration Id");
         }
+    }
+
+    @Override
+    public String getScanConfigurationName(int configurationId) {
+        HttpEntity<String> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        String url = cxProperties.getUrl() + SCAN_CONFIGURATION;
+        ResponseEntity<JsonNode> response = restTemplate.exchange(url,
+                HttpMethod.GET,
+                httpEntity,
+                JsonNode.class,
+                configurationId);
+
+        String result = null;
+        if (response.getBody() != null) {
+            JsonNode nameNode = response.getBody().get("name");
+            if (nameNode != null) {
+                result = nameNode.textValue();
+            }
+        }
+
+        if (result == null) {
+            log.warn("Unable to get scan configuration by ID: {}.", configurationId);
+        }
+
+        return result;
     }
 
     public Integer getPresetId(String preset) throws CheckmarxException {
@@ -1673,14 +1720,14 @@ public class CxService implements CxClient{
                 String presetName = cxPreset.getName();
                 int presetId = cxPreset.getId();
                 if(presetName.equalsIgnoreCase(preset)){
-                    log.info("Found preset {} with ID {}", preset, presetId);
+                    log.info("Found preset '{}' with ID {}", preset, presetId);
                     return cxPreset.getId();
                 }
                 if(presetName.equalsIgnoreCase(Constants.CX_DEFAULT_PRESET)){
                     defaultPresetId =  presetId;
                 }
             }
-            log.warn("No Preset was found for {}", preset);
+            log.warn("No Preset was found for '{}'", preset);
             log.warn("Default Preset {} with ID {} will be used instead", Constants.CX_DEFAULT_PRESET, defaultPresetId);
             return defaultPresetId;
         }   catch (HttpStatusCodeException e) {
