@@ -5,7 +5,6 @@ import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.exception.CheckmarxException;
-import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -207,6 +206,8 @@ public interface CxClient {
      * @return
      */
     public String getScanSetting(Integer projectId);
+
+    CxScanSettings getScanSettingsDto(int projectId);
 
     /**
      * Get Preset Name based on Id
@@ -458,13 +459,18 @@ public interface CxClient {
     public void deleteTeamWS(String teamId) throws CheckmarxException;
 
     /**
-     * Get scan configuration Id
+     * Get scan configuration Id by name.
      *
      * @param configuration
      * @return
      * @throws CheckmarxException
      */
     public Integer getScanConfiguration(String configuration) throws CheckmarxException;
+
+    /**
+     * Get scan configuration name by Id.
+     */
+    String getScanConfigurationName(int configurationId);
 
     /**
      * Fetch the Id of a given preset name
