@@ -10,9 +10,13 @@ public interface ScanSettingsClient {
 
     CxScanSettings getScanSettingsDto(int projectId);
 
-    Integer getPresetId(String preset) throws CheckmarxException;
+    int getPresetId(String preset) throws CheckmarxException;
 
     String getPresetName(int presetId);
 
-    Integer getProjectPresetId(int projectId);
+    int getProjectPresetId(int projectId);
+
+    int getScanConfigurationId(String configuration) throws CheckmarxException;
+
+    String getScanConfigurationName(int configurationId);
 }

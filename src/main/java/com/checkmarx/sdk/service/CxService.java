@@ -10,7 +10,6 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.StringUtils;
@@ -93,8 +92,6 @@ public class CxService implements CxClient{
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
     private static final String PROJECT_SOURCE_FILE = "/projects/{id}/sourceCode/attachments";
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
-    private static final String SCAN_CONFIGURATIONS = "/sast/engineConfigurations";
-    private static final String SCAN_CONFIGURATION = SCAN_CONFIGURATIONS + "/{id}";
     private static final String SCAN = "/sast/scans";
     private static final String SCAN_SUMMARY = "/sast/scans/{id}/resultsStatistics";
     private static final String PROJECT_SCANS = "/sast/scans?projectId={pid}";
@@ -1585,57 +1582,12 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     public Integer getScanConfiguration(String configuration) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
-        int defaultConfigId = UNKNOWN_INT;
-        try {
-            log.info("Retrieving Cx engineConfigurations");
-            ResponseEntity<CxScanEngine[]> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_CONFIGURATIONS), HttpMethod.GET, httpEntity, CxScanEngine[].class);
-            CxScanEngine[] engines = response.getBody();
-            if (engines == null) {
-                throw new CheckmarxException("Error obtaining Scan configurations");
-            }
-            log.debug("Engine configurations found: {}.", engines.length);
-            for (CxScanEngine engine : engines) {
-                String engineName = engine.getName();
-                int engineId = engine.getId();
-                if (engineName.equalsIgnoreCase(configuration)) {
-                    log.info("Found xml/engine configuration {} with ID {}", configuration, engineId);
-                    return engineId;
-                }
-            }
-            log.warn("No scan configuration found for {}", configuration);
-            log.warn("Scan Configuration {} with ID {} will be used instead", Constants.CX_DEFAULT_CONFIGURATION, defaultConfigId);
-            return defaultConfigId;
-        }   catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving engine configurations");
-            log.error(ExceptionUtils.getStackTrace(e));
-            throw new CheckmarxException("Error obtaining Configuration Id");
-        }
-    }
+        return scanSettingsClient.getScanConfigurationId(configuration);
+     }
 
     @Override
     public String getScanConfigurationName(int configurationId) {
-        HttpEntity<String> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
-        String url = cxProperties.getUrl() + SCAN_CONFIGURATION;
-        ResponseEntity<JsonNode> response = restTemplate.exchange(url,
-                HttpMethod.GET,
-                httpEntity,
-                JsonNode.class,
-                configurationId);
-
-        String result = null;
-        if (response.getBody() != null) {
-            JsonNode nameNode = response.getBody().get("name");
-            if (nameNode != null) {
-                result = nameNode.textValue();
-            }
-        }
-
-        if (result == null) {
-            log.warn("Unable to get scan configuration by ID: {}.", configurationId);
-        }
-
-        return result;
+        return scanSettingsClient.getScanConfigurationName(configurationId);
     }
 
     public Integer getPresetId(String preset) throws CheckmarxException {
