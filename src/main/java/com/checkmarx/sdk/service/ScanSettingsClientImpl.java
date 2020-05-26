@@ -11,9 +11,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +25,6 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class ScanSettingsClientImpl implements ScanSettingsClient {
     private static final String ID_TEMPLATE = "/{id}";
 
@@ -44,6 +45,14 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
     private final CxProperties cxProperties;
     private final CxAuthClient authClient;
 
+    public ScanSettingsClientImpl(@Qualifier("cxRestTemplate") RestTemplate restTemplate,
+                                  CxProperties cxProperties,
+                                  CxAuthClient authClient) {
+        this.restTemplate = restTemplate;
+        this.cxProperties = cxProperties;
+        this.authClient = authClient;
+    }
+
     @Override
     public int createScanSettings(int projectId, int presetId, int engineConfigId) {
         CxScanSettings scanSettings = CxScanSettings.builder()
@@ -56,6 +65,7 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
         log.info("Creating ScanSettings for project Id {}", projectId);
         try {
             String response = restTemplate.postForObject(cxProperties.getUrl().concat(SCAN_SETTINGS), requestEntity, String.class);
+            response = StringUtils.defaultIfEmpty(response, "");
             JSONObject obj = new JSONObject(response);
             String id = obj.get("id").toString();
             return Integer.parseInt(id);
