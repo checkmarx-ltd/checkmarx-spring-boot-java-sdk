@@ -3,6 +3,7 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.cx.CxPreset;
+import com.checkmarx.sdk.dto.cx.CxScanEngine;
 import com.checkmarx.sdk.dto.cx.CxScanSettings;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,8 +25,19 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 @RequiredArgsConstructor
 public class ScanSettingsClientImpl implements ScanSettingsClient {
+    private static final String ID_TEMPLATE = "/{id}";
+
     private static final String SCAN_SETTINGS = "/sast/scanSettings";
+    private static final String SCAN_SETTINGS_BY_ID = SCAN_SETTINGS + ID_TEMPLATE;
+
     private static final String PRESETS = "/sast/presets";
+    private static final String PRESET_BY_ID = PRESETS + ID_TEMPLATE;
+
+    private static final String SCAN_CONFIGURATIONS = "/sast/engineConfigurations";
+    private static final String SCAN_CONFIGURATION_BY_ID = SCAN_CONFIGURATIONS + ID_TEMPLATE;
+
+    private static final String JSON_ERROR = "Error processing JSON Response";
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final RestTemplate restTemplate;
@@ -51,7 +63,7 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
             log.error("Error occurred while creating ScanSettings for project {}, http error {}", projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
         } catch (JSONException e) {
-            log.error("Error processing JSON Response");
+            log.error(JSON_ERROR);
             log.error(ExceptionUtils.getStackTrace(e));
         }
         return Constants.UNKNOWN_INT;
@@ -59,18 +71,18 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
 
     @Override
     public String getScanSettings(int projectId) {
-        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        HttpEntity<Void> requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
         log.info("Retrieving ScanSettings for project Id {}", projectId);
         try {
-            String url = cxProperties.getUrl().concat(SCAN_SETTINGS.concat("/{id}"));
+            String url = cxProperties.getUrl().concat(SCAN_SETTINGS_BY_ID);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class, projectId);
             return response.getBody();
         } catch (HttpStatusCodeException e) {
             log.error("Error occurred while retrieving ScanSettings for project {}, http error {}", projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
         } catch (JSONException e) {
-            log.error("Error processing JSON Response");
+            log.error(JSON_ERROR);
             log.error(ExceptionUtils.getStackTrace(e));
         }
         return null;
@@ -95,8 +107,8 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
     }
 
     @Override
-    public Integer getPresetId(String presetName) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+    public int getPresetId(String presetName) throws CheckmarxException {
+        HttpEntity<Void> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         int defaultPresetId = Constants.UNKNOWN_INT;
         try {
             log.info("Retrieving Cx presets");
@@ -128,11 +140,11 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
 
     @Override
     public String getPresetName(int presetId) {
-        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        HttpEntity<Void> requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
         log.info("Retrieving preset name for preset Id {}", presetId);
         try {
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(PRESETS.concat("/{id}")),
+            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(PRESET_BY_ID),
                     HttpMethod.GET,
                     requestEntity,
                     String.class,
@@ -147,18 +159,77 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
             log.error("Error occurred while retrieving preset for preset id {}, http error {}", presetId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
         } catch (JSONException e) {
-            log.error("Error processing JSON Response");
+            log.error(JSON_ERROR);
             log.error(ExceptionUtils.getStackTrace(e));
         }
         return null;
     }
 
     @Override
-    public Integer getProjectPresetId(int projectId) {
+    public int getProjectPresetId(int projectId) {
         CxScanSettings scanSettings = getScanSettingsDto(projectId);
         if (scanSettings == null) {
             return Constants.UNKNOWN_INT;
         }
         return scanSettings.getPresetId();
+    }
+
+    @Override
+    public int getScanConfigurationId(String configurationName) throws CheckmarxException {
+        HttpEntity<Void> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        int defaultConfigId = Constants.UNKNOWN_INT;
+        try {
+            log.info("Retrieving Cx engineConfigurations");
+            ResponseEntity<CxScanEngine[]> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_CONFIGURATIONS),
+                    HttpMethod.GET,
+                    httpEntity,
+                    CxScanEngine[].class);
+
+            CxScanEngine[] engines = response.getBody();
+            if (engines == null) {
+                throw new CheckmarxException("Error obtaining Scan configurations");
+            }
+            log.debug("Engine configurations found: {}.", engines.length);
+            for (CxScanEngine engine : engines) {
+                String engineName = engine.getName();
+                int engineId = engine.getId();
+                if (engineName.equalsIgnoreCase(configurationName)) {
+                    log.info("Found xml/engine configuration {} with ID {}", configurationName, engineId);
+                    return engineId;
+                }
+            }
+            log.warn("No scan configuration found for {}", configurationName);
+            log.warn("Scan Configuration {} with ID {} will be used instead", Constants.CX_DEFAULT_CONFIGURATION, defaultConfigId);
+            return defaultConfigId;
+        }   catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving engine configurations");
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("Error obtaining Configuration Id");
+        }
+    }
+
+    @Override
+    public String getScanConfigurationName(int configurationId) {
+        HttpEntity<String> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        String url = cxProperties.getUrl() + SCAN_CONFIGURATION_BY_ID;
+        ResponseEntity<JsonNode> response = restTemplate.exchange(url,
+                HttpMethod.GET,
+                httpEntity,
+                JsonNode.class,
+                configurationId);
+
+        String result = null;
+        if (response.getBody() != null) {
+            JsonNode nameNode = response.getBody().get("name");
+            if (nameNode != null) {
+                result = nameNode.textValue();
+            }
+        }
+
+        if (result == null) {
+            log.warn("Unable to get scan configuration by ID: {}.", configurationId);
+        }
+
+        return result;
     }
 }
