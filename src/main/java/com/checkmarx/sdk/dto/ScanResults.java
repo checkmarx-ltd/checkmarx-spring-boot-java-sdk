@@ -167,7 +167,7 @@ public class ScanResults{
         return "ScanResults(osa=" + this.getOsa()  + ", link=" + this.getLink() + ", files=" + this.getFiles() + ", loc=" + this.getLoc() + ", scanType=" + this.getScanType() + ", xIssues=" + this.getXIssues() + ")";
     }
 
-    public void mergeResultsWith(ScanResults scanResultsToMerge) {
+    public void mergeWith(ScanResults scanResultsToMerge) {
         ModelMapper modelMapper = new ModelMapper();
         modelMapper.getConfiguration().setPropertyCondition(Conditions.isNotNull());
 
