@@ -93,7 +93,6 @@ public class CxService implements CxClient{
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
     private static final String PROJECT_SOURCE_FILE = "/projects/{id}/sourceCode/attachments";
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
-    private static final String PRESETS = "/sast/presets";
     private static final String SCAN_CONFIGURATIONS = "/sast/engineConfigurations";
     private static final String SCAN_CONFIGURATION = SCAN_CONFIGURATIONS + "/{id}";
     private static final String SCAN = "/sast/scans";
@@ -1214,34 +1213,12 @@ public class CxService implements CxClient{
 
     @Override
     public Integer getProjectPresetId(Integer projectId) {
-        CxScanSettings scanSettings = getScanSettingsDto(projectId);
-        if(scanSettings == null){
-            return UNKNOWN_INT;
-        }
-        return scanSettings.getPresetId();
+        return scanSettingsClient.getProjectPresetId(projectId);
     }
 
     @Override
     public String getPresetName(Integer presetId) {
-
-        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
-
-        log.info("Retrieving preset name for preset Id {}", presetId);
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(PRESETS.concat("/{id}")), HttpMethod.GET, requestEntity, String.class, presetId);
-            if(response.getBody() == null){
-                return null;
-            }
-            JSONObject obj = new JSONObject(response.getBody());
-            return obj.getString("name");
-        } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving preset for preset id {}, http error {}", presetId, e.getStatusCode());
-            log.error(ExceptionUtils.getStackTrace(e));
-        } catch (JSONException e) {
-            log.error("Error processing JSON Response");
-            log.error(ExceptionUtils.getStackTrace(e));
-        }
-        return null;
+        return scanSettingsClient.getPresetName(presetId);
     }
 
     /**
@@ -1662,34 +1639,7 @@ public class CxService implements CxClient{
     }
 
     public Integer getPresetId(String preset) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
-        int defaultPresetId = UNKNOWN_INT;
-        try {
-            log.info("Retrieving Cx presets");
-            ResponseEntity<CxPreset[]> response = restTemplate.exchange(cxProperties.getUrl().concat(PRESETS), HttpMethod.GET, httpEntity, CxPreset[].class);
-            CxPreset[] cxPresets = response.getBody();
-            if (cxPresets == null) {
-                throw new CheckmarxException("Error obtaining Team Id");
-            }
-            for(CxPreset cxPreset: cxPresets){
-                String presetName = cxPreset.getName();
-                int presetId = cxPreset.getId();
-                if(presetName.equalsIgnoreCase(preset)){
-                    log.info("Found preset '{}' with ID {}", preset, presetId);
-                    return cxPreset.getId();
-                }
-                if(presetName.equalsIgnoreCase(Constants.CX_DEFAULT_PRESET)){
-                    defaultPresetId =  presetId;
-                }
-            }
-            log.warn("No Preset was found for '{}'", preset);
-            log.warn("Default Preset {} with ID {} will be used instead", Constants.CX_DEFAULT_PRESET, defaultPresetId);
-            return defaultPresetId;
-        }   catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving presets");
-            log.error(ExceptionUtils.getStackTrace(e));
-            throw new CheckmarxException("Error obtaining Preset Id");
-        }
+        return scanSettingsClient.getPresetId(preset);
     }
 
     /**
