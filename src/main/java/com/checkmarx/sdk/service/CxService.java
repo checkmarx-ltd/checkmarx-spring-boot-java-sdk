@@ -1,12 +1,12 @@
 package com.checkmarx.sdk.service;
 
+import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.*;
 import com.checkmarx.sdk.exception.CheckmarxException;
-import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -91,9 +92,6 @@ public class CxService implements CxClient{
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
     private static final String PROJECT_SOURCE_FILE = "/projects/{id}/sourceCode/attachments";
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
-    private static final String PRESETS = "/sast/presets";
-    private static final String SCAN_CONFIGURATIONS = "/sast/engineConfigurations";
-    private static final String SCAN_SETTINGS = "/sast/scanSettings";
     private static final String SCAN = "/sast/scans";
     private static final String SCAN_SUMMARY = "/sast/scans/{id}/resultsStatistics";
     private static final String PROJECT_SCANS = "/sast/scans?projectId={pid}";
@@ -102,16 +100,23 @@ public class CxService implements CxClient{
     private static final String REPORT_DOWNLOAD = "/reports/sastScan/{id}";
     private static final String REPORT_STATUS = "/reports/sastScan/{id}/status";
     private static final String OSA_VULN = "Vulnerable_Library";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
     private final CxAuthClient authClient;
     private final RestTemplate restTemplate;
+    private final ScanSettingsClient scanSettingsClient;
 
-    public CxService(CxAuthClient authClient, CxProperties cxProperties, CxLegacyService cxLegacyService, @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
+    public CxService(CxAuthClient authClient,
+                     CxProperties cxProperties,
+                     CxLegacyService cxLegacyService,
+                     @Qualifier("cxRestTemplate") RestTemplate restTemplate,
+                     ScanSettingsClient scanSettingsClient) {
         this.authClient = authClient;
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
         this.restTemplate = restTemplate;
+        this.scanSettingsClient = scanSettingsClient;
     }
 
     /**
@@ -650,7 +655,6 @@ public class CxService implements CxClient{
             throw new CheckmarxException("Files not provided for processing of OSA results");
         }
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             List<ScanResults.XIssue> issueList = new ArrayList<>();
 
             //convert json string to object
@@ -1184,94 +1188,34 @@ public class CxService implements CxClient{
     /**
      * Create Scan Settings
      *
-     * @param projectId
-     * @param presetId
-     * @param engineConfigId
-     * @return
+     * @return Scan setting ID.
      */
     public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId) {
-        CxScanSettings scanSettings = CxScanSettings.builder()
-                .projectId(projectId)
-                .engineConfigurationId(engineConfigId)
-                .presetId(presetId)
-                .build();
-        HttpEntity<CxScanSettings> requestEntity = new HttpEntity<>(scanSettings, authClient.createAuthHeaders());
-
-        log.info("Creating ScanSettings for project Id {}", projectId);
-        try {
-            String response = restTemplate.postForObject(cxProperties.getUrl().concat(SCAN_SETTINGS), requestEntity, String.class);
-            JSONObject obj = new JSONObject(response);
-            String id = obj.get("id").toString();
-            return Integer.parseInt(id);
-        } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while creating ScanSettings for project {}, http error {}", projectId, e.getStatusCode());
-            log.error(ExceptionUtils.getStackTrace(e));
-        } catch (JSONException e) {
-            log.error("Error processing JSON Response");
-            log.error(ExceptionUtils.getStackTrace(e));
-        }
-        return UNKNOWN_INT;
+        return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId);
     }
 
     /**
-     * Create Scan Settings for an existing project
+     * Get Scan Settings for an existing project.
      *
-     * @param projectId
-     * @return
+     * @return JSON string that includes preset and engine configuration info.
      */
     public String getScanSetting(Integer projectId) {
+        return scanSettingsClient.getScanSettings(projectId);
+    }
 
-        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
-
-        log.info("Retrieving ScanSettings for project Id {}", projectId);
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_SETTINGS.concat("/{id}")), HttpMethod.GET, requestEntity, String.class, projectId);
-            if(response.getBody() == null){
-                return null;
-            }
-            return response.getBody();
-        } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving ScanSettings for project {}, http error {}", projectId, e.getStatusCode());
-            log.error(ExceptionUtils.getStackTrace(e));
-        } catch (JSONException e) {
-            log.error("Error processing JSON Response");
-            log.error(ExceptionUtils.getStackTrace(e));
-        }
-        return null;
+    @Override
+    public CxScanSettings getScanSettingsDto(int projectId) {
+        return scanSettingsClient.getScanSettingsDto(projectId);
     }
 
     @Override
     public Integer getProjectPresetId(Integer projectId) {
-        String scanSettings = getScanSetting(projectId);
-        if(scanSettings == null){
-            return UNKNOWN_INT;
-        }
-        JSONObject scanSettingsObj = new JSONObject(scanSettings);
-        JSONObject preset = scanSettingsObj.getJSONObject("preset");
-        return preset.getInt("id");
+        return scanSettingsClient.getProjectPresetId(projectId);
     }
 
     @Override
     public String getPresetName(Integer presetId) {
-
-        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
-
-        log.info("Retrieving preset name for preset Id {}", presetId);
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(PRESETS.concat("/{id}")), HttpMethod.GET, requestEntity, String.class, presetId);
-            if(response.getBody() == null){
-                return null;
-            }
-            JSONObject obj = new JSONObject(response.getBody());
-            return obj.getString("name");
-        } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving preset for preset id {}, http error {}", presetId, e.getStatusCode());
-            log.error(ExceptionUtils.getStackTrace(e));
-        } catch (JSONException e) {
-            log.error("Error processing JSON Response");
-            log.error(ExceptionUtils.getStackTrace(e));
-        }
-        return null;
+        return scanSettingsClient.getPresetName(presetId);
     }
 
     /**
@@ -1632,69 +1576,22 @@ public class CxService implements CxClient{
     }
 
     /**
-     * Get scan configuration Id
+     * Get scan configuration Id by name.
      *
-     * @param configuration
-     * @return
+     * @param configuration configuration name
      * @throws CheckmarxException
      */
     public Integer getScanConfiguration(String configuration) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
-        int defaultConfigId = UNKNOWN_INT;
-        try {
-            log.info("Retrieving Cx engineConfigurations");
-            ResponseEntity<CxScanEngine[]> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_CONFIGURATIONS), HttpMethod.GET, httpEntity, CxScanEngine[].class);
-            CxScanEngine[] engines = response.getBody();
-            if (engines == null) {
-                throw new CheckmarxException("Error obtaining Scan configurations");
-            }
-            for(CxScanEngine engine: engines){
-                String engineName = engine.getName();
-                int engineId = engine.getId();
-                if(engineName.equalsIgnoreCase(configuration)){
-                    log.info("Found xml/engine configuration {} with ID {}", configuration, engineId);
-                    return engineId;
-                }
-            }
-            log.warn("No scan configuration found for {}", configuration);
-            log.warn("Scan Configuration {} with ID {} will be used instead", Constants.CX_DEFAULT_CONFIGURATION, defaultConfigId);
-            return defaultConfigId;
-        }   catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving engine configurations");
-            log.error(ExceptionUtils.getStackTrace(e));
-            throw new CheckmarxException("Error obtaining Configuration Id");
-        }
+        return scanSettingsClient.getEngineConfigurationId(configuration);
+     }
+
+    @Override
+    public String getScanConfigurationName(int configurationId) {
+        return scanSettingsClient.getEngineConfigurationName(configurationId);
     }
 
     public Integer getPresetId(String preset) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
-        int defaultPresetId = UNKNOWN_INT;
-        try {
-            log.info("Retrieving Cx presets");
-            ResponseEntity<CxPreset[]> response = restTemplate.exchange(cxProperties.getUrl().concat(PRESETS), HttpMethod.GET, httpEntity, CxPreset[].class);
-            CxPreset[] cxPresets = response.getBody();
-            if (cxPresets == null) {
-                throw new CheckmarxException("Error obtaining Team Id");
-            }
-            for(CxPreset cxPreset: cxPresets){
-                String presetName = cxPreset.getName();
-                int presetId = cxPreset.getId();
-                if(presetName.equalsIgnoreCase(preset)){
-                    log.info("Found preset {} with ID {}", preset, presetId);
-                    return cxPreset.getId();
-                }
-                if(presetName.equalsIgnoreCase(Constants.CX_DEFAULT_PRESET)){
-                    defaultPresetId =  presetId;
-                }
-            }
-            log.warn("No Preset was found for {}", preset);
-            log.warn("Default Preset {} with ID {} will be used instead", Constants.CX_DEFAULT_PRESET, defaultPresetId);
-            return defaultPresetId;
-        }   catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving presets");
-            log.error(ExceptionUtils.getStackTrace(e));
-            throw new CheckmarxException("Error obtaining Preset Id");
-        }
+        return scanSettingsClient.getPresetId(preset);
     }
 
     /**
@@ -1755,29 +1652,22 @@ public class CxService implements CxClient{
     public Integer createScan(CxScanParams params, String comment) throws CheckmarxException{
         log.info("Creating scan...");
         validateScanParams(params);
-        String teamId = params.getTeamId();
-        Integer projectId = params.getProjectId();
-        if(ScanUtils.empty(teamId) || teamId.equals(UNKNOWN)) {
-            teamId = getTeamId(params.getTeamName());
-            if(teamId.equals(UNKNOWN)){
-                throw new CheckmarxException("Team does not exist: ".concat(params.getTeamName()));
-            }
-        }
-        if(projectId == null || projectId.equals(UNKNOWN_INT)) {
-            projectId = getProjectId(teamId, params.getProjectName());
-        }
-        if(projectId.equals(UNKNOWN_INT)){
+        String teamId = determineTeamId(params);
+        Integer projectId = determineProjectId(params, teamId);
+
+        boolean projectExistedBeforeScan = !projectId.equals(UNKNOWN_INT);
+        if (!projectExistedBeforeScan) {
             projectId = createProject(teamId, params.getProjectName());
-            if(projectId.equals(UNKNOWN_INT)){
+            if (projectId.equals(UNKNOWN_INT)) {
                 throw new CheckmarxException("Project was not created successfully: ".concat(params.getProjectName()));
             }
         }
 
         Integer presetId = getPresetId(params.getScanPreset());
-        Integer engineId = getScanConfiguration(params.getScanConfiguration());
-        createScanSetting(projectId, presetId, engineId);
+        Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
+        createScanSetting(projectId, presetId, engineConfigurationId);
 
-        switch (params.getSourceType()){
+        switch (params.getSourceType()) {
             case GIT:
                 setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
                 break;
@@ -1785,7 +1675,7 @@ public class CxService implements CxClient{
                 uploadProjectSource(projectId, new File(params.getFilePath()));
                 break;
         }
-        if(params.isIncremental() && !projectId.equals(UNKNOWN_INT)) {
+        if(params.isIncremental() && !projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
             if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
                 log.debug("Last scanDate: {}", scanDate);
@@ -1827,6 +1717,25 @@ public class CxService implements CxClient{
         }
         log.info("...Finished creating scan");
         return UNKNOWN_INT;
+    }
+
+    private Integer determineProjectId(CxScanParams params, String teamId) {
+        Integer projectId = params.getProjectId();
+        if(projectId == null || projectId.equals(UNKNOWN_INT)) {
+            projectId = getProjectId(teamId, params.getProjectName());
+        }
+        return projectId;
+    }
+
+    private String determineTeamId(CxScanParams params) throws CheckmarxException {
+        String teamId = params.getTeamId();
+        if(ScanUtils.empty(teamId) || teamId.equals(UNKNOWN)) {
+            teamId = getTeamId(params.getTeamName());
+            if(teamId.equals(UNKNOWN)){
+                throw new CheckmarxException("Team does not exist: ".concat(params.getTeamName()));
+            }
+        }
+        return teamId;
     }
 
     /**
