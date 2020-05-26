@@ -2,6 +2,12 @@ package com.checkmarx.sdk.dto;
 
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
 import com.checkmarx.sdk.dto.sca.SCAResults;
+import com.cx.restclient.sca.dto.report.Finding;
+import com.cx.restclient.sca.dto.report.Package;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import org.modelmapper.Conditions;
 import org.modelmapper.ModelMapper;
 
@@ -187,11 +193,12 @@ public class ScanResults{
         private String gitUrl;
         private int falsePositiveCount = 0;
         private List<OsaDetails> osaDetails;
+        private List<ScaDetails> scaDetails;
         private Map<Integer, IssueDetails>  details;
         private Map<String, Object> additionalDetails;
 
         XIssue(String vulnerability, String similarityId, String cwe, String cve, String description, String language,
-               String severity, String link, String filename, String gitUrl, List<OsaDetails> osaDetails, Map<Integer, IssueDetails> details,
+               String severity, String link, String filename, String gitUrl, List<OsaDetails> osaDetails, List<ScaDetails> scaDetails, Map<Integer, IssueDetails> details,
                Map<String, Object> additionalDetails) {
             this.vulnerability = vulnerability;
             this.similarityId = similarityId;
@@ -204,6 +211,7 @@ public class ScanResults{
             this.filename = filename;
             this.gitUrl = gitUrl;
             this.osaDetails = osaDetails;
+            this.scaDetails = scaDetails;
             this.details = details;
             this.additionalDetails = additionalDetails;
         }
@@ -228,6 +236,14 @@ public class ScanResults{
             int result = vulnerability.hashCode();
             result = 5225 * result + filename.hashCode();
             return result;
+        }
+
+        public List<ScaDetails> getScaDetails() {
+            return scaDetails;
+        }
+
+        public void setScaDetails(List<ScaDetails> scaDetails) {
+            this.scaDetails = scaDetails;
         }
 
         public boolean isAllFalsePositive(){
@@ -360,6 +376,7 @@ public class ScanResults{
             private String link;
             private String file;
             private List<OsaDetails> osaDetails;
+            private List<ScaDetails> scaDetails;
             private Map<Integer, IssueDetails> details;
             private Map<String, Object> additionalDetails;
 
@@ -416,6 +433,11 @@ public class ScanResults{
                 return this;
             }
 
+            public XIssue.XIssueBuilder scaDetails(List<ScaDetails> scaDetails) {
+                this.scaDetails = scaDetails;
+                return this;
+            }
+
             public XIssue.XIssueBuilder details(Map<Integer, IssueDetails> details) {
                 this.details = details;
                 return this;
@@ -427,7 +449,7 @@ public class ScanResults{
             }
 
             public XIssue build() {
-                return new XIssue(vulnerability, similarityId, cwe, cve, description, language, severity, link, file, "", osaDetails, details, additionalDetails);
+                return new XIssue(vulnerability, similarityId, cwe, cve, description, language, severity, link, file, "", osaDetails, scaDetails, details, additionalDetails);
             }
 
             @Override
@@ -480,6 +502,16 @@ public class ScanResults{
             return this;
         }
 
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @Builder
+    public static class ScaDetails {
+        private String vulnerabilityLink;
+        private Finding finding;
+        private Package vulnerabilityPackage;
     }
 
     public static class OsaDetails {
