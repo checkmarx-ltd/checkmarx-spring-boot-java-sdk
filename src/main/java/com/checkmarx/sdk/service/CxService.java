@@ -1,15 +1,14 @@
 package com.checkmarx.sdk.service;
 
+import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.*;
 import com.checkmarx.sdk.exception.CheckmarxException;
-import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.utils.ScanUtils;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -96,7 +96,6 @@ public class CxService implements CxClient{
     private static final String PRESETS = "/sast/presets";
     private static final String SCAN_CONFIGURATIONS = "/sast/engineConfigurations";
     private static final String SCAN_CONFIGURATION = SCAN_CONFIGURATIONS + "/{id}";
-    private static final String SCAN_SETTINGS = "/sast/scanSettings";
     private static final String SCAN = "/sast/scans";
     private static final String SCAN_SUMMARY = "/sast/scans/{id}/resultsStatistics";
     private static final String PROJECT_SCANS = "/sast/scans?projectId={pid}";
@@ -105,20 +104,23 @@ public class CxService implements CxClient{
     private static final String REPORT_DOWNLOAD = "/reports/sastScan/{id}";
     private static final String REPORT_STATUS = "/reports/sastScan/{id}/status";
     private static final String OSA_VULN = "Vulnerable_Library";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
     private final CxAuthClient authClient;
     private final RestTemplate restTemplate;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private final ScanSettingsClient scanSettingsClient;
 
     public CxService(CxAuthClient authClient,
                      CxProperties cxProperties,
                      CxLegacyService cxLegacyService,
-                     @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
+                     @Qualifier("cxRestTemplate") RestTemplate restTemplate,
+                     ScanSettingsClient scanSettingsClient) {
         this.authClient = authClient;
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
         this.restTemplate = restTemplate;
+        this.scanSettingsClient = scanSettingsClient;
     }
 
     /**
@@ -1193,27 +1195,7 @@ public class CxService implements CxClient{
      * @return Scan setting ID.
      */
     public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId) {
-        CxScanSettings scanSettings = CxScanSettings.builder()
-                .projectId(projectId)
-                .engineConfigurationId(engineConfigId)
-                .presetId(presetId)
-                .build();
-        HttpEntity<CxScanSettings> requestEntity = new HttpEntity<>(scanSettings, authClient.createAuthHeaders());
-
-        log.info("Creating ScanSettings for project Id {}", projectId);
-        try {
-            String response = restTemplate.postForObject(cxProperties.getUrl().concat(SCAN_SETTINGS), requestEntity, String.class);
-            JSONObject obj = new JSONObject(response);
-            String id = obj.get("id").toString();
-            return Integer.parseInt(id);
-        } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while creating ScanSettings for project {}, http error {}", projectId, e.getStatusCode());
-            log.error(ExceptionUtils.getStackTrace(e));
-        } catch (JSONException e) {
-            log.error("Error processing JSON Response");
-            log.error(ExceptionUtils.getStackTrace(e));
-        }
-        return UNKNOWN_INT;
+        return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId);
     }
 
     /**
@@ -1222,39 +1204,12 @@ public class CxService implements CxClient{
      * @return JSON string that includes preset and engine configuration info.
      */
     public String getScanSetting(Integer projectId) {
-
-        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
-
-        log.info("Retrieving ScanSettings for project Id {}", projectId);
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_SETTINGS.concat("/{id}")), HttpMethod.GET, requestEntity, String.class, projectId);
-            return response.getBody();
-        } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving ScanSettings for project {}, http error {}", projectId, e.getStatusCode());
-            log.error(ExceptionUtils.getStackTrace(e));
-        } catch (JSONException e) {
-            log.error("Error processing JSON Response");
-            log.error(ExceptionUtils.getStackTrace(e));
-        }
-        return null;
+        return scanSettingsClient.getScanSettings(projectId);
     }
 
     @Override
     public CxScanSettings getScanSettingsDto(int projectId) {
-        String jsonResponse = getScanSetting(projectId);
-        CxScanSettings result = null;
-        try {
-            JsonNode response = objectMapper.readTree(jsonResponse);
-
-            result = CxScanSettings.builder()
-                    .projectId(projectId)
-                    .presetId(response.at("/preset/id").asInt())
-                    .engineConfigurationId(response.at("/engineConfiguration/id").asInt())
-                    .build();
-        } catch (JsonProcessingException e) {
-            log.error("Error parsing scan settings response.", e);
-        }
-        return result;
+        return scanSettingsClient.getScanSettingsDto(projectId);
     }
 
     @Override
