@@ -3,6 +3,11 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.dto.cx.CxScanSettings;
 import com.checkmarx.sdk.exception.CheckmarxException;
 
+/**
+ * Works with scan settings. The settings contain<br>
+ * - engine configuration<br>
+ * - scan presets
+ */
 public interface ScanSettingsClient {
     int createScanSettings(int projectId, int presetId, int engineConfigId);
 
@@ -16,7 +21,7 @@ public interface ScanSettingsClient {
 
     int getProjectPresetId(int projectId);
 
-    int getScanConfigurationId(String configuration) throws CheckmarxException;
+    int getEngineConfigurationId(String configurationName) throws CheckmarxException;
 
-    String getScanConfigurationName(int configurationId);
+    String getEngineConfigurationName(int configurationId);
 }
