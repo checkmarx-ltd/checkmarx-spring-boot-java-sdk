@@ -24,7 +24,7 @@ public class CheckmarxSdkApplicationTests {
 	@Test
 	public void testCxProperties(){
 		log.info(cxProperties.getBaseUrl());
-		assertEquals("/CxServer/SP/America/cxts", cxProperties.getTeam());
+		assertEquals("\\CxServer\\SP\\Checkmarx", cxProperties.getTeam());
 	}
 
 }
