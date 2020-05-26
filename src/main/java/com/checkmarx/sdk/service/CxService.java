@@ -69,12 +69,6 @@ public class CxService implements CxClient{
     Created (2)
     */
     public static final Integer REPORT_STATUS_CREATED = 2;
-    private static final Map<String, Integer> STATUS_MAP = ImmutableMap.of(
-            "TO VERIFY", 0,
-            "CONFIRMED", 2,
-            "URGENT", 3,
-            "PROPOSED NOT EXPLOITABLE",4
-    );
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
     private static final String TEAMS = "/auth/teams";
     private static final String TEAM = "/auth/teams/{id}";
@@ -108,17 +102,20 @@ public class CxService implements CxClient{
     private final CxAuthClient authClient;
     private final RestTemplate restTemplate;
     private final ScanSettingsClient scanSettingsClient;
+    private final FilterValidator filterValidator;
 
     public CxService(CxAuthClient authClient,
                      CxProperties cxProperties,
                      CxLegacyService cxLegacyService,
                      @Qualifier("cxRestTemplate") RestTemplate restTemplate,
-                     ScanSettingsClient scanSettingsClient) {
+                     ScanSettingsClient scanSettingsClient,
+                     FilterValidator filterValidator) {
         this.authClient = authClient;
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
         this.restTemplate = restTemplate;
         this.scanSettingsClient = scanSettingsClient;
+        this.filterValidator = filterValidator;
     }
 
     /**
@@ -772,11 +769,11 @@ public class CxService implements CxClient{
     private Map<String, Integer> getIssues(List<Filter> filter, String session, List<ScanResults.XIssue> cxIssueList, CxXMLResultsType cxResults) {
         Map<String, Integer> summary = new HashMap<>();
         for (QueryType q : cxResults.getQuery()) {
-            if (checkFilter(q, filter)) {
+            if (filterValidator.passesFilter(q, filter)) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
                 for (ResultType r : q.getResult()) {
-                    if (checkFilter(r, filter)) {
+                    if (filterValidator.passesFilter(r, filter)) {
                         boolean falsePositive = false;
                         if(!r.getFalsePositive().equalsIgnoreCase("FALSE")){
                             falsePositive = true;
@@ -882,63 +879,7 @@ public class CxService implements CxClient{
     }
 
 
-    /**
-     * Check if the highlevel Query resultset meets the filter criteria
-     *
-     * @param q
-     * @param filters
-     * @return
-     */
-    private boolean checkFilter(QueryType q, List<Filter> filters) {
-        if (filters == null || filters.isEmpty()) {
-            return true;
-        }
-        List<String> severity = new ArrayList<>();
-        List<String> cwe = new ArrayList<>();
-        List<String> category = new ArrayList<>();
 
-        for(Filter f: filters){
-            Filter.Type type = f.getType();
-            String value = f.getValue();
-            if(type.equals(Filter.Type.SEVERITY)){
-                severity.add(value.toUpperCase(Locale.ROOT));
-            }
-            else if(type.equals(Filter.Type.TYPE)){
-                category.add(value.toUpperCase(Locale.ROOT));
-            }
-            else if(type.equals(Filter.Type.CWE)){
-                cwe.add(value.toUpperCase(Locale.ROOT));
-            }
-        }
-        if (!severity.isEmpty() && !severity.contains(q.getSeverity().toUpperCase(Locale.ROOT))) {
-            return false;
-        }
-        if (!cwe.isEmpty() && !cwe.contains(q.getCweId())) {
-            return false;
-        }
-
-        return category.isEmpty() || category.contains(q.getName().toUpperCase(Locale.ROOT));
-    }
-
-    private boolean checkFilter(ResultType r, List<Filter> filters) {
-        if (filters == null || filters.isEmpty()) {
-            return true;
-        }
-        List<Integer> status = new ArrayList<>();
-
-        for (Filter f : filters) {
-            if (f.getType().equals(Filter.Type.STATUS)) {
-                //handle New Status separately (this field is Status as opposed to State for the others
-                if(f.getValue().equalsIgnoreCase("New")){
-                    if(r.getStatus().equalsIgnoreCase("New")){
-                        return true;
-                    }
-                }
-                status.add(STATUS_MAP.get(f.getValue().toUpperCase(Locale.ROOT)));
-            }
-        }
-        return status.isEmpty() || status.contains(Integer.parseInt(r.getState()));
-    }
 
     private void checkForDuplicateIssue(List<ScanResults.XIssue> cxIssueList, ResultType r, Map<Integer, ScanResults.IssueDetails> details,
                                         boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
