@@ -33,8 +33,8 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
     private static final String PRESETS = "/sast/presets";
     private static final String PRESET_BY_ID = PRESETS + ID_TEMPLATE;
 
-    private static final String SCAN_CONFIGURATIONS = "/sast/engineConfigurations";
-    private static final String SCAN_CONFIGURATION_BY_ID = SCAN_CONFIGURATIONS + ID_TEMPLATE;
+    private static final String ENGINE_CONFIGURATIONS = "/sast/engineConfigurations";
+    private static final String SCAN_CONFIGURATION_BY_ID = ENGINE_CONFIGURATIONS + ID_TEMPLATE;
 
     private static final String JSON_ERROR = "Error processing JSON Response";
 
@@ -175,12 +175,12 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
     }
 
     @Override
-    public int getScanConfigurationId(String configurationName) throws CheckmarxException {
+    public int getEngineConfigurationId(String configurationName) throws CheckmarxException {
         HttpEntity<Void> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         int defaultConfigId = Constants.UNKNOWN_INT;
         try {
             log.info("Retrieving Cx engineConfigurations");
-            ResponseEntity<CxScanEngine[]> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_CONFIGURATIONS),
+            ResponseEntity<CxScanEngine[]> response = restTemplate.exchange(cxProperties.getUrl().concat(ENGINE_CONFIGURATIONS),
                     HttpMethod.GET,
                     httpEntity,
                     CxScanEngine[].class);
@@ -209,7 +209,7 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
     }
 
     @Override
-    public String getScanConfigurationName(int configurationId) {
+    public String getEngineConfigurationName(int configurationId) {
         HttpEntity<String> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         String url = cxProperties.getUrl() + SCAN_CONFIGURATION_BY_ID;
         ResponseEntity<JsonNode> response = restTemplate.exchange(url,

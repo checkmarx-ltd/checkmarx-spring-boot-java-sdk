@@ -1582,12 +1582,12 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     public Integer getScanConfiguration(String configuration) throws CheckmarxException {
-        return scanSettingsClient.getScanConfigurationId(configuration);
+        return scanSettingsClient.getEngineConfigurationId(configuration);
      }
 
     @Override
     public String getScanConfigurationName(int configurationId) {
-        return scanSettingsClient.getScanConfigurationName(configurationId);
+        return scanSettingsClient.getEngineConfigurationName(configurationId);
     }
 
     public Integer getPresetId(String preset) throws CheckmarxException {
