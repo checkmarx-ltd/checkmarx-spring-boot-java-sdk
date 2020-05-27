@@ -25,29 +25,31 @@ public class FilterValidatorImpl implements FilterValidator {
         if (filters == null || filters.isEmpty()) {
             return true;
         }
+
         List<String> severity = new ArrayList<>();
         List<String> cwe = new ArrayList<>();
         List<String> category = new ArrayList<>();
 
-        for (Filter f : filters) {
-            Filter.Type type = f.getType();
-            String value = f.getValue();
+        for (Filter filter : filters) {
+            Filter.Type type = filter.getType();
+            String value = filter.getValue();
+            List<String> targetList = null;
             if (type.equals(Filter.Type.SEVERITY)) {
-                severity.add(value.toUpperCase(Locale.ROOT));
+                targetList = severity;
             } else if (type.equals(Filter.Type.TYPE)) {
-                category.add(value.toUpperCase(Locale.ROOT));
+                targetList = category;
             } else if (type.equals(Filter.Type.CWE)) {
-                cwe.add(value.toUpperCase(Locale.ROOT));
+                targetList = cwe;
+            }
+
+            if (targetList != null) {
+                targetList.add(value.toUpperCase(Locale.ROOT));
             }
         }
-        if (!severity.isEmpty() && !severity.contains(findingGroup.getSeverity().toUpperCase(Locale.ROOT))) {
-            return false;
-        }
-        if (!cwe.isEmpty() && !cwe.contains(findingGroup.getCweId())) {
-            return false;
-        }
 
-        return category.isEmpty() || category.contains(findingGroup.getName().toUpperCase(Locale.ROOT));
+        return fieldMatches(findingGroup.getSeverity(), severity) &&
+                fieldMatches(findingGroup.getCweId(), cwe) &&
+                fieldMatches(findingGroup.getName(), category);
     }
 
     @Override
@@ -55,19 +57,23 @@ public class FilterValidatorImpl implements FilterValidator {
         if (filters == null || filters.isEmpty()) {
             return true;
         }
-        List<Integer> status = new ArrayList<>();
 
-        for (Filter f : filters) {
-            if (f.getType().equals(Filter.Type.STATUS)) {
+        List<Integer> status = new ArrayList<>();
+        for (Filter filter : filters) {
+            if (filter.getType().equals(Filter.Type.STATUS)) {
                 //handle New Status separately (this field is Status as opposed to State for the others
-                if (f.getValue().equalsIgnoreCase("New")) {
-                    if (finding.getStatus().equalsIgnoreCase("New")) {
-                        return true;
-                    }
+                if (filter.getValue().equalsIgnoreCase("New") &&
+                        finding.getStatus().equalsIgnoreCase("New")) {
+                    return true;
                 }
-                status.add(STATUS_MAP.get(f.getValue().toUpperCase(Locale.ROOT)));
+                status.add(STATUS_MAP.get(filter.getValue().toUpperCase(Locale.ROOT)));
             }
         }
         return status.isEmpty() || status.contains(Integer.parseInt(finding.getState()));
+    }
+
+    private static boolean fieldMatches(String fieldValue, List<String> allowedValues) {
+        return allowedValues.isEmpty() ||
+                allowedValues.contains(fieldValue.toUpperCase(Locale.ROOT));
     }
 }
