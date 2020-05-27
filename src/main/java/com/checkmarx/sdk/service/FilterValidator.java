@@ -3,7 +3,9 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
+import com.checkmarx.sdk.dto.filtering.ScriptedFilter;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -27,4 +29,8 @@ public interface FilterValidator {
      * @return a value indicating whether the finding meets the filter criteria
      */
     boolean passesFilter(ResultType finding, List<Filter> filters);
+
+    boolean passesScriptedFilter(@NotNull QueryType findingGroup,
+                                 @NotNull ResultType finding,
+                                 @NotNull ScriptedFilter filter);
 }
