@@ -13,4 +13,8 @@ import java.util.List;
 public class FilterConfiguration {
     private List<Filter> simpleFilters;
     private ScriptedFilter scriptedFilter;
+
+    public static FilterConfiguration fromSimpleFilters(List<Filter> simpleFilters) {
+        return FilterConfiguration.builder().simpleFilters(simpleFilters).build();
+    }
 }
