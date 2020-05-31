@@ -6,6 +6,7 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.*;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.utils.ScanUtils;
@@ -344,7 +345,7 @@ public class CxService implements CxClient{
      *
      * @throws CheckmarxException
      */
-    public ScanResults getReportContentByScanId(Integer scanId, List<Filter> filter) throws CheckmarxException{
+    public ScanResults getReportContentByScanId(Integer scanId, FilterConfiguration filter) throws CheckmarxException{
         Integer reportId = createScanReport(scanId);
         try {
             waitForReportCreateOrFail(reportId);
@@ -362,7 +363,7 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     @Override
-    public ScanResults getReportContent(Integer reportId, List<Filter> filter) throws CheckmarxException {
+    public ScanResults getReportContent(Integer reportId, FilterConfiguration filter) throws CheckmarxException {
         HttpHeaders headers = authClient.createAuthHeaders();
         headers.setContentType(MediaType.APPLICATION_XML);
         HttpEntity httpEntity = new HttpEntity<>(headers);
@@ -576,7 +577,7 @@ public class CxService implements CxClient{
      *
      * @throws CheckmarxException
      */
-    public ScanResults getReportContent(File file, List<Filter> filter) throws CheckmarxException {
+    public ScanResults getReportContent(File file, FilterConfiguration filter) throws CheckmarxException {
 
         if (file == null) {
             throw new CheckmarxException("File not provided for processing of results");
@@ -746,19 +747,18 @@ public class CxService implements CxClient{
 
 
     /**
-     * @param filter
+     * @param filter determines which SAST findings will be mapped into XIssue-s.
      * @param session
-     * @param cxIssueList
-     * @param cxResults
+     * @param cxIssueList list that will be populated during this method execution.
+     * @param cxResults SAST-specific scan results based on SAST XML report.
      */
-    private Map<String, Integer> getIssues(List<Filter> filter, String session, List<ScanResults.XIssue> cxIssueList, CxXMLResultsType cxResults) {
+    private Map<String, Integer> getIssues(FilterConfiguration filter, String session, List<ScanResults.XIssue> cxIssueList, CxXMLResultsType cxResults) {
         Map<String, Integer> summary = new HashMap<>();
         for (QueryType q : cxResults.getQuery()) {
-            if (filterValidator.passesFilter(q, filter)) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
                 for (ResultType r : q.getResult()) {
-                    if (filterValidator.passesFilter(r, filter)) {
+                    if (filterValidator.passesFilter(q, r, filter)) {
                         boolean falsePositive = false;
                         if(!r.getFalsePositive().equalsIgnoreCase("FALSE")){
                             falsePositive = true;
@@ -811,13 +811,12 @@ public class CxService implements CxClient{
                         checkForDuplicateIssue(cxIssueList, r, details, falsePositive, issue, summary);
                     }
                 }
-            }
         }
         return summary;
     }
 
     private Map<String, Object> getAdditionalIssueDetails(QueryType q, ResultType r) {
-        Map<String, Object> additionalDetails = new HashMap<String, Object>();
+        Map<String, Object> additionalDetails = new HashMap<>();
         additionalDetails.put("categories", q.getCategories());
         String descUrl = ScanUtils.getHostWithProtocol(r.getDeepLink()) +
                 "/CxWebClient/ScanQueryDescription.aspx?queryID=" + q.getId() +
@@ -825,9 +824,9 @@ public class CxService implements CxClient{
                 "&queryTitle=" + q.getName();
         additionalDetails.put("recommendedFix", descUrl);
 
-        List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> results = new ArrayList<>();
         // Source / Sink data
-        Map<String, Object> result = new HashMap<String, Object>();
+        Map<String, Object> result = new HashMap<>();
         result.put("state", r.getState());
         PathType path = r.getPath();
         if (path != null) {
@@ -1736,7 +1735,7 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     @Override
-    public ScanResults createScanAndReport(CxScanParams params, String comment, List<Filter> filters) throws CheckmarxException{
+    public ScanResults createScanAndReport(CxScanParams params, String comment, FilterConfiguration filters) throws CheckmarxException{
         Integer scanId = createScan(params, comment);
         waitForScanCompletion(scanId);
 
@@ -1824,7 +1823,7 @@ public class CxService implements CxClient{
      * @throws CheckmarxException
      */
     @Override
-    public ScanResults getLatestScanResults(String teamName, String projectName, List<Filter> filters) throws CheckmarxException {
+    public ScanResults getLatestScanResults(String teamName, String projectName, FilterConfiguration filters) throws CheckmarxException {
         String teamId = getTeamId(teamName);
         Integer projectId = getProjectId(teamId, projectName);
         Integer scanId = getLastScanId(projectId);

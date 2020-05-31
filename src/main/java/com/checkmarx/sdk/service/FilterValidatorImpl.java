@@ -3,12 +3,14 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.ScriptInput;
 import com.checkmarx.sdk.dto.filtering.ScriptedFilter;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
 import com.google.common.collect.ImmutableMap;
 import groovy.lang.Binding;
 import groovy.lang.Script;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotNull;
@@ -25,14 +27,47 @@ public class FilterValidatorImpl implements FilterValidator {
     private static final Map<Integer, String> STATE_ID_TO_NAME = getInvertedStateMap();
 
     private static final String NEW_STATUS_SPECIAL_CASE = "NEW";
+
+    /**
+     * An object variable with this name will be passed to the filtering script.
+     */
     private static final String INPUT_VARIABLE_NAME = "finding";
 
     @Override
-    public boolean passesFilter(QueryType findingGroup, List<Filter> filters) {
-        if (filters == null || filters.isEmpty()) {
-            return true;
+    public boolean passesFilter(@NotNull QueryType findingGroup, @NotNull ResultType finding,
+                                FilterConfiguration filterConfiguration) {
+        validate(filterConfiguration);
+        boolean result;
+        if (!filtersAreSpecified(filterConfiguration)) {
+            // No filters => everything passes.
+            result = true;
+        } else if (filterConfiguration.getScriptedFilter() != null) {
+            result = passesScriptedFilter(findingGroup, finding, filterConfiguration.getScriptedFilter());
+        } else {
+            List<Filter> filters = filterConfiguration.getSimpleFilters();
+            result = CollectionUtils.isEmpty(filters) ||
+                    (findingGroupPassesFilter(findingGroup, filters) && findingPassesFilter(finding, filters));
         }
+        return result;
+    }
 
+    private static void validate(FilterConfiguration filterConfiguration) {
+        if (filterConfiguration != null &&
+                filterConfiguration.getScriptedFilter() != null &&
+                CollectionUtils.isNotEmpty(filterConfiguration.getSimpleFilters())) {
+
+            throw new CheckmarxRuntimeException("Simple filters and scripted filter cannot be used together. " +
+                    "Please either specify one of them or don't use filters.");
+        }
+    }
+
+    private static boolean filtersAreSpecified(FilterConfiguration filterConfiguration) {
+        return filterConfiguration != null &&
+                (CollectionUtils.isNotEmpty(filterConfiguration.getSimpleFilters()) ||
+                        filterConfiguration.getScriptedFilter() != null);
+    }
+
+    private static boolean findingGroupPassesFilter(QueryType findingGroup, List<Filter> filters) {
         List<String> severity = new ArrayList<>();
         List<String> cwe = new ArrayList<>();
         List<String> category = new ArrayList<>();
@@ -59,12 +94,7 @@ public class FilterValidatorImpl implements FilterValidator {
                 fieldMatches(findingGroup.getName(), category);
     }
 
-    @Override
-    public boolean passesFilter(ResultType finding, List<Filter> filters) {
-        if (filters == null || filters.isEmpty()) {
-            return true;
-        }
-
+    private static boolean findingPassesFilter(ResultType finding, List<Filter> filters) {
         List<Integer> status = new ArrayList<>();
         for (Filter filter : filters) {
             if (filter.getType().equals(Filter.Type.STATUS)) {
@@ -79,22 +109,22 @@ public class FilterValidatorImpl implements FilterValidator {
         return status.isEmpty() || status.contains(Integer.parseInt(finding.getState()));
     }
 
-    @Override
-    public boolean passesScriptedFilter(@NotNull QueryType findingGroup,
-                                        @NotNull ResultType finding,
-                                        @NotNull ScriptedFilter filter) {
-        String status = getEffectiveStatus(finding);
-        String severity = findingGroup.getSeverity().toUpperCase(Locale.ROOT);
-
-        ScriptInput input = ScriptInput.builder()
-                .status(status)
-                .severity(severity)
-                .build();
-
+    private static boolean passesScriptedFilter(QueryType findingGroup, ResultType finding, ScriptedFilter filter) {
+        ScriptInput input = getScriptInput(findingGroup, finding);
         return evaluateFilterScript(input, filter.getScript());
     }
 
-    private boolean evaluateFilterScript(ScriptInput input, Script script) {
+    private static ScriptInput getScriptInput(QueryType findingGroup, ResultType finding) {
+        String status = getEffectiveStatus(finding);
+        String severity = findingGroup.getSeverity().toUpperCase(Locale.ROOT);
+
+        return ScriptInput.builder()
+                .status(status)
+                .severity(severity)
+                .build();
+    }
+
+    private static boolean evaluateFilterScript(ScriptInput input, Script script) {
         Binding binding = new Binding();
         binding.setVariable(INPUT_VARIABLE_NAME, input);
         script.setBinding(binding);
@@ -107,13 +137,13 @@ public class FilterValidatorImpl implements FilterValidator {
         }
     }
 
-    private String getEffectiveStatus(@NotNull ResultType finding) {
+    private static String getEffectiveStatus(@NotNull ResultType finding) {
         String effectiveStatus;
         if (finding.getStatus().equalsIgnoreCase(NEW_STATUS_SPECIAL_CASE)) {
             // Filter type is called 'status', but we actually use finding status only in this specific case.
             effectiveStatus = NEW_STATUS_SPECIAL_CASE;
         } else {
-            // In the rest of the cases, finding state is used (as opposed to status).
+            // In the rest of the cases, finding state is used (and not status).
             effectiveStatus = STATE_ID_TO_NAME.get(Integer.parseInt(finding.getState()));
         }
         return effectiveStatus;

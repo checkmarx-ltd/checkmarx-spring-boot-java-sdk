@@ -2,6 +2,7 @@ package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.ScriptedFilter;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
@@ -92,7 +93,11 @@ public class FilterValidatorImplTest {
                 .script(script)
                 .build();
 
-        boolean actualResult = validator.passesScriptedFilter(findingGroup, finding, filter);
+        FilterConfiguration filterConfiguration = FilterConfiguration.builder()
+                .scriptedFilter(filter)
+                .build();
+
+        boolean actualResult = validator.passesFilter(findingGroup, finding, filterConfiguration);
         assertEquals(expectedResult, actualResult, "Unexpected filtering result.");
     }
 }
