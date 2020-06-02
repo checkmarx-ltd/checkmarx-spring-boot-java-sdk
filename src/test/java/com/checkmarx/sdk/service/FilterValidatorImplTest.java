@@ -26,7 +26,7 @@ public class FilterValidatorImplTest {
 
     @Test
     public void passesScriptedFilter_sanity() {
-        String scriptText = "return finding.severity == 'HIGH' || (finding.severity == 'MEDIUM' && finding.status == 'URGENT')";
+        String scriptText = "finding.severity == 'HIGH' || (finding.severity == 'MEDIUM' && finding.status == 'URGENT')";
 
         GroovyShell groovyShell = new GroovyShell();
         Script script = groovyShell.parse(scriptText);
@@ -38,7 +38,7 @@ public class FilterValidatorImplTest {
 
     @Test
     public void passesScriptedFilter_performance() {
-        String scriptText = "return finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
+        String scriptText = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
         Script script = verifyParsingPerformance(scriptText, Duration.ofSeconds(10));
         verifyEvaluationPerformance(script, Duration.ofSeconds(1));
     }
