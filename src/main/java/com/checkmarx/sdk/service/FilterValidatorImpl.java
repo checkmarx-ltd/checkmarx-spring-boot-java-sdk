@@ -115,12 +115,13 @@ public class FilterValidatorImpl implements FilterValidator {
     }
 
     private static ScriptInput getScriptInput(QueryType findingGroup, ResultType finding) {
-        String status = getEffectiveStatus(finding);
         String severity = findingGroup.getSeverity().toUpperCase(Locale.ROOT);
 
         return ScriptInput.builder()
-                .status(status)
+                .category(findingGroup.getName())
+                .cwe(findingGroup.getCweId())
                 .severity(severity)
+                .status(getEffectiveStatus(finding))
                 .build();
     }
 
