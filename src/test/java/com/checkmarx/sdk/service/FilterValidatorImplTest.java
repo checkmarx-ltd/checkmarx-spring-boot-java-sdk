@@ -4,6 +4,7 @@ import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.ScriptedFilter;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +12,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 public class FilterValidatorImplTest {
@@ -51,6 +51,27 @@ public class FilterValidatorImplTest {
         verifyScriptResult(script, SEVERITY_MEDIUM, STATUS_RECURRENT, STATE_URGENT, NAME1, CWE1, false);
         verifyScriptResult(script, SEVERITY_MEDIUM, STATUS_RECURRENT, STATE_VERIFY, NAME2, CWE1, false);
         verifyScriptResult(script, SEVERITY_MEDIUM, STATUS_RECURRENT, STATE_VERIFY, NAME1, CWE2, false);
+    }
+
+    @Test
+    public void passesFilter_scriptRuntimeError() {
+        String unknownObject = "cry.of.surprise == 'present'";
+        String unknownProperty = "finding.mystery == 'unsolvable'";
+
+        validateExpectedError(unknownObject);
+        validateExpectedError(unknownProperty);
+    }
+
+    private void validateExpectedError(String scriptWithUnknownObject) {
+        Script script = parse(scriptWithUnknownObject);
+        QueryType findingGroup = createFindingGroup(SEVERITY_LOW, NAME1, CWE1);
+        ResultType finding = createFinding(STATUS_NEW, STATE_URGENT);
+        FilterConfiguration filterConfiguration = createFilterConfiguration(script);
+
+        FilterValidatorImpl validator = new FilterValidatorImpl();
+        assertThrows(GroovyRuntimeException.class,
+                () -> validator.passesFilter(findingGroup, finding, filterConfiguration),
+                "Runtime error expected due to invalid script.");
     }
 
     /**
@@ -106,20 +127,28 @@ public class FilterValidatorImplTest {
                                            String name,
                                            String cweId,
                                            boolean expectedResult) {
-        ResultType finding = new ResultType();
-        finding.setStatus(status);
-        finding.setState(state);
-
-        QueryType findingGroup = new QueryType();
-        findingGroup.setSeverity(severity);
-        findingGroup.setSeverity(severity);
-        findingGroup.setName(name);
-        findingGroup.setCweId(cweId);
+        ResultType finding = createFinding(status, state);
+        QueryType findingGroup = createFindingGroup(severity, name, cweId);
         FilterConfiguration filterConfiguration = createFilterConfiguration(script);
 
         FilterValidatorImpl validator = new FilterValidatorImpl();
         boolean actualResult = validator.passesFilter(findingGroup, finding, filterConfiguration);
         assertEquals(expectedResult, actualResult, "Unexpected filtering result.");
+    }
+
+    private static QueryType createFindingGroup(String severity, String name, String cweId) {
+        QueryType findingGroup = new QueryType();
+        findingGroup.setSeverity(severity);
+        findingGroup.setName(name);
+        findingGroup.setCweId(cweId);
+        return findingGroup;
+    }
+
+    private static ResultType createFinding(String status, String state) {
+        ResultType finding = new ResultType();
+        finding.setStatus(status);
+        finding.setState(state);
+        return finding;
     }
 
     private static FilterConfiguration createFilterConfiguration(Script script) {
