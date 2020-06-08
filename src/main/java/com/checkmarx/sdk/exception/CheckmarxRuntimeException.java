@@ -13,4 +13,8 @@ public class CheckmarxRuntimeException extends RuntimeException {
     public CheckmarxRuntimeException(String message) {
         super(message);
     }
+
+    public CheckmarxRuntimeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

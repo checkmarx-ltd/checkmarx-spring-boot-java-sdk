@@ -9,12 +9,15 @@ import com.checkmarx.sdk.dto.filtering.ScriptedFilter;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
 import com.google.common.collect.ImmutableMap;
 import groovy.lang.Binding;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotNull;
+import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FilterValidatorImpl implements FilterValidator {
@@ -129,13 +132,33 @@ public class FilterValidatorImpl implements FilterValidator {
         Binding binding = new Binding();
         binding.setVariable(INPUT_VARIABLE_NAME, input);
         script.setBinding(binding);
-        Object rawResult = script.run();
+        Object rawResult = null;
+        try {
+            rawResult = script.run();
+        } catch (GroovyRuntimeException e) {
+            rethrowWithDetailedMessage(e);
+        } catch (Exception e) {
+            throw new CheckmarxRuntimeException("An unexpected error has occurred while executing the filter script.", e);
+        }
 
         if (rawResult instanceof Boolean) {
             return (boolean) rawResult;
         } else {
             throw new CheckmarxRuntimeException("Filtering script must return a boolean value.");
         }
+    }
+
+    private static void rethrowWithDetailedMessage(GroovyRuntimeException cause) {
+        List<String> existingFields = Arrays.stream(ScriptInput.class.getDeclaredFields())
+                .map(Field::getName)
+                .collect(Collectors.toList());
+
+        String message = String.format("A runtime error has occurred while executing the filter script. " +
+                        "Please use %s.<property>, in your expressions, where <property> is one of %s.",
+                INPUT_VARIABLE_NAME,
+                existingFields);
+
+        throw new CheckmarxRuntimeException(message, cause);
     }
 
     private static String getEffectiveStatus(@NotNull ResultType finding) {

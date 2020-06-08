@@ -4,6 +4,7 @@ import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.ScriptedFilter;
+import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
@@ -69,9 +70,13 @@ public class FilterValidatorImplTest {
         FilterConfiguration filterConfiguration = createFilterConfiguration(script);
 
         FilterValidatorImpl validator = new FilterValidatorImpl();
-        assertThrows(GroovyRuntimeException.class,
-                () -> validator.passesFilter(findingGroup, finding, filterConfiguration),
-                "Runtime error expected due to invalid script.");
+
+        try {
+            validator.passesFilter(findingGroup, finding, filterConfiguration);
+        } catch (Exception e) {
+            assertTrue(e instanceof CheckmarxRuntimeException, String.format("Expected %s to be thrown.", CheckmarxRuntimeException.class));
+            assertTrue(e.getCause() instanceof GroovyRuntimeException, String.format("Expected exception cause to be %s", GroovyRuntimeException.class));
+        }
     }
 
     /**
