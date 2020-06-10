@@ -190,6 +190,14 @@ public interface CxClient {
     public boolean scanExists(Integer projectId);
 
     /**
+     * Get scanId of existing if a scan exists for a projectId
+     *
+     * @param projectId
+     * @return
+     */
+    public Integer getScanIdOfExistingScanIfExists(Integer projectId);
+
+    /**
      * Create Scan Settings
      *
      * @param projectId
@@ -534,6 +542,14 @@ public interface CxClient {
      * @throws CheckmarxException
      */
     public void deleteScan(Integer scanId) throws CheckmarxException;
+
+    /**
+     *
+     * @param scanId
+     * @return
+     * @throws CheckmarxException
+     */
+    public void cancelScan(Integer scanId) throws CheckmarxException;
 
     /**
      * Create a scan based on the CxScanParams and wait for the scan to complete, returning the result XML Jaxb object
