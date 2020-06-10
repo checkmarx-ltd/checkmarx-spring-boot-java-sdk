@@ -99,6 +99,8 @@ public class CxService implements CxClient{
     private static final String REPORT = "/reports/sastScan";
     private static final String REPORT_DOWNLOAD = "/reports/sastScan/{id}";
     private static final String REPORT_STATUS = "/reports/sastScan/{id}/status";
+    private static final String SCAN_QUEUE_STATUS = "/sast/scansQueue/{id}";
+    private static final String SCAN_QUEUE = "/sast/scansQueue";
     private static final String OSA_VULN = "Vulnerable_Library";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private final CxProperties cxProperties;
@@ -1186,6 +1188,43 @@ public class CxService implements CxClient{
     }
 
     /**
+     * Get ScanId of existing scan if a scan exists for a projectId
+     *
+     * @param projectId
+     * @return
+     */
+    public Integer getScanIdOfExistingScanIfExists(Integer projectId) {
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+
+            ResponseEntity<String> scans = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_QUEUE).concat("?ProjectId=").concat(projectId.toString()), HttpMethod.GET, httpEntity, String.class);
+            JSONArray jsonArray = new JSONArray(scans.getBody());
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject scan = jsonArray.getJSONObject(i);
+                JSONObject stage = scan.getJSONObject("stage");
+                int statusId = stage.getInt("id");
+                if (SCAN_STATUS_QUEUED.equals(statusId) || SCAN_STATUS_NEW.equals(statusId) || SCAN_STATUS_SCANNING.equals(statusId) ||
+                        SCAN_STATUS_PRESCAN.equals(statusId) || SCAN_STATUS_SOURCE_PULLING.equals(statusId)) {
+                    log.debug("Scan status is {} for Project: {}", statusId, projectId);
+                    Integer scanId = scan.getInt("id");
+                    return scanId;
+                }
+            }
+            log.debug("No scans in the queue that are in progress");
+            return UNKNOWN_INT;
+
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving project with id {}, http error {}", projectId, e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return UNKNOWN_INT;
+    }
+
+
+    /**
      * Create Scan Settings
      *
      * @return Scan setting ID.
@@ -1801,6 +1840,26 @@ public class CxService implements CxClient{
             ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_STATUS), HttpMethod.DELETE, httpEntity, String.class, scanId);
         } catch (HttpStatusCodeException e) {
             log.error("HTTP Status Code of {} while deleting scan Id {}", e.getStatusCode(), scanId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    /**
+     *
+     * @param scanId
+     * @return
+     * @throws CheckmarxException
+     */
+    @Override
+    public void cancelScan(Integer scanId) throws CheckmarxException {
+        log.debug("Canceling scan with id {}", scanId);
+        try {
+            JSONObject scanRequest = new JSONObject();
+            scanRequest.put("status","Canceled");
+            HttpEntity<String> httpEntity = new HttpEntity<>(scanRequest.toString(), authClient.createAuthHeaders());
+            ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_QUEUE_STATUS), HttpMethod.PATCH, httpEntity, String.class, scanId);
+        } catch (HttpStatusCodeException e) {
+            log.error("HTTP Status Code of {} while canceling scan Id {}", e.getStatusCode(), scanId);
             log.error(ExceptionUtils.getStackTrace(e));
         }
     }
