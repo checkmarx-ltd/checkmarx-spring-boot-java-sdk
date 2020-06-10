@@ -16,4 +16,5 @@ public class ScriptInput {
     private final String cwe;
     private final String severity;
     private final String status;
+    private final String state;
 }

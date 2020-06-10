@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableMap;
 import groovy.lang.Binding;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
 
@@ -20,16 +21,18 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class FilterValidatorImpl implements FilterValidator {
-    private static final Map<String, Integer> STATE_MAP = ImmutableMap.of(
-            "TO VERIFY", 0,
-            "CONFIRMED", 2,
-            "URGENT", 3,
-            "PROPOSED NOT EXPLOITABLE", 4
+    /**
+     * Maps finding state name (as specified in filter) to a numeric state ID (as returned in SAST report).
+     */
+    private static final Map<String, String> STATE_MAP = ImmutableMap.of(
+            "TO VERIFY", "0",
+            "CONFIRMED", "2",
+            "URGENT", "3",
+            "PROPOSED NOT EXPLOITABLE", "4"
     );
-    private static final Map<Integer, String> STATE_ID_TO_NAME = getInvertedStateMap();
-
-    private static final String NEW_STATUS_SPECIAL_CASE = "NEW";
+    private static final Map<String, String> STATE_ID_TO_NAME = getInvertedStateMap();
 
     /**
      * An object variable with this name will be passed to the filtering script.
@@ -45,13 +48,27 @@ public class FilterValidatorImpl implements FilterValidator {
             // No filters => everything passes.
             result = true;
         } else if (filterConfiguration.getScriptedFilter() != null) {
-            result = passesScriptedFilter(findingGroup, finding, filterConfiguration.getScriptedFilter());
+            result = passesScriptedFilter(findingGroup, finding, filterConfiguration);
         } else {
-            List<Filter> filters = filterConfiguration.getSimpleFilters();
-            result = CollectionUtils.isEmpty(filters) ||
-                    (findingGroupPassesFilter(findingGroup, filters) && findingPassesFilter(finding, filters));
+            result = passesSimpleFilter(findingGroup, finding, filterConfiguration);
         }
         return result;
+    }
+
+    private static boolean passesScriptedFilter(QueryType findingGroup,
+                                                ResultType finding,
+                                                FilterConfiguration filterConfiguration) {
+        ScriptedFilter filter = filterConfiguration.getScriptedFilter();
+        ScriptInput input = getScriptInput(findingGroup, finding);
+        return evaluateFilterScript(filter.getScript(), input);
+    }
+
+    private static boolean passesSimpleFilter(QueryType findingGroup,
+                                              ResultType finding,
+                                              FilterConfiguration filterConfiguration) {
+        List<Filter> filters = filterConfiguration.getSimpleFilters();
+        return CollectionUtils.isEmpty(filters) ||
+                (findingGroupPassesFilter(findingGroup, filters) && findingPassesFilter(finding, filters));
     }
 
     private static void validate(FilterConfiguration filterConfiguration) {
@@ -98,37 +115,40 @@ public class FilterValidatorImpl implements FilterValidator {
     }
 
     private static boolean findingPassesFilter(ResultType finding, List<Filter> filters) {
-        List<Integer> status = new ArrayList<>();
+        List<String> statuses = new ArrayList<>();
+        List<String> states = new ArrayList<>();
         for (Filter filter : filters) {
             if (filter.getType().equals(Filter.Type.STATUS)) {
-                //handle New Status separately (this field is Status as opposed to State for the others
-                if (filter.getValue().equalsIgnoreCase(NEW_STATUS_SPECIAL_CASE) &&
-                        finding.getStatus().equalsIgnoreCase(NEW_STATUS_SPECIAL_CASE)) {
-                    return true;
+                statuses.add(filter.getValue().toUpperCase(Locale.ROOT));
+            } else if (filter.getType().equals(Filter.Type.STATE)) {
+                String stateName = filter.getValue().toUpperCase(Locale.ROOT);
+                String stateId = STATE_MAP.get(stateName);
+                if (stateId == null) {
+                    log.warn("Unknown status is specified in filter: '{}'. This filter value will be ignored.",
+                            filter.getValue());
+                } else {
+                    states.add(stateId);
                 }
-                status.add(STATE_MAP.get(filter.getValue().toUpperCase(Locale.ROOT)));
             }
         }
-        return status.isEmpty() || status.contains(Integer.parseInt(finding.getState()));
-    }
 
-    private static boolean passesScriptedFilter(QueryType findingGroup, ResultType finding, ScriptedFilter filter) {
-        ScriptInput input = getScriptInput(findingGroup, finding);
-        return evaluateFilterScript(input, filter.getScript());
+        return fieldMatches(finding.getStatus(), statuses) &&
+                fieldMatches(finding.getState(), states);
     }
 
     private static ScriptInput getScriptInput(QueryType findingGroup, ResultType finding) {
-        String severity = findingGroup.getSeverity().toUpperCase(Locale.ROOT);
+        String stateName = STATE_ID_TO_NAME.get(finding.getState());
 
         return ScriptInput.builder()
-                .category(findingGroup.getName())
+                .category(findingGroup.getName().toUpperCase(Locale.ROOT))
                 .cwe(findingGroup.getCweId())
-                .severity(severity)
-                .status(getEffectiveStatus(finding))
+                .severity(findingGroup.getSeverity().toUpperCase(Locale.ROOT))
+                .status(finding.getStatus().toUpperCase(Locale.ROOT))
+                .state(stateName)
                 .build();
     }
 
-    private static boolean evaluateFilterScript(ScriptInput input, Script script) {
+    private static boolean evaluateFilterScript(Script script, ScriptInput input) {
         Binding binding = new Binding();
         binding.setVariable(INPUT_VARIABLE_NAME, input);
         script.setBinding(binding);
@@ -154,23 +174,11 @@ public class FilterValidatorImpl implements FilterValidator {
                 .collect(Collectors.toList());
 
         String message = String.format("A runtime error has occurred while executing the filter script. " +
-                        "Please use %s.<property>, in your expressions, where <property> is one of %s.",
+                        "Please use %s.<property> in your expressions, where <property> is one of %s.",
                 INPUT_VARIABLE_NAME,
                 existingFields);
 
         throw new CheckmarxRuntimeException(message, cause);
-    }
-
-    private static String getEffectiveStatus(@NotNull ResultType finding) {
-        String effectiveStatus;
-        if (finding.getStatus().equalsIgnoreCase(NEW_STATUS_SPECIAL_CASE)) {
-            // Filter type is called 'status', but we actually use finding status only in this specific case.
-            effectiveStatus = NEW_STATUS_SPECIAL_CASE;
-        } else {
-            // In the rest of the cases, finding state is used (and not status).
-            effectiveStatus = STATE_ID_TO_NAME.get(Integer.parseInt(finding.getState()));
-        }
-        return effectiveStatus;
     }
 
     private static boolean fieldMatches(String fieldValue, List<String> allowedValues) {
@@ -178,9 +186,9 @@ public class FilterValidatorImpl implements FilterValidator {
                 allowedValues.contains(fieldValue.toUpperCase(Locale.ROOT));
     }
 
-    private static Map<Integer, String> getInvertedStateMap() {
-        Map<Integer, String> result = new HashMap<>();
-        for (Map.Entry<String, Integer> entry : FilterValidatorImpl.STATE_MAP.entrySet()) {
+    private static Map<String, String> getInvertedStateMap() {
+        Map<String, String> result = new HashMap<>();
+        for (Map.Entry<String, String> entry : FilterValidatorImpl.STATE_MAP.entrySet()) {
             result.put(entry.getValue(), entry.getKey());
         }
         return ImmutableMap.copyOf(result);

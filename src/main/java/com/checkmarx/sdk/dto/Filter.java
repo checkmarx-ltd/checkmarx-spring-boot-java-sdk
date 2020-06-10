@@ -56,17 +56,21 @@ public class Filter {
         SEVERITY("SEVERITY"),
         CWE("CWE"),
         OWASP("OWASP"),
+
+        // Filter by vulnerability type aka category aka name.
         TYPE("TYPE"),
-        STATUS("STATUS");
 
-        private String type;
+        STATUS("STATUS"),
+        STATE("STATE");
 
-        Type(String type) {
-            this.type = type;
+        private final String typeName;
+
+        Type(String typeName) {
+            this.typeName = typeName;
         }
 
-        public String getType() {
-            return type;
+        public String getTypeName() {
+            return typeName;
         }
     }
 
@@ -77,14 +81,14 @@ public class Filter {
         LOW("Low"),
         INFO("Informational");
 
-        private String severity;
+        private final String severityName;
 
-        Severity(String severity) {
-            this.severity = severity;
+        Severity(String severityName) {
+            this.severityName = severityName;
         }
 
-        public String getSeverity() {
-            return severity;
+        public String getSeverityName() {
+            return severityName;
         }
     }
 
