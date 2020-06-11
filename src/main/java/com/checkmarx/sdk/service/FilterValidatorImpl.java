@@ -42,16 +42,25 @@ public class FilterValidatorImpl implements FilterValidator {
     @Override
     public boolean passesFilter(@NotNull QueryType findingGroup, @NotNull ResultType finding,
                                 FilterConfiguration filterConfiguration) {
-        validate(filterConfiguration);
         boolean result;
-        if (!filtersAreSpecified(filterConfiguration)) {
+
+        boolean hasSimpleFilters = hasSimpleFilters(filterConfiguration);
+        boolean hasScriptedFilter = hasScriptedFilter(filterConfiguration);
+
+        if (hasScriptedFilter && hasSimpleFilters) {
+            throw new CheckmarxRuntimeException("Simple filters and scripted filter cannot be used together. " +
+                    "Please either specify one of them or don't use filters.");
+        } else if (!hasSimpleFilters && !hasScriptedFilter) {
             // No filters => everything passes.
             result = true;
-        } else if (filterConfiguration.getScriptedFilter() != null) {
+        } else if (hasScriptedFilter) {
             result = passesScriptedFilter(findingGroup, finding, filterConfiguration);
         } else {
             result = passesSimpleFilter(findingGroup, finding, filterConfiguration);
         }
+
+        log.debug("Finding {} {} the filter.", finding.getNodeId(), result ? "passes" : "does not pass");
+
         return result;
     }
 
@@ -71,20 +80,15 @@ public class FilterValidatorImpl implements FilterValidator {
                 (findingGroupPassesFilter(findingGroup, filters) && findingPassesFilter(finding, filters));
     }
 
-    private static void validate(FilterConfiguration filterConfiguration) {
-        if (filterConfiguration != null &&
+    private static boolean hasScriptedFilter(FilterConfiguration filterConfiguration) {
+        return filterConfiguration != null &&
                 filterConfiguration.getScriptedFilter() != null &&
-                CollectionUtils.isNotEmpty(filterConfiguration.getSimpleFilters())) {
-
-            throw new CheckmarxRuntimeException("Simple filters and scripted filter cannot be used together. " +
-                    "Please either specify one of them or don't use filters.");
-        }
+                filterConfiguration.getScriptedFilter().getScript() != null;
     }
 
-    private static boolean filtersAreSpecified(FilterConfiguration filterConfiguration) {
+    private static boolean hasSimpleFilters(FilterConfiguration filterConfiguration) {
         return filterConfiguration != null &&
-                (CollectionUtils.isNotEmpty(filterConfiguration.getSimpleFilters()) ||
-                        filterConfiguration.getScriptedFilter() != null);
+                CollectionUtils.isNotEmpty(filterConfiguration.getSimpleFilters());
     }
 
     private static boolean findingGroupPassesFilter(QueryType findingGroup, List<Filter> filters) {
