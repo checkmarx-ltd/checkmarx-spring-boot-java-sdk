@@ -21,7 +21,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -38,7 +40,33 @@ public class ScaClientImpl implements ScaClient {
         CxScanConfig scanConfig = getScanConfig(scaParams);
         DependencyScanResults scanResults = executeScan(scanConfig);
 
-        return toScaResults(scanResults.getScaResults());
+        SCAResults scaResults = toScaResults(scanResults.getScaResults());
+        applyScaResultsFilters(scaResults);
+
+        return scaResults;
+    }
+
+    private void applyScaResultsFilters(SCAResults scaResults) {
+        if (scaProperties.getFilterSeverity() != null && !Objects.requireNonNull(scaProperties.getFilterSeverity()).isEmpty()) {
+            filterResultsBySeverity(scaResults, scaProperties.getFilterSeverity());
+        }
+        if (scaProperties.getFilterScore() > 0.0) {
+            filterResultsByScore(scaResults, scaProperties.getFilterScore());
+        }
+    }
+
+    private void filterResultsBySeverity(SCAResults scaResults, List<String> filerSeverity) {
+        log.info("Applying SCA results filter severities: {}", filerSeverity.toString());
+        scaResults.getFindings().removeIf(finding -> (
+                !StringUtils.containsIgnoreCase(filerSeverity.toString(), finding.getSeverity().name())
+                ));
+    }
+
+    private void filterResultsByScore(SCAResults scaResults, double score) {
+        log.info("Applying SCA results filter score: [{}]", score);
+        scaResults.getFindings().removeIf(finding -> (
+                finding.getScore() <= score
+                ));
     }
 
     /**
