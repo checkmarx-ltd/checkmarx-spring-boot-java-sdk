@@ -24,6 +24,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Iterator;
+import java.util.EnumSet;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -50,23 +52,42 @@ public class ScaClientImpl implements ScaClient {
         if (scaProperties.getFilterSeverity() != null && !Objects.requireNonNull(scaProperties.getFilterSeverity()).isEmpty()) {
             filterResultsBySeverity(scaResults, scaProperties.getFilterSeverity());
         }
-        if (scaProperties.getFilterScore() > 0.0) {
-            filterResultsByScore(scaResults, scaProperties.getFilterScore());
+
+        double filterScore = scaProperties.getFilterScore();
+        if (filterScore >= 0.0) {
+            filterResultsByScore(scaResults, filterScore);
+        } else  {
+            log.warn("Score Severity: [{}] must be a positive value", filterScore) ;
         }
     }
 
     private void filterResultsBySeverity(SCAResults scaResults, List<String> filerSeverity) {
-        log.info("Applying SCA results filter severities: {}", filerSeverity.toString());
+        List<String> validateFilterSeverity = validateFilterSeverity(filerSeverity);
+        log.info("Applying SCA results filter severities: {}", validateFilterSeverity.toString());
         scaResults.getFindings().removeIf(finding -> (
-                !StringUtils.containsIgnoreCase(filerSeverity.toString(), finding.getSeverity().name())
+                !StringUtils.containsIgnoreCase(validateFilterSeverity.toString(), finding.getSeverity().name())
                 ));
     }
 
     private void filterResultsByScore(SCAResults scaResults, double score) {
-        log.info("Applying SCA results filter score: [{}]", score);
-        scaResults.getFindings().removeIf(finding -> (
-                finding.getScore() <= score
-                ));
+        if (score != 0.0) {
+            log.info("Applying SCA results filter score: [{}]", score);
+            scaResults.getFindings().removeIf(finding -> (
+                    finding.getScore() < score
+            ));
+        }
+    }
+
+    private List<String> validateFilterSeverity(List<String> filerSeverity) {
+        Iterator<String> iterator = filerSeverity.iterator();
+        while (iterator.hasNext()) {
+            String nextFilter = iterator.next();
+            if (!StringUtils.containsIgnoreCase(EnumSet.range(Filter.Severity.HIGH, Filter.Severity.LOW).toString(), nextFilter)) {
+                log.warn("Severity: [{}] is not a supported filter", nextFilter);
+                iterator.remove();
+            }
+        }
+        return filerSeverity;
     }
 
     /**
