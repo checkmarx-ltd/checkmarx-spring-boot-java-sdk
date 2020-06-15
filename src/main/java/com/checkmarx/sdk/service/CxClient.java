@@ -4,6 +4,7 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import org.json.JSONObject;
 
@@ -72,7 +73,7 @@ public interface CxClient {
      * @return
      * @throws CheckmarxException
      */
-    public ScanResults getReportContentByScanId(Integer scanId, List<Filter> filter) throws CheckmarxException;
+    public ScanResults getReportContentByScanId(Integer scanId, FilterConfiguration filter) throws CheckmarxException;
 
     /**
      * Retrieve the report by reportId, mapped to ScanResults DTO, applying filtering as requested
@@ -82,7 +83,7 @@ public interface CxClient {
      * @return
      * @throws CheckmarxException
      */
-    public ScanResults getReportContent(Integer reportId, List<Filter> filter) throws CheckmarxException;
+    public ScanResults getReportContent(Integer reportId, FilterConfiguration filter) throws CheckmarxException;
 
     /**
      * Retrieve the xml report by reportId, mapped to ScanResults DTO, applying filtering as requested
@@ -110,7 +111,7 @@ public interface CxClient {
      * @return
      * @throws CheckmarxException
      */
-    public ScanResults getReportContent(File file, List<Filter> filter) throws CheckmarxException;
+    public ScanResults getReportContent(File file, FilterConfiguration filter) throws CheckmarxException;
 
     /**
      * @param vulnsFile
@@ -569,7 +570,7 @@ public interface CxClient {
      * @return
      * @throws CheckmarxException
      */
-    public ScanResults createScanAndReport(CxScanParams params, String comment, List<Filter> filters) throws CheckmarxException;
+    public ScanResults createScanAndReport(CxScanParams params, String comment, FilterConfiguration filters) throws CheckmarxException;
 
     /**
      * Create a scan based on the CxScanParams and wait for the scan to complete, returning the result XML Jaxb object
@@ -590,7 +591,7 @@ public interface CxClient {
      * @return
      * @throws CheckmarxException
      */
-    public ScanResults getLatestScanResults(String teamName, String projectName, List<Filter> filters) throws CheckmarxException;
+    public ScanResults getLatestScanResults(String teamName, String projectName, FilterConfiguration filters) throws CheckmarxException;
 
     public Integer getLdapServerId(String serverName) throws  CheckmarxException;
 
