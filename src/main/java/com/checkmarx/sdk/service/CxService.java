@@ -1426,18 +1426,21 @@ public class CxService implements CxClient{
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             // Versions prior to 9.0 do not return parent ID with the Team list
+            // We'll do two lookups instead (not particularly efficient, but hopefully won't be around for too long
             if(cxProperties.getVersion() < 9.0){
-                log.error("Unsupported function for this version of Checkmarx");
-                return null;
+                String parentTeamName = getTeamName(parentTeamId);
+                return getTeamId(parentTeamName.concat(cxProperties.getTeamPathSeparator()).concat(teamName));
             }
-            List<CxTeam> teams = getTeams();
-            if (teams == null) {
-                throw new CheckmarxException("Error obtaining Team Id");
-            }
-            for (CxTeam team : teams) {
-                if (team.getName().equals(teamName) && team.getParentId().equals(parentTeamId)) {
-                    log.info("Found team {} with ID {}", teamName, team.getId());
-                    return team.getId();
+            else {
+                List<CxTeam> teams = getTeams();
+                if (teams == null) {
+                    throw new CheckmarxException("Error obtaining Team Id");
+                }
+                for (CxTeam team : teams) {
+                    if (team.getName().equals(teamName) && team.getParentId().equals(parentTeamId)) {
+                        log.info("Found team {} with ID {}", teamName, team.getId());
+                        return team.getId();
+                    }
                 }
             }
         } catch (HttpStatusCodeException e) {
@@ -1526,8 +1529,8 @@ public class CxService implements CxClient{
     public String createTeamWS(String parentTeamId, String teamName) throws CheckmarxException {
         String session = authClient.getLegacySession();
         cxLegacyService.createTeam(session, parentTeamId, teamName);
-        return getTeamId(cxProperties.getTeam().concat(cxProperties.getTeamPathSeparator()).concat(teamName));
-    }
+        return getTeamId(parentTeamId, teamName);
+   }
 
 
     /**
