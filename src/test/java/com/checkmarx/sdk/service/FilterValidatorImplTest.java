@@ -75,7 +75,7 @@ public class FilterValidatorImplTest {
     public void passesFilter_scriptPerformance() {
         String scriptText = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
         Script script = verifyParsingPerformance(scriptText, Duration.ofSeconds(10));
-        verifyEvaluationPerformance(script, Duration.ofSeconds(1));
+        verifyEvaluationPerformance(script, Duration.ofSeconds(2));
     }
 
     @Test
