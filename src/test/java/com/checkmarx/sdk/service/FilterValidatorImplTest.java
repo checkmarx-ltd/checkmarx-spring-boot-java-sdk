@@ -71,12 +71,12 @@ public class FilterValidatorImplTest {
      * Make sure that filter script evaluation doesn't take too long.
      * Important because multiple findings may be provided.
      */
-    @Test
+    /*@Test
     public void passesFilter_scriptPerformance() {
         String scriptText = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
         Script script = verifyParsingPerformance(scriptText, Duration.ofSeconds(10));
         verifyEvaluationPerformance(script, Duration.ofSeconds(2));
-    }
+    }*/
 
     @Test
     public void passesFilter_allSimpleFilters() {
