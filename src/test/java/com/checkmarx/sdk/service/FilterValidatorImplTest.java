@@ -32,6 +32,8 @@ public class FilterValidatorImplTest {
     private static final String NAME2 = "Client_Potential_XSS";
     private static final String CWE1 = "203";
     private static final String CWE2 = "611";
+    public static final String PERFORMANCE_TEST_SCRIPT = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
+    public static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(10);
 
     @Test
     public void passesFilter_scriptTypicalExample() {
@@ -68,15 +70,45 @@ public class FilterValidatorImplTest {
     }
 
     /**
+     * Parsing normally occurs only once during automation flow.
+     * However, it takes much longer than script evaluation.
+     */
+    @Test
+    public void passesFilter_parsingPerformance() {
+        long start = System.currentTimeMillis();
+        parse(PERFORMANCE_TEST_SCRIPT);
+        long end = System.currentTimeMillis();
+
+        Duration parseDuration = Duration.ofMillis(end - start);
+        log.info("Parsing took {}.", parseDuration);
+
+        assertTrue(MAX_ALLOWED_DURATION.compareTo(parseDuration) >= 0,
+                String.format("Script parsing took too long (more than %s).", MAX_ALLOWED_DURATION));
+    }
+
+    /**
      * Make sure that filter script evaluation doesn't take too long.
      * Important because multiple findings may be provided.
      */
-    /*@Test
-    public void passesFilter_scriptPerformance() {
-        String scriptText = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
-        Script script = verifyParsingPerformance(scriptText, Duration.ofSeconds(10));
-        verifyEvaluationPerformance(script, Duration.ofSeconds(2));
-    }*/
+    @Test
+    public void passesFilter_evaluationPerformance() {
+        final int EVALUATION_COUNT = 10000;
+        Script script = parse(PERFORMANCE_TEST_SCRIPT);
+        long start = System.currentTimeMillis();
+
+        for (int i = 0; i < EVALUATION_COUNT; i++) {
+            verifyScriptResult(script, SEVERITY_MEDIUM, STATUS_NEW, STATE_VERIFY_ID, NAME1, CWE1, true);
+            verifyScriptResult(script, SEVERITY_LOW, STATUS_RECURRENT, STATE_URGENT_ID, NAME1, CWE1, false);
+            verifyScriptResult(script, SEVERITY_HIGH, STATUS_NEW, STATE_VERIFY_ID, NAME1, CWE1, true);
+            verifyScriptResult(script, SEVERITY_HIGH, STATUS_RECURRENT, STATE_URGENT_ID, NAME1, CWE1, true);
+        }
+        long end = System.currentTimeMillis();
+
+        Duration actualDuration = Duration.ofMillis(end - start);
+        log.info("Evaluation took {}.", actualDuration);
+
+        assertTrue(MAX_ALLOWED_DURATION.compareTo(actualDuration) >= 0,
+                String.format("Filter evaluation took too long (more than %s).", MAX_ALLOWED_DURATION));    }
 
     @Test
     public void passesFilter_allSimpleFilters() {
@@ -115,36 +147,6 @@ public class FilterValidatorImplTest {
     private static Script parse(String scriptText) {
         GroovyShell groovyShell = new GroovyShell();
         return groovyShell.parse(scriptText);
-    }
-
-    private void verifyEvaluationPerformance(Script script, Duration maxAllowedDuration) {
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < 10000; i++) {
-            verifyScriptResult(script, SEVERITY_MEDIUM, STATUS_NEW, STATE_VERIFY_ID, NAME1, CWE1, true);
-            verifyScriptResult(script, SEVERITY_LOW, STATUS_RECURRENT, STATE_URGENT_ID, NAME1, CWE1, false);
-            verifyScriptResult(script, SEVERITY_HIGH, STATUS_NEW, STATE_VERIFY_ID, NAME1, CWE1, true);
-            verifyScriptResult(script, SEVERITY_HIGH, STATUS_RECURRENT, STATE_URGENT_ID, NAME1, CWE1, true);
-        }
-        long end = System.currentTimeMillis();
-
-        Duration actualDuration = Duration.ofMillis(end - start);
-        log.info("Evaluation took {}.", actualDuration);
-
-        assertTrue(maxAllowedDuration.compareTo(actualDuration) >= 0,
-                "Filter evaluation took too long");
-    }
-
-    private static Script verifyParsingPerformance(String scriptText, Duration maxAllowedDuration) {
-        long start = System.currentTimeMillis();
-        Script script = parse(scriptText);
-        long end = System.currentTimeMillis();
-
-        Duration parseDuration = Duration.ofMillis(end - start);
-        log.info("Parsing took {}.", parseDuration);
-
-        assertTrue(maxAllowedDuration.compareTo(parseDuration) >= 0,
-                "Script parsing took too long");
-        return script;
     }
 
     private static void verifyScriptResult(Script script,
