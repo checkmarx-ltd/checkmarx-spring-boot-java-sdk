@@ -1,7 +1,5 @@
 package com.checkmarx.sdk.service;
 
-import checkmarx.wsdl.portal.CxUserTypes;
-import checkmarx.wsdl.portal.Group;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxConfig;
 import com.checkmarx.sdk.config.CxProperties;
@@ -10,11 +8,10 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.cx.restclient.CxOsaService;
-//import com.cx.restclient.httpClient.CxHttpClient;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +21,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -266,7 +261,8 @@ public class CxServiceIT {
         try {
             List<Filter> filters = new ArrayList<>();
             filters.add(new Filter(Filter.Type.SEVERITY, "High"));
-            ScanResults results = service.getLatestScanResults(properties.getTeam(), "Riches", filters);
+            FilterConfiguration filterConfiguration = FilterConfiguration.builder().simpleFilters(filters).build();
+            ScanResults results = service.getLatestScanResults(properties.getTeam(), "Riches", filterConfiguration);
             assertNotNull(results);
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
