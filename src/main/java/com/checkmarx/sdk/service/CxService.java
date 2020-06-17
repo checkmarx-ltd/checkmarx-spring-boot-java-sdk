@@ -13,6 +13,7 @@ import com.checkmarx.sdk.utils.ScanUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONArray;
@@ -70,6 +71,12 @@ public class CxService implements CxClient{
     Created (2)
     */
     public static final Integer REPORT_STATUS_CREATED = 2;
+    private static final Map<String, Integer> STATE_MAP = ImmutableMap.of(
+            "TO VERIFY", 0,
+            "CONFIRMED", 2,
+            "URGENT", 3,
+            "PROPOSED NOT EXPLOITABLE",4
+    );
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
     private static final String TEAMS = "/auth/teams";
     private static final String TEAM = "/auth/teams/{id}";
@@ -754,26 +761,27 @@ public class CxService implements CxClient{
      */
     private Map<String, Integer> getIssues(FilterConfiguration filter, String session, List<ScanResults.XIssue> cxIssueList, CxXMLResultsType cxResults) {
         Map<String, Integer> summary = new HashMap<>();
-        for (QueryType q : cxResults.getQuery()) {
+        for (QueryType result : cxResults.getQuery()) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
-                for (ResultType r : q.getResult()) {
-                    if (filterValidator.passesFilter(q, r, filter)) {
+                for (ResultType resultType : result.getResult()) {
+                    if (filterValidator.passesFilter(result, resultType, filter)) {
                         boolean falsePositive = false;
-                        if(!r.getFalsePositive().equalsIgnoreCase("FALSE")){
+                        if(!resultType.getFalsePositive().equalsIgnoreCase("FALSE")){
                             falsePositive = true;
                         }
                         /*Map issue details*/
-                        xIssueBuilder.cwe(q.getCweId());
-                        xIssueBuilder.language(q.getLanguage());
-                        xIssueBuilder.severity(q.getSeverity());
-                        xIssueBuilder.vulnerability(q.getName());
-                        xIssueBuilder.file(r.getFileName());
-                        xIssueBuilder.severity(r.getSeverity());
-                        xIssueBuilder.link(r.getDeepLink());
-
+                        xIssueBuilder.cwe(result.getCweId());
+                        xIssueBuilder.language(result.getLanguage());
+                        xIssueBuilder.severity(result.getSeverity());
+                        xIssueBuilder.vulnerability(result.getName());
+                        xIssueBuilder.file(resultType.getFileName());
+                        xIssueBuilder.severity(resultType.getSeverity());
+                        xIssueBuilder.link(resultType.getDeepLink());
+                        xIssueBuilder.vulnerabilityStatus(getStateFullName(resultType.getState()));
+ 
                         // Add additional details
-                        Map<String, Object> additionalDetails = getAdditionalIssueDetails(q, r);
+                        Map<String, Object> additionalDetails = getAdditionalIssueDetails(result, resultType);
                         xIssueBuilder.additionalDetails(additionalDetails);
 
                         Map<Integer, ScanResults.IssueDetails> details = new HashMap<>();
@@ -781,40 +789,44 @@ public class CxService implements CxClient{
                             /* Call the CX SOAP Service to get Issue Description*/
                             if (session != null) {
                                 try {
-                                    xIssueBuilder.description(this.getIssueDescription(session, Long.parseLong(cxResults.getScanId()), Long.parseLong(r.getPath().getPathId())));
+                                    xIssueBuilder.description(this.getIssueDescription(session, Long.parseLong(cxResults.getScanId()), Long.parseLong(resultType.getPath().getPathId())));
                                 } catch (HttpStatusCodeException e) {
                                     xIssueBuilder.description("");
                                 }
                             } else {
                                 xIssueBuilder.description("");
                             }
-                            String snippet = r.getPath().getPathNode().get(0).getSnippet().getLine().getCode();
+                            String snippet = resultType.getPath().getPathNode().get(0).getSnippet().getLine().getCode();
                             snippet = StringUtils.truncate(snippet, cxProperties.getCodeSnippetLength());
                             ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
                                     .codeSnippet(snippet)
-                                    .comment(r.getRemark())
+                                    .comment(resultType.getRemark())
                                     .falsePositive(falsePositive);
-                            details.put(Integer.parseInt(r.getPath().getPathNode().get(0).getLine()),
+                            details.put(Integer.parseInt(resultType.getPath().getPathNode().get(0).getLine()),
                                     issueDetails);
-                            xIssueBuilder.similarityId(r.getPath().getSimilarityId());
+                            xIssueBuilder.similarityId(resultType.getPath().getSimilarityId());
                         } catch (NullPointerException e) {
                             log.warn("Problem grabbing snippet.  Snippet may not exist for finding for Node ID");
                             /*Defaulting to initial line number with no snippet*/
                             ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
                                     .codeSnippet(null)
-                                    .comment(r.getRemark())
+                                    .comment(resultType.getRemark())
                                     .falsePositive(falsePositive);
-                            details.put(Integer.parseInt(r.getLine()), issueDetails);
+                            details.put(Integer.parseInt(resultType.getLine()), issueDetails);
                         }
                         xIssueBuilder.details(details);
                         ScanResults.XIssue issue = xIssueBuilder.build();
-                        checkForDuplicateIssue(cxIssueList, r, details, falsePositive, issue, summary);
+                        prepareIssuesRemoveDuplicates(cxIssueList, resultType, details, falsePositive, issue, summary);
                     }
                 }
         }
         return summary;
     }
 
+    public String getStateFullName(String key){
+        return ((Map<Integer, String>)MapUtils.invertMap(STATE_MAP)).get(Integer.parseInt(key));
+    }
+    
     private Map<String, Object> getAdditionalIssueDetails(QueryType q, ResultType r) {
         Map<String, Object> additionalDetails = new HashMap<>();
         additionalDetails.put("categories", q.getCategories());
@@ -865,36 +877,36 @@ public class CxService implements CxClient{
 
 
 
-    private void checkForDuplicateIssue(List<ScanResults.XIssue> cxIssueList, ResultType r, Map<Integer, ScanResults.IssueDetails> details,
-                                        boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
+    private void prepareIssuesRemoveDuplicates(List<ScanResults.XIssue> cxIssueList, ResultType resultType, Map<Integer, ScanResults.IssueDetails> details,
+                                               boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
         if (cxIssueList.contains(issue)) {
             /*Get existing issue of same vuln+filename*/
             ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
             /*If no reference exists for this particular line, append it to the details (line+snippet)*/
-            if (!existingIssue.getDetails().containsKey(Integer.parseInt(r.getLine()))) {
+            if (!existingIssue.getDetails().containsKey(Integer.parseInt(resultType.getLine()))) {
                 if(falsePositive) {
                     existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount()+1));
                 }
                 else{
-                    if(!summary.containsKey(r.getSeverity())){
-                        summary.put(r.getSeverity(), 0);
+                    if(!summary.containsKey(resultType.getSeverity())){
+                        summary.put(resultType.getSeverity(), 0);
                     }
-                    int x = summary.get(r.getSeverity());
-                    x++;
-                    summary.put(r.getSeverity(), x);
+                    int severityCount = summary.get(resultType.getSeverity());
+                    severityCount++;
+                    summary.put(resultType.getSeverity(), severityCount);
                 }
                 existingIssue.getDetails().putAll(details);
             }
             else { //reference exists, ensure fp flag is maintained
-                ScanResults.IssueDetails existingDetails = existingIssue.getDetails().get(Integer.parseInt(r.getLine()));
-                ScanResults.IssueDetails newDetails = details.get(Integer.parseInt(r.getLine()));
+                ScanResults.IssueDetails existingDetails = existingIssue.getDetails().get(Integer.parseInt(resultType.getLine()));
+                ScanResults.IssueDetails newDetails = details.get(Integer.parseInt(resultType.getLine()));
                 if(newDetails.isFalsePositive() && !existingDetails.isFalsePositive()){
                     existingDetails.setFalsePositive(true);
                     existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount()+1));
                     //bump down the count for the severity
-                    int x = summary.get(r.getSeverity());
-                    x--;
-                    summary.put(r.getSeverity(), x);
+                    int severityCount = summary.get(resultType.getSeverity());
+                    severityCount--;
+                    summary.put(resultType.getSeverity(), severityCount);
                 }
             }
             // Copy additionalData.results from issue to existingIssue
@@ -906,12 +918,12 @@ public class CxService implements CxClient{
                 issue.setFalsePositiveCount((issue.getFalsePositiveCount()+1));
             }
             else{
-                if(!summary.containsKey(r.getSeverity())){
-                    summary.put(r.getSeverity(), 0);
+                if(!summary.containsKey(resultType.getSeverity())){
+                    summary.put(resultType.getSeverity(), 0);
                 }
-                int x = summary.get(r.getSeverity());
-                x++;
-                summary.put(r.getSeverity(), x);
+                int severityCount = summary.get(resultType.getSeverity());
+                severityCount++;
+                summary.put(resultType.getSeverity(), severityCount);
             }
             cxIssueList.add(issue);
         }
