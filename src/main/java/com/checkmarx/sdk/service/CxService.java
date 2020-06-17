@@ -1142,12 +1142,12 @@ public class CxService implements CxClient{
                 int statusId = stage.getInt("id");
                 if (SCAN_STATUS_QUEUED.equals(statusId) || SCAN_STATUS_NEW.equals(statusId) || SCAN_STATUS_SCANNING.equals(statusId) ||
                         SCAN_STATUS_PRESCAN.equals(statusId) || SCAN_STATUS_SOURCE_PULLING.equals(statusId)) {
-                    log.debug("Scan status is {} for Project: {}", statusId, projectId);
+                    log.info("Scan status is {} for Project: {}", statusId, projectId);
                     Integer scanId = scan.getInt("id");
                     return scanId;
                 }
             }
-            log.debug("No scans in the queue that are in progress");
+            log.info("No scans in the queue that are in progress");
             return UNKNOWN_INT;
 
         } catch (HttpStatusCodeException e) {
@@ -1789,7 +1789,7 @@ public class CxService implements CxClient{
      */
     @Override
     public void cancelScan(Integer scanId) throws CheckmarxException {
-        log.debug("Canceling scan with id {}", scanId);
+        log.info("Canceling scan with id {}", scanId);
         try {
             JSONObject scanRequest = new JSONObject();
             scanRequest.put("status","Canceled");

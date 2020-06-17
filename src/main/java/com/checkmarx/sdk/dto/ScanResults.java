@@ -174,10 +174,12 @@ public class ScanResults{
     }
 
     public void mergeWith(ScanResults scanResultsToMerge) {
-        ModelMapper modelMapper = new ModelMapper();
-        modelMapper.getConfiguration().setPropertyCondition(Conditions.isNotNull());
+        if(scanResultsToMerge!=null) {
+            ModelMapper modelMapper = new ModelMapper();
+            modelMapper.getConfiguration().setPropertyCondition(Conditions.isNotNull());
 
-        modelMapper.map(scanResultsToMerge, this);
+            modelMapper.map(scanResultsToMerge, this);
+        }
     }
 
     public static class XIssue{
