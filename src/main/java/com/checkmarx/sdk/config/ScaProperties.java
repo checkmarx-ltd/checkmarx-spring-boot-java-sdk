@@ -18,7 +18,8 @@ import java.util.Map;
 public class ScaProperties {
     public static final String CONFIG_PREFIX = "sca";
 
-    private Map<Severity, Double> thresholds;
+    private Map<Severity, Integer> thresholdsSeverity;
+    private Double thresholdsScore;
     private List<String> filterSeverity;
     private double filterScore;
     private String appUrl;
