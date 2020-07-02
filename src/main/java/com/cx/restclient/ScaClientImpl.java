@@ -53,29 +53,27 @@ public class ScaClientImpl implements ScaClient {
             filterResultsBySeverity(scaResults, scaProperties.getFilterSeverity());
         }
 
-        double filterScore = scaProperties.getFilterScore();
-        if (filterScore >= 0.0) {
+        Double filterScore = scaProperties.getFilterScore();
+        if (filterScore != null && filterScore >= 0.0) {
             filterResultsByScore(scaResults, filterScore);
         } else  {
-            log.warn("Score Severity: [{}] must be a positive value", filterScore) ;
+            log.info("Cx-SCA filter score is not defined", filterScore); ;
         }
     }
 
     private void filterResultsBySeverity(SCAResults scaResults, List<String> filerSeverity) {
         List<String> validateFilterSeverity = validateFilterSeverity(filerSeverity);
-        log.info("Applying SCA results filter severities: {}", validateFilterSeverity.toString());
+        log.info("Applying Cx-SCA results filter severities: [{}]", validateFilterSeverity.toString());
         scaResults.getFindings().removeIf(finding -> (
                 !StringUtils.containsIgnoreCase(validateFilterSeverity.toString(), finding.getSeverity().name())
                 ));
     }
 
     private void filterResultsByScore(SCAResults scaResults, double score) {
-        if (score != 0.0) {
-            log.info("Applying SCA results filter score: [{}]", score);
-            scaResults.getFindings().removeIf(finding -> (
-                    finding.getScore() < score
-            ));
-        }
+        log.info("Applying Cx-SCA results filter score: [{}]", score);
+        scaResults.getFindings().removeIf(finding -> (
+                finding.getScore() < score
+        ));
     }
 
     private List<String> validateFilterSeverity(List<String> filerSeverity) {

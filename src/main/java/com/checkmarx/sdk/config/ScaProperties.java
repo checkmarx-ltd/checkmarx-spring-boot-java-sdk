@@ -21,7 +21,7 @@ public class ScaProperties {
     private Map<Severity, Integer> thresholdsSeverity;
     private Double thresholdsScore;
     private List<String> filterSeverity;
-    private double filterScore;
+    private Double filterScore;
     private String appUrl;
     private String apiUrl;
     private String accessControlUrl;
