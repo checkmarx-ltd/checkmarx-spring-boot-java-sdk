@@ -32,6 +32,7 @@ import java.util.EnumSet;
 @Service
 public class ScaClientImpl implements ScaClient {
     private static final String ERROR_PREFIX = "SCA scan cannot be initiated.";
+    private static final int SCA_SCAN_INTERVAL_IN_SECONDS = 5;
 
     private final ScaProperties scaProperties;
 
@@ -40,6 +41,7 @@ public class ScaClientImpl implements ScaClient {
         validate(scaParams);
 
         CxScanConfig scanConfig = getScanConfig(scaParams);
+        scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
         DependencyScanResults scanResults = executeScan(scanConfig);
 
         SCAResults scaResults = toScaResults(scanResults.getScaResults());
