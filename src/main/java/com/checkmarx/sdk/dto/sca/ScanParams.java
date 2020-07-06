@@ -7,7 +7,7 @@ import java.net.URL;
 
 @Data
 @Builder
-public class SCAParams {
+public class ScanParams {
     private String projectName;
     private URL remoteRepoUrl;
     private String zipPath;
