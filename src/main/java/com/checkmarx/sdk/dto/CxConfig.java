@@ -34,8 +34,18 @@ public class CxConfig implements Serializable {
     private Osa osa;
     @JsonProperty("additionalProperties")
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    @JsonProperty("sca")
+    private Sca sca;
 
     private final static long serialVersionUID = 2851455437649831239L;
+
+    public Sca getSca() {
+        return sca;
+    }
+
+    public void setSca(Sca sca) {
+        this.sca = sca;
+    }
 
     @JsonProperty("version")
     public Double getVersion() {
