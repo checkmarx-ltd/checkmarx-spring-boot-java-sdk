@@ -1654,7 +1654,7 @@ public class CxService implements CxClient{
                 uploadProjectSource(projectId, new File(params.getFilePath()));
                 break;
         }
-        if(params.isIncremental() && !projectExistedBeforeScan) {
+        if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
             if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
                 log.debug("Last scanDate: {}", scanDate);
