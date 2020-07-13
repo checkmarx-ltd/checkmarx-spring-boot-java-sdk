@@ -1,13 +1,14 @@
 package com.cx.restclient;
 
 import com.checkmarx.sdk.dto.Filter;
-import com.checkmarx.sdk.dto.sca.CombinedResults;
-import com.checkmarx.sdk.dto.sca.ScanParams;
+import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
+import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.AstClient;
+import com.cx.restclient.ast.dto.common.SummaryResults;
 import com.cx.restclient.configuration.CxScanConfig;
 import com.cx.restclient.dto.ScanResults;
-import com.cx.restclient.sca.dto.report.SummaryResults;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -20,26 +21,26 @@ public abstract class AbstractClientImpl implements AstClient {
 
     protected static final String ERROR_PREFIX = "SCA scan cannot be initiated.";
 
-    public CombinedResults scanRemoteRepo(ScanParams scanParams) throws IOException {
+    public ASTResultsWrapper scanRemoteRepo(ScanParams scanParams) throws IOException {
         validate(scanParams);
 
         CxScanConfig scanConfig = getScanConfig(scanParams);
         ScanResults scanResults = executeScan(scanConfig);
 
-        CombinedResults scaResults = toResults(scanResults);
+        ASTResultsWrapper scaResults = toResults(scanResults);
         applyScaResultsFilters(scaResults);
 
         return scaResults;
     }
 
-    protected abstract void applyScaResultsFilters(CombinedResults scaResults);
+    protected abstract void applyScaResultsFilters(ASTResultsWrapper scaResults);
 
-    protected abstract CombinedResults toResults(ScanResults scanResults);
+    protected abstract ASTResultsWrapper toResults(ScanResults scanResults);
 
     protected ScanResults executeScan(CxScanConfig cxScanConfig) throws IOException {
         CxClientDelegator client = new CxClientDelegator(cxScanConfig, log);
         client.init();
-        client.createScan();
+        client.initiateScan();
 
         return client.waitForScanResults();
     }

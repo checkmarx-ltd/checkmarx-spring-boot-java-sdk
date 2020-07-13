@@ -1,25 +1,28 @@
 package com.cx.restclient;
 
 import com.checkmarx.sdk.config.AstProperties;
-import com.checkmarx.sdk.dto.Filter;
-import com.checkmarx.sdk.dto.sca.CombinedResults;
-import com.checkmarx.sdk.dto.sca.SCAResults;
-import com.checkmarx.sdk.dto.sca.ScanParams;
+import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
+import com.checkmarx.sdk.dto.ast.SCAResults;
+import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.cx.restclient.ast.dto.common.ASTConfig;
+import com.cx.restclient.ast.dto.common.ASTSummaryResults;
+import com.cx.restclient.ast.dto.common.RemoteRepositoryInfo;
+import com.cx.restclient.ast.dto.common.SummaryResults;
+import com.cx.restclient.ast.dto.sast.AstSastConfig;
 import com.cx.restclient.configuration.CxScanConfig;
+import com.checkmarx.sdk.dto.ast.ASTResults;
 
 import com.cx.restclient.dto.ScanResults;
 import com.cx.restclient.dto.ScannerType;
-import com.cx.restclient.sca.dto.*;
-import com.cx.restclient.sca.dto.report.ASTSummaryResults;
-import com.cx.restclient.sca.dto.report.SummaryResults;
+
+import com.cx.restclient.dto.SourceLocationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.lang.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,7 +33,7 @@ public class AstClientImpl extends AbstractClientImpl {
     private final AstProperties astProperties;
 
 
-    protected void applyScaResultsFilters(CombinedResults combinedResults) {
+    protected void applyScaResultsFilters(ASTResultsWrapper combinedResults) {
       //currently do nothing
     }
 
@@ -40,27 +43,27 @@ public class AstClientImpl extends AbstractClientImpl {
      */
 
     @Override
-    protected CombinedResults toResults(ScanResults astResults) {
-        validateNotNull(astResults.getAstResults());
+    protected ASTResultsWrapper toResults(ScanResults scanResults) {
+        validateNotNull(scanResults.getAstResults());
 
-        ASTSummaryResults summary = astResults.getAstResults().getSummary();
-        Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summary);
-
+        ASTSummaryResults summary = scanResults.getAstResults().getSummary();
+ 
         ModelMapper mapper = new ModelMapper();
-        SCAResults result = mapper.map(astResults, SCAResults.class);
-        result.getSummary().setFindingCounts(findingCountsPerSeverity);
+        ASTResults astResults = mapper.map(scanResults.getAstResults(), ASTResults.class);
         
-        return new CombinedResults(result);
+        return new ASTResultsWrapper(new SCAResults(), astResults);
     }
 
-    private void validateNotNull(ASTResults scaResults) {
-        if (scaResults == null) {
-            throw new ASTRuntimeException("SCA results are missing.");
+
+
+    private void validateNotNull(com.cx.restclient.ast.dto.common.ASTResults astResults) {
+        if (astResults == null) {
+            throw new ASTRuntimeException("AST results are missing.");
         }
 
-        SummaryResults summary = scaResults.getSummary();
+        SummaryResults summary = astResults.getSummary();
         if (summary == null) {
-            throw new ASTRuntimeException("SCA results don't contain a summary.");
+            throw new ASTRuntimeException("AST results don't contain a summary.");
         }
     }
     /**
@@ -68,43 +71,44 @@ public class AstClientImpl extends AbstractClientImpl {
      */
     protected CxScanConfig getScanConfig(ScanParams scanParams) {
         CxScanConfig cxScanConfig = new CxScanConfig();
-        cxScanConfig.setScannerType(ScannerType.AST);
+        cxScanConfig.addScannerType(ScannerType.AST_SAST);
         cxScanConfig.setSastEnabled(false);
         cxScanConfig.setProjectName(scanParams.getProjectName());
-        cxScanConfig.setAstConfig(getAstConfig(scanParams));
+        cxScanConfig.setAstSastConfig(getAstConfig(scanParams));
 
         return cxScanConfig;
     }
 
-    private ASTConfig getAstConfig(ScanParams astParams) {
-        ASTConfig astConfig = new ASTConfig();
+    private AstSastConfig getAstConfig(ScanParams scanParams) {
+        AstSastConfig astConfig = new AstSastConfig();
         astConfig.setApiUrl(astProperties.getApiUrl());
-        astConfig.setToken(astProperties.getToken());
-        astConfig.setPreset(astProperties.getPreset());
-        astConfig.setIncremental(astProperties.getIncremental());
+        astConfig.setAccessToken(astProperties.getToken());
+        astConfig.setPresetName(astProperties.getPreset());
+        astConfig.setIncremental(StringUtils.isEmpty(astProperties.getIncremental()) ? false : Boolean.parseBoolean(astProperties.getIncremental()));
 
+
+        astConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
+
+        RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
+        remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
+        astConfig.setRemoteRepositoryInfo(remoteRepoInfo);
+        
         return astConfig;
     }
 
 
 
-    protected void validate(ScanParams scaParams) {
-        validateNotNull(scaParams);
+    protected void validate(ScanParams scanParams) {
+        if (scanParams == null) {
+            throw new ASTRuntimeException(String.format("%s SCA parameters weren't provided.", ERROR_PREFIX));
+        }
          validateNotEmpty(astProperties.getApiUrl(), "AST API URL");
         validateNotEmpty(astProperties.getToken(), "AST Access Token");
         validateNotEmpty(astProperties.getPreset(), "AST preset");
         validateNotEmpty(astProperties.getIncremental(), "Is Incremental flag");
     }
 
-    private void validateNotNull(ScanParams scaParams) {
-        if (scaParams == null) {
-            throw new ASTRuntimeException(String.format("%s SCA parameters weren't provided.", ERROR_PREFIX));
-        }
 
-        if (scaParams.getRemoteRepoUrl() == null) {
-            throw new ASTRuntimeException(String.format("%s Repository URL wasn't provided.", ERROR_PREFIX));
-        }
-    }
 
 
 

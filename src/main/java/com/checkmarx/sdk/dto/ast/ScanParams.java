@@ -1,4 +1,4 @@
-package com.checkmarx.sdk.dto.sca;
+package com.checkmarx.sdk.dto.ast;
 
 import lombok.Builder;
 import lombok.Data;
