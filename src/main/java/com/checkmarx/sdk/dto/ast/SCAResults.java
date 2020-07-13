@@ -1,7 +1,6 @@
-package com.checkmarx.sdk.dto.sca;
+package com.checkmarx.sdk.dto.ast;
 
-import com.cx.restclient.sca.dto.report.Finding;
-import com.cx.restclient.sca.dto.report.Package;
+
 import lombok.Getter;
 import lombok.Setter;
 

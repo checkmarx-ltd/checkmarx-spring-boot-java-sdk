@@ -2,18 +2,20 @@ package com.cx.restclient;
 
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.Filter;
-import com.checkmarx.sdk.dto.sca.CombinedResults;
-import com.checkmarx.sdk.dto.sca.ScanParams;
-import com.checkmarx.sdk.dto.sca.SCAResults;
+import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
+import com.checkmarx.sdk.dto.ast.ScanParams;
+import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.cx.restclient.ast.dto.common.RemoteRepositoryInfo;
+import com.cx.restclient.ast.dto.sca.AstScaConfig;
+import com.cx.restclient.ast.dto.sca.AstScaResults;
+import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
 import com.cx.restclient.configuration.CxScanConfig;
 
 import com.cx.restclient.dto.ScanResults;
 import com.cx.restclient.dto.ScannerType;
-import com.cx.restclient.sca.dto.RemoteRepositoryInfo;
-import com.cx.restclient.sca.dto.SCAConfig;
-import com.cx.restclient.sca.dto.SourceLocationType;
-import com.cx.restclient.sca.dto.report.SCASummaryResults;
+import com.cx.restclient.dto.SourceLocationType;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -34,7 +36,7 @@ public class ScaClientImpl extends AbstractClientImpl {
     private final ScaProperties scaProperties;
 
 
-    protected void applyScaResultsFilters(CombinedResults combinedResults) {
+    protected void applyScaResultsFilters(ASTResultsWrapper combinedResults) {
 
         SCAResults scaResults = combinedResults.getScaResults();
         if (scaProperties.getFilterSeverity() != null && !Objects.requireNonNull(scaProperties.getFilterSeverity()).isEmpty()) {
@@ -81,17 +83,19 @@ public class ScaClientImpl extends AbstractClientImpl {
      */
 
     @Override
-    protected CombinedResults toResults(ScanResults scaResultsFromCommonClient) {
+    protected ASTResultsWrapper toResults(ScanResults scaResultsFromCommonClient) {
         validateNotNull(scaResultsFromCommonClient.getScaResults());
 
-        SCASummaryResults summary = scaResultsFromCommonClient.getScaResults().getSummary();
+        AstScaSummaryResults summary = scaResultsFromCommonClient.getScaResults().getSummary();
         Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summary);
 
         ModelMapper mapper = new ModelMapper();
-        SCAResults result = mapper.map(scaResultsFromCommonClient, SCAResults.class);
+        SCAResults result = mapper.map(scaResultsFromCommonClient.getScaResults(), SCAResults.class);
         result.getSummary().setFindingCounts(findingCountsPerSeverity);
-        
-        return new CombinedResults(result);
+
+        ASTResultsWrapper results = new ASTResultsWrapper();
+        results.setScaResults(result);
+        return results;
     }
 
 
@@ -101,16 +105,16 @@ public class ScaClientImpl extends AbstractClientImpl {
      */
     protected CxScanConfig getScanConfig(ScanParams scaParams) {
         CxScanConfig cxScanConfig = new CxScanConfig();
-        cxScanConfig.setScannerType(ScannerType.SCA);
+        cxScanConfig.addScannerType(ScannerType.AST_SCA);
         cxScanConfig.setSastEnabled(false);
         cxScanConfig.setProjectName(scaParams.getProjectName());
-        cxScanConfig.setScaConfig(getSCAConfig(scaParams));
+        cxScanConfig.setAstScaConfig(getSCAConfig(scaParams));
 
         return cxScanConfig;
     }
 
-    private SCAConfig getSCAConfig(ScanParams scaParams) {
-        SCAConfig scaConfig = new SCAConfig();
+    private AstScaConfig getSCAConfig(ScanParams scanParams) {
+        AstScaConfig scaConfig = new AstScaConfig();
         scaConfig.setWebAppUrl(scaProperties.getAppUrl());
         scaConfig.setApiUrl(scaProperties.getApiUrl());
         scaConfig.setAccessControlUrl(scaProperties.getAccessControlUrl());
@@ -120,7 +124,7 @@ public class ScaClientImpl extends AbstractClientImpl {
         scaConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
 
         RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
-        remoteRepoInfo.setUrl(scaParams.getRemoteRepoUrl());
+        remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
         scaConfig.setRemoteRepositoryInfo(remoteRepoInfo);
 
         return scaConfig;
@@ -139,22 +143,22 @@ public class ScaClientImpl extends AbstractClientImpl {
         validateNotEmpty(scaProperties.getPassword(), "Password");
     }
 
-    private void validateNotNull(ScanParams scaParams) {
-        if (scaParams == null) {
+    private void validateNotNull(ScanParams scanParams) {
+        if (scanParams == null) {
             throw new ASTRuntimeException(String.format("%s SCA parameters weren't provided.", ERROR_PREFIX));
         }
 
-        if (scaParams.getRemoteRepoUrl() == null) {
+        if (scanParams.getRemoteRepoUrl() == null) {
             throw new ASTRuntimeException(String.format("%s Repository URL wasn't provided.", ERROR_PREFIX));
         }
     }
 
-    private void validateNotNull(com.cx.restclient.sca.dto.SCAResults scaResults) {
+    private void validateNotNull(AstScaResults scaResults) {
         if (scaResults == null) {
             throw new ASTRuntimeException("SCA results are missing.");
         }
 
-        SCASummaryResults summary = scaResults.getSummary();
+        AstScaSummaryResults summary = scaResults.getSummary();
         if (summary == null) {
             throw new ASTRuntimeException("SCA results don't contain a summary.");
         }
