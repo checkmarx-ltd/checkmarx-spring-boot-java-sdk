@@ -2,6 +2,7 @@ package com.checkmarx.sdk.dto;
 
 import com.checkmarx.sdk.dto.ast.ASTResults;
 import com.checkmarx.sdk.dto.ast.Finding;
+import com.checkmarx.sdk.dto.ast.Package;
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 
