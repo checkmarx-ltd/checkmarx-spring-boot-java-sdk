@@ -22,6 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +34,7 @@ import java.util.EnumSet;
 @RequiredArgsConstructor
 @Service
 public class ScaClientImpl extends AbstractClientImpl {
+
 
     private final ScaProperties scaProperties;
 
@@ -121,11 +124,15 @@ public class ScaClientImpl extends AbstractClientImpl {
         scaConfig.setTenant(scaProperties.getTenant());
         scaConfig.setUsername(scaProperties.getUsername());
         scaConfig.setPassword(scaProperties.getPassword());
-        scaConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
-
-        RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
-        remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
-        scaConfig.setRemoteRepositoryInfo(remoteRepoInfo);
+        if(scanParams.getZipPath() != null){
+            scaConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
+        }
+        else{
+            scaConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
+            RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
+            remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
+            scaConfig.setRemoteRepositoryInfo(remoteRepoInfo);
+        }
 
         return scaConfig;
     }
@@ -148,8 +155,12 @@ public class ScaClientImpl extends AbstractClientImpl {
             throw new ASTRuntimeException(String.format("%s SCA parameters weren't provided.", ERROR_PREFIX));
         }
 
-        if (scanParams.getRemoteRepoUrl() == null) {
-            throw new ASTRuntimeException(String.format("%s Repository URL wasn't provided.", ERROR_PREFIX));
+        if (scanParams.getRemoteRepoUrl() == null && scanParams.getZipPath() == null) {
+            throw new ASTRuntimeException(String.format("%s Repository URL or Zip path wasn't provided.", ERROR_PREFIX));
+        }
+
+        if(!(new File(scanParams.getZipPath()).exists())){
+            throw new ASTRuntimeException(String.format("%s file (%s) does not exist.", ERROR_PREFIX, scanParams.getZipPath()));
         }
     }
 

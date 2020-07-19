@@ -87,12 +87,15 @@ public class AstClientImpl extends AbstractClientImpl {
         astConfig.setPresetName(astProperties.getPreset());
         astConfig.setIncremental(StringUtils.isEmpty(astProperties.getIncremental()) ? false : Boolean.parseBoolean(astProperties.getIncremental()));
 
-
-        astConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
-
-        RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
-        remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
-        astConfig.setRemoteRepositoryInfo(remoteRepoInfo);
+        if(scanParams.getZipPath() != null){
+            astConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
+        }
+        else{
+            astConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
+            RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
+            remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
+            astConfig.setRemoteRepositoryInfo(remoteRepoInfo);
+        }
         
         return astConfig;
     }

@@ -12,4 +12,6 @@ public interface AstClient {
      * @return scan results
      */
     ASTResultsWrapper scanRemoteRepo(ScanParams scaParams) throws IOException;
+
+    ASTResultsWrapper scanLocalSource(ScanParams scanParams) throws IOException;
 }
