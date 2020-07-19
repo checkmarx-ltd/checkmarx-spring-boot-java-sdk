@@ -5,7 +5,7 @@ import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
-import com.cx.restclient.ast.dto.common.ASTConfig;
+
 import com.cx.restclient.ast.dto.common.ASTSummaryResults;
 import com.cx.restclient.ast.dto.common.RemoteRepositoryInfo;
 import com.cx.restclient.ast.dto.common.SummaryResults;
@@ -15,6 +15,7 @@ import com.checkmarx.sdk.dto.ast.ASTResults;
 
 import com.cx.restclient.dto.ScanResults;
 import com.cx.restclient.dto.ScannerType;
+
 
 import com.cx.restclient.dto.SourceLocationType;
 import lombok.RequiredArgsConstructor;
