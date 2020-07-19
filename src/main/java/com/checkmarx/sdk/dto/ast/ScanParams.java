@@ -10,4 +10,5 @@ import java.net.URL;
 public class ScanParams {
     private String projectName;
     private URL remoteRepoUrl;
+    private String zipPath;
 }

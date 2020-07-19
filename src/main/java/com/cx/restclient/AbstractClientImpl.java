@@ -12,13 +12,15 @@ import com.cx.restclient.dto.ScanResults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
 
 @Slf4j
 public abstract class AbstractClientImpl implements AstClient {
-
+    
+    private static final int SCA_SCAN_INTERVAL_IN_SECONDS = 5;
     protected static final String ERROR_PREFIX = "SCA scan cannot be initiated.";
 
     public ASTResultsWrapper scanRemoteRepo(ScanParams scanParams) throws IOException {
@@ -33,6 +35,27 @@ public abstract class AbstractClientImpl implements AstClient {
         return scaResults;
     }
 
+    @Override
+    public ASTResultsWrapper scanLocalSource(ScanParams scanParams) throws IOException {
+        validate(scanParams);
+
+        CxScanConfig scanConfig = getScanConfig(scanParams);
+        scanConfig.setZipFile(new File(scanParams.getZipPath()));
+        scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
+        /*
+        TODO
+        ...
+        LOGIC for Resolver functionality (package manager)
+        ...
+         */
+        ScanResults scanResults = executeScan(scanConfig);
+
+        ASTResultsWrapper scaResults = toResults(scanResults);
+        applyScaResultsFilters(scaResults);
+
+        return scaResults;
+    }
+    
     protected abstract void applyScaResultsFilters(ASTResultsWrapper scaResults);
 
     protected abstract ASTResultsWrapper toResults(ScanResults scanResults);
