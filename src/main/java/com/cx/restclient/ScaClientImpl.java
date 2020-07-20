@@ -196,7 +196,7 @@ public class ScaClientImpl implements ScaClient {
             throw new SCARuntimeException(String.format("%s Repository URL or Zip path wasn't provided.", ERROR_PREFIX));
         }
 
-        if(!(new File(scaParams.getZipPath()).exists())){
+        if((!StringUtils.isEmpty(scaParams.getZipPath()) && !(new File(scaParams.getZipPath()).exists()))){
             throw new SCARuntimeException(String.format("%s file (%s) does not exist.", ERROR_PREFIX, scaParams.getZipPath()));
         }
     }
