@@ -1,6 +1,6 @@
-package com.checkmarx.sdk.dto.sca;
+package com.checkmarx.sdk.dto.ast;
 
-import com.cx.restclient.sca.dto.report.DependencyPathSegment;
+
 import lombok.Getter;
 import lombok.Setter;
 

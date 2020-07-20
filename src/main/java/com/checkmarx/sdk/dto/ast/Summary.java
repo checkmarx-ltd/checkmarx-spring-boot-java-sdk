@@ -1,4 +1,4 @@
-package com.checkmarx.sdk.dto.sca;
+package com.checkmarx.sdk.dto.ast;
 
 import com.checkmarx.sdk.dto.Filter;
 import lombok.Getter;
