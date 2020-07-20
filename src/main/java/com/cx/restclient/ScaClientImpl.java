@@ -159,7 +159,7 @@ public class ScaClientImpl extends AbstractClientImpl {
             throw new ASTRuntimeException(String.format("%s Repository URL or Zip path wasn't provided.", ERROR_PREFIX));
         }
 
-        if(!(new File(scanParams.getZipPath()).exists())){
+        if((!StringUtils.isEmpty(scanParams.getZipPath()) && !(new File(scanParams.getZipPath()).exists()))){
             throw new ASTRuntimeException(String.format("%s file (%s) does not exist.", ERROR_PREFIX, scanParams.getZipPath()));
         }
     }
