@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-
+import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.List;
@@ -42,6 +42,27 @@ public class ScaClientImpl implements ScaClient {
 
         CxScanConfig scanConfig = getScanConfig(scaParams);
         scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
+        DependencyScanResults scanResults = executeScan(scanConfig);
+
+        SCAResults scaResults = toScaResults(scanResults.getScaResults());
+        applyScaResultsFilters(scaResults);
+
+        return scaResults;
+    }
+
+    @Override
+    public SCAResults scanLocalSource(SCAParams scaParams) throws IOException {
+        validate(scaParams);
+
+        CxScanConfig scanConfig = getScanConfig(scaParams);
+        scanConfig.setZipFile(new File(scaParams.getZipPath()));
+        scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
+        /*
+        TODO
+        ...
+        LOGIC for Resolver functionality (package manager)
+        ...
+         */
         DependencyScanResults scanResults = executeScan(scanConfig);
 
         SCAResults scaResults = toScaResults(scanResults.getScaResults());
@@ -134,11 +155,15 @@ public class ScaClientImpl implements ScaClient {
         scaConfig.setTenant(scaProperties.getTenant());
         scaConfig.setUsername(scaProperties.getUsername());
         scaConfig.setPassword(scaProperties.getPassword());
-        scaConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
-
-        RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
-        remoteRepoInfo.setUrl(scaParams.getRemoteRepoUrl());
-        scaConfig.setRemoteRepositoryInfo(remoteRepoInfo);
+        if(scaParams.getZipPath() != null){
+            scaConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
+        }
+        else{
+            scaConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
+            RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
+            remoteRepoInfo.setUrl(scaParams.getRemoteRepoUrl());
+            scaConfig.setRemoteRepositoryInfo(remoteRepoInfo);
+        }
 
         return scaConfig;
     }
@@ -167,8 +192,12 @@ public class ScaClientImpl implements ScaClient {
             throw new SCARuntimeException(String.format("%s SCA parameters weren't provided.", ERROR_PREFIX));
         }
 
-        if (scaParams.getRemoteRepoUrl() == null) {
-            throw new SCARuntimeException(String.format("%s Repository URL wasn't provided.", ERROR_PREFIX));
+        if (scaParams.getRemoteRepoUrl() == null && scaParams.getZipPath() == null) {
+            throw new SCARuntimeException(String.format("%s Repository URL or Zip path wasn't provided.", ERROR_PREFIX));
+        }
+
+        if(!(new File(scaParams.getZipPath()).exists())){
+            throw new SCARuntimeException(String.format("%s file (%s) does not exist.", ERROR_PREFIX, scaParams.getZipPath()));
         }
     }
 

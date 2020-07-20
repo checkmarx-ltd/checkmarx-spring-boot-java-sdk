@@ -12,4 +12,10 @@ public interface ScaClient {
      * @return scan results
      */
     SCAResults scanRemoteRepo(SCAParams scaParams) throws IOException;
+
+    /**
+     * Create new SCA scan for a new/existing project with a local zip source
+     * @return scan results
+     */
+    SCAResults scanLocalSource(SCAParams scaParams) throws IOException;
 }
