@@ -27,8 +27,9 @@ public abstract class AbstractClientImpl implements AstClient {
         validate(scanParams);
 
         CxScanConfig scanConfig = getScanConfig(scanParams);
+        scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
         ScanResults scanResults = executeScan(scanConfig);
-
+        
         ASTResultsWrapper scaResults = toResults(scanResults);
         applyScaResultsFilters(scaResults);
 
