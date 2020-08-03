@@ -18,17 +18,13 @@ import com.cx.restclient.dto.SourceLocationType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Iterator;
-import java.util.EnumSet;
+import java.util.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -39,19 +35,54 @@ public class ScaClientImpl extends AbstractClientImpl {
     private final ScaProperties scaProperties;
 
 
-    protected void applyScaResultsFilters(ASTResultsWrapper combinedResults) {
+    protected void applyScaResultsFilters(ASTResultsWrapper combinedResults, ScanParams scanParams) {
 
         SCAResults scaResults = combinedResults.getScaResults();
-        if (scaProperties.getFilterSeverity() != null && !Objects.requireNonNull(scaProperties.getFilterSeverity()).isEmpty()) {
-            filterResultsBySeverity(scaResults, scaProperties.getFilterSeverity());
+        List<String> filterSeverityFromRequest = null;
+        Double filterScoreFromRequest = null;
+
+        if (Optional.ofNullable(scanParams.getScaConfig()).isPresent()) {
+            filterSeverityFromRequest = scanParams.getScaConfig().getFilterSeverity();
+            filterScoreFromRequest = scanParams.getScaConfig().getFilterScore();
         }
 
-        Double filterScore = scaProperties.getFilterScore();
-        if (filterScore != null && filterScore >= 0.0) {
-            filterResultsByScore(scaResults, filterScore);
-        } else  {
-            log.info("Cx-SCA filter score is not defined", filterScore); ;
+        List<String> appliedFilterSeverity;
+        appliedFilterSeverity = getFilterSeverity(filterSeverityFromRequest);
+
+        if (appliedFilterSeverity != null && !Objects.requireNonNull(appliedFilterSeverity).isEmpty()) {
+            filterResultsBySeverity(scaResults, appliedFilterSeverity);
         }
+
+        Double appliedFilterScore;
+        appliedFilterScore = getFilterScore(filterScoreFromRequest);
+
+        if (isNotEmptyDouble(appliedFilterScore)) {
+            filterResultsByScore(scaResults, appliedFilterScore);
+        } else  {
+            log.info("Cx-SCA filter score is not defined", appliedFilterScore); ;
+        }
+    }
+
+    private Double getFilterScore(Double filterScoreFromRequest) {
+        Double appliedFilterScore;
+
+        if (isNotEmptyDouble(filterScoreFromRequest)) {
+            appliedFilterScore = filterScoreFromRequest;
+        } else {
+            appliedFilterScore = scaProperties.getFilterScore();
+        }
+        return appliedFilterScore;
+    }
+
+    private List<String> getFilterSeverity(List<String> filterSeverityFromRequest) {
+        List<String> appliedFilterSeverity;
+
+        if (CollectionUtils.isNotEmpty(filterSeverityFromRequest)) {
+            appliedFilterSeverity = filterSeverityFromRequest;
+        } else {
+            appliedFilterSeverity = scaProperties.getFilterSeverity();
+        }
+        return appliedFilterSeverity;
     }
 
     private void filterResultsBySeverity(SCAResults scaResults, List<String> filerSeverity) {
@@ -118,10 +149,24 @@ public class ScaClientImpl extends AbstractClientImpl {
 
     private AstScaConfig getSCAConfig(ScanParams scanParams) {
         AstScaConfig scaConfig = new AstScaConfig();
-        scaConfig.setWebAppUrl(scaProperties.getAppUrl());
-        scaConfig.setApiUrl(scaProperties.getApiUrl());
-        scaConfig.setAccessControlUrl(scaProperties.getAccessControlUrl());
-        scaConfig.setTenant(scaProperties.getTenant());
+
+        String appUrlFromRequest = null;
+        String apiUrlFromRequest = null;
+        String accessControlUrlFromRequest = null;
+        String tenantFromRequest = null;
+
+        if (Optional.ofNullable(scanParams.getScaConfig()).isPresent()) {
+            appUrlFromRequest = scanParams.getScaConfig().getAppUrl();
+            apiUrlFromRequest = scanParams.getScaConfig().getApiUrl();
+            accessControlUrlFromRequest = scanParams.getScaConfig().getAccessControlUrl();
+            tenantFromRequest = scanParams.getScaConfig().getTenant();
+        }
+
+        setAppliedAppUrl(scaConfig, appUrlFromRequest);
+        setAppliedApiUrl(scaConfig, apiUrlFromRequest);
+        setAppliedAcUrl(scaConfig, accessControlUrlFromRequest);
+        setAppliedTenant(scaConfig, tenantFromRequest);
+
         scaConfig.setUsername(scaProperties.getUsername());
         scaConfig.setPassword(scaProperties.getPassword());
         if(scanParams.getZipPath() != null){
@@ -137,7 +182,37 @@ public class ScaClientImpl extends AbstractClientImpl {
         return scaConfig;
     }
 
+    private void setAppliedTenant(AstScaConfig scaConfig, String tenantFromRequest) {
+        if (tenantFromRequest != null) {
+            scaConfig.setTenant(tenantFromRequest);
+        } else {
+            scaConfig.setTenant(scaProperties.getTenant());
+        }
+    }
 
+    private void setAppliedAcUrl(AstScaConfig scaConfig, String accessControlUrlFromRequest) {
+        if (accessControlUrlFromRequest != null) {
+            scaConfig.setAccessControlUrl(accessControlUrlFromRequest);
+        } else {
+            scaConfig.setAccessControlUrl(scaProperties.getAccessControlUrl());
+        }
+    }
+
+    private void setAppliedApiUrl(AstScaConfig scaConfig, String apiUrlFromRequest) {
+        if (apiUrlFromRequest != null) {
+            scaConfig.setApiUrl(apiUrlFromRequest);
+        } else {
+            scaConfig.setApiUrl(scaProperties.getApiUrl());
+        }
+    }
+
+    private void setAppliedAppUrl(AstScaConfig scaConfig, String appUrlFromRequest) {
+        if (appUrlFromRequest != null) {
+            scaConfig.setWebAppUrl(appUrlFromRequest);
+        } else {
+            scaConfig.setWebAppUrl(scaProperties.getAppUrl());
+        }
+    }
 
     protected void validate(ScanParams scaParams) {
         validateNotNull(scaParams);
@@ -175,5 +250,7 @@ public class ScaClientImpl extends AbstractClientImpl {
         }
     }
 
-
+    private boolean isNotEmptyDouble(Double d) {
+        return (d != null && d >= 0.0);
+    }
 }

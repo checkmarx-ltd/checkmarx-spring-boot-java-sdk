@@ -36,7 +36,7 @@ public class AstClientImpl extends AbstractClientImpl {
     private final AstProperties astProperties;
 
 
-    protected void applyScaResultsFilters(ASTResultsWrapper combinedResults) {
+    protected void applyScaResultsFilters(ASTResultsWrapper combinedResults, ScanParams scanParams) {
       //currently do nothing
     }
 

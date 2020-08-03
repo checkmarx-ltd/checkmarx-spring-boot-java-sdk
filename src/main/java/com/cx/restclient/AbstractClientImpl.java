@@ -31,7 +31,7 @@ public abstract class AbstractClientImpl implements AstClient {
         ScanResults scanResults = executeScan(scanConfig);
         
         ASTResultsWrapper scaResults = toResults(scanResults);
-        applyScaResultsFilters(scaResults);
+        applyScaResultsFilters(scaResults, scanParams);
 
         return scaResults;
     }
@@ -52,12 +52,12 @@ public abstract class AbstractClientImpl implements AstClient {
         ScanResults scanResults = executeScan(scanConfig);
 
         ASTResultsWrapper scaResults = toResults(scanResults);
-        applyScaResultsFilters(scaResults);
+        applyScaResultsFilters(scaResults, scanParams);
 
         return scaResults;
     }
     
-    protected abstract void applyScaResultsFilters(ASTResultsWrapper scaResults);
+    protected abstract void applyScaResultsFilters(ASTResultsWrapper scaResults, ScanParams scanParams);
 
     protected abstract ASTResultsWrapper toResults(ScanResults scanResults);
 
