@@ -1,5 +1,6 @@
 package com.cx.restclient;
 
+import com.checkmarx.sdk.config.ScaConfig;
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
@@ -216,13 +217,22 @@ public class ScaClientImpl extends AbstractClientImpl {
 
     protected void validate(ScanParams scaParams) {
         validateNotNull(scaParams);
-        validateNotEmpty(scaProperties.getAppUrl(), "SCA application URL");
-        validateNotEmpty(scaProperties.getApiUrl(), "SCA API URL");
-        validateNotEmpty(scaProperties.getAccessControlUrl(), "SCA Access Control URL");
-        validateNotEmpty(scaParams.getProjectName(), "Project name");
-        validateNotEmpty(scaProperties.getTenant(), "SCA tenant");
-        validateNotEmpty(scaProperties.getUsername(), "Username");
-        validateNotEmpty(scaProperties.getPassword(), "Password");
+
+        ScaConfig scaConfig = scaParams.getScaConfig();
+        if (Optional.ofNullable(scaConfig).isPresent()) {
+            validateNotEmpty(scaConfig.getAppUrl(), "SCA application URL");
+            validateNotEmpty(scaConfig.getApiUrl(), "SCA API URL");
+            validateNotEmpty(scaConfig.getAccessControlUrl(), "SCA Access Control URL");
+            validateNotEmpty(scaConfig.getTenant(), "SCA tenant");
+        } else {
+            validateNotEmpty(scaProperties.getAppUrl(), "SCA application URL");
+            validateNotEmpty(scaProperties.getApiUrl(), "SCA API URL");
+            validateNotEmpty(scaProperties.getAccessControlUrl(), "SCA Access Control URL");
+            validateNotEmpty(scaParams.getProjectName(), "Project name");
+            validateNotEmpty(scaProperties.getTenant(), "SCA tenant");
+            validateNotEmpty(scaProperties.getUsername(), "Username");
+            validateNotEmpty(scaProperties.getPassword(), "Password");
+        }
     }
 
     private void validateNotNull(ScanParams scanParams) {
