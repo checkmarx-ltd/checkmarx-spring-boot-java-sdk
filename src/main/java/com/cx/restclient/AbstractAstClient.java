@@ -5,25 +5,26 @@ import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.AstClient;
-import com.cx.restclient.ast.dto.common.SummaryResults;
+import com.cx.restclient.ast.dto.common.*;
 import com.cx.restclient.configuration.CxScanConfig;
 import com.cx.restclient.dto.ScanResults;
-
+import com.cx.restclient.dto.SourceLocationType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.EnumMap;
 import java.util.Map;
 
 @Slf4j
-public abstract class AbstractClientImpl implements AstClient {
+public abstract class AbstractAstClient implements AstClient {
     
     private static final int SCA_SCAN_INTERVAL_IN_SECONDS = 5;
-    protected static final String ERROR_PREFIX = "SCA scan cannot be initiated.";
+    protected static final String ERROR_PREFIX = "Scan cannot be initiated.";
 
-    public ASTResultsWrapper scanRemoteRepo(ScanParams scanParams) throws IOException {
+    @Override
+    public ASTResultsWrapper scanRemoteRepo(ScanParams scanParams) {
         validate(scanParams);
 
         CxScanConfig scanConfig = getScanConfig(scanParams);
@@ -37,7 +38,7 @@ public abstract class AbstractClientImpl implements AstClient {
     }
 
     @Override
-    public ASTResultsWrapper scanLocalSource(ScanParams scanParams) throws IOException {
+    public ASTResultsWrapper scanLocalSource(ScanParams scanParams) {
         validate(scanParams);
 
         CxScanConfig scanConfig = getScanConfig(scanParams);
@@ -61,8 +62,14 @@ public abstract class AbstractClientImpl implements AstClient {
 
     protected abstract ASTResultsWrapper toResults(ScanResults scanResults);
 
-    protected ScanResults executeScan(CxScanConfig cxScanConfig) throws IOException {
-        CxClientDelegator client = new CxClientDelegator(cxScanConfig, log);
+    protected ScanResults executeScan(CxScanConfig cxScanConfig) {
+        CxClientDelegator client;
+        try {
+            client = new CxClientDelegator(cxScanConfig, log);
+        } catch (MalformedURLException e) {
+            String message = String.format("Error creating %s instance.", CxClientDelegator.class.getSimpleName());
+            throw new ASTRuntimeException(message, e);
+        }
         client.init();
         client.initiateScan();
 
@@ -81,6 +88,18 @@ public abstract class AbstractClientImpl implements AstClient {
         if (StringUtils.isEmpty(parameter)) {
             String message = String.format("%s %s wasn't provided", ERROR_PREFIX, parameterDescr);
             throw new ASTRuntimeException(message);
+        }
+    }
+
+    protected static void setSourceLocation(ScanParams scanParams, ASTConfig astConfig) {
+        if(scanParams.getZipPath() != null){
+            astConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
+        }
+        else{
+            astConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
+            RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
+            remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
+            astConfig.setRemoteRepositoryInfo(remoteRepoInfo);
         }
     }
 
