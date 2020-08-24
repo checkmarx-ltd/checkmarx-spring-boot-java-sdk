@@ -131,7 +131,14 @@ public class ScaClientImpl extends AbstractAstClient {
             CxClientDelegator client = new CxClientDelegator(commonClientScanConfig, log);
             client.init();
             ScanResults commonClientResults = client.getLatestScanResults();
-            return toResults(commonClientResults);
+            ASTResultsWrapper result;
+            if (commonClientResults.getScaResults() != null) {
+                result = toResults(commonClientResults);
+                applyScaResultsFilters(result, scanParams);
+            } else {
+                result = new ASTResultsWrapper();
+            }
+            return result;
         } catch (Exception e) {
             throw new ASTRuntimeException("Error getting latest scan results.", e);
         }
