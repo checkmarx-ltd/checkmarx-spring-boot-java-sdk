@@ -3,7 +3,9 @@ package com.cx.restclient;
 import com.checkmarx.sdk.config.ScaConfig;
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.Filter;
-import com.checkmarx.sdk.dto.ast.*;
+import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
+import com.checkmarx.sdk.dto.ast.SCAResults;
+import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.cx.restclient.ast.dto.sca.AstScaConfig;
 import com.cx.restclient.ast.dto.sca.AstScaResults;
@@ -19,7 +21,12 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -148,17 +155,21 @@ public class ScaClientImpl extends AbstractAstClient {
      * Convert scaParams to an object that is used by underlying logic in Common Client.
      */
     @Override
-    protected CxScanConfig getScanConfig(ScanParams scaParams) {
+    protected CxScanConfig getScanConfig(ScanParams scanParams) {
         CxScanConfig cxScanConfig = new CxScanConfig();
         cxScanConfig.addScannerType(ScannerType.AST_SCA);
         cxScanConfig.setSastEnabled(false);
-        cxScanConfig.setProjectName(scaParams.getProjectName());
-        cxScanConfig.setAstScaConfig(getSCAConfig(scaParams));
+        cxScanConfig.setProjectName(scanParams.getProjectName());
+
+        AstScaConfig scaConfig = getScaSpecificConfig(scanParams);
+        setSourceLocation(scanParams, cxScanConfig, scaConfig);
+
+        cxScanConfig.setAstScaConfig(scaConfig);
 
         return cxScanConfig;
     }
 
-    private AstScaConfig getSCAConfig(ScanParams scanParams) {
+    private AstScaConfig getScaSpecificConfig(ScanParams scanParams) {
         AstScaConfig scaConfig = new AstScaConfig();
 
         String appUrlFromRequest = null;
@@ -173,50 +184,18 @@ public class ScaClientImpl extends AbstractAstClient {
             tenantFromRequest = scanParams.getScaConfig().getTenant();
         }
 
-        setAppliedAppUrl(scaConfig, appUrlFromRequest);
-        setAppliedApiUrl(scaConfig, apiUrlFromRequest);
-        setAppliedAcUrl(scaConfig, accessControlUrlFromRequest);
-        setAppliedTenant(scaConfig, tenantFromRequest);
+        scaConfig.setWebAppUrl(Optional.ofNullable(appUrlFromRequest).orElse(scaProperties.getAppUrl()));
+        scaConfig.setApiUrl(Optional.ofNullable(apiUrlFromRequest).orElse(scaProperties.getApiUrl()));
+        scaConfig.setAccessControlUrl(Optional.ofNullable(accessControlUrlFromRequest).orElse(scaProperties.getAccessControlUrl()));
+        scaConfig.setTenant(Optional.ofNullable(tenantFromRequest).orElse(scaProperties.getTenant()));
 
         scaConfig.setUsername(scaProperties.getUsername());
         scaConfig.setPassword(scaProperties.getPassword());
-        setSourceLocation(scanParams, scaConfig);
 
         return scaConfig;
     }
 
-    private void setAppliedTenant(AstScaConfig scaConfig, String tenantFromRequest) {
-        if (tenantFromRequest != null) {
-            scaConfig.setTenant(tenantFromRequest);
-        } else {
-            scaConfig.setTenant(scaProperties.getTenant());
-        }
-    }
-
-    private void setAppliedAcUrl(AstScaConfig scaConfig, String accessControlUrlFromRequest) {
-        if (accessControlUrlFromRequest != null) {
-            scaConfig.setAccessControlUrl(accessControlUrlFromRequest);
-        } else {
-            scaConfig.setAccessControlUrl(scaProperties.getAccessControlUrl());
-        }
-    }
-
-    private void setAppliedApiUrl(AstScaConfig scaConfig, String apiUrlFromRequest) {
-        if (apiUrlFromRequest != null) {
-            scaConfig.setApiUrl(apiUrlFromRequest);
-        } else {
-            scaConfig.setApiUrl(scaProperties.getApiUrl());
-        }
-    }
-
-    private void setAppliedAppUrl(AstScaConfig scaConfig, String appUrlFromRequest) {
-        if (appUrlFromRequest != null) {
-            scaConfig.setWebAppUrl(appUrlFromRequest);
-        } else {
-            scaConfig.setWebAppUrl(scaProperties.getAppUrl());
-        }
-    }
-
+    @Override
     protected void validate(ScanParams scaParams) {
         validateNotNull(scaParams);
 
@@ -237,17 +216,25 @@ public class ScaClientImpl extends AbstractAstClient {
         }
     }
 
-    private void validateNotNull(ScanParams scanParams) {
+    private static void validateNotNull(ScanParams scanParams) {
         if (scanParams == null) {
             throw new ASTRuntimeException(String.format("%s SCA parameters weren't provided.", ERROR_PREFIX));
         }
 
-        if (scanParams.getRemoteRepoUrl() == null && scanParams.getZipPath() == null) {
-            throw new ASTRuntimeException(String.format("%s Repository URL or Zip path wasn't provided.", ERROR_PREFIX));
+        if (scanParams.getRemoteRepoUrl() == null && !localSourcesAreSpecified(scanParams)) {
+            String message = String.format("%s Source location is not specified. Please specify either " +
+                    "repository URL, zip file path or source directory path.", ERROR_PREFIX);
+
+            throw new ASTRuntimeException(message);
         }
 
-        if((!StringUtils.isEmpty(scanParams.getZipPath()) && !(new File(scanParams.getZipPath()).exists()))){
-            throw new ASTRuntimeException(String.format("%s file (%s) does not exist.", ERROR_PREFIX, scanParams.getZipPath()));
+        validateSpecifiedPathExists(scanParams.getZipPath());
+        validateSpecifiedPathExists(scanParams.getSourceDir());
+    }
+
+    private static void validateSpecifiedPathExists(String path) {
+        if (StringUtils.isNotEmpty(path) && !new File(path).exists()) {
+            throw new ASTRuntimeException(String.format("%s Source location (%s) does not exist.", ERROR_PREFIX, path));
         }
     }
 
