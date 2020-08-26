@@ -1,7 +1,10 @@
 package com.cx.restclient;
 
 import com.checkmarx.sdk.config.AstProperties;
-import com.checkmarx.sdk.dto.ast.*;
+import com.checkmarx.sdk.dto.ast.ASTResults;
+import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
+import com.checkmarx.sdk.dto.ast.SCAResults;
+import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.cx.restclient.ast.dto.common.SummaryResults;
 import com.cx.restclient.ast.dto.sast.AstSastConfig;
@@ -11,7 +14,6 @@ import com.cx.restclient.dto.ScanResults;
 import com.cx.restclient.dto.ScannerType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -59,26 +61,27 @@ public class AstClientImpl extends AbstractAstClient {
     /**
      * Convert scaParams to an object that is used by underlying logic in Common Client.
      */
+    @Override
     protected CxScanConfig getScanConfig(ScanParams scanParams) {
         CxScanConfig cxScanConfig = new CxScanConfig();
         cxScanConfig.addScannerType(ScannerType.AST_SAST);
         cxScanConfig.setSastEnabled(false);
         cxScanConfig.setProjectName(scanParams.getProjectName());
-        cxScanConfig.setAstSastConfig(getAstConfig(scanParams));
+
+        AstSastConfig astConfig = getAstSpecificConfig();
+        setSourceLocation(scanParams, cxScanConfig, astConfig);
+        cxScanConfig.setAstSastConfig(astConfig);
 
         return cxScanConfig;
     }
 
-    private AstSastConfig getAstConfig(ScanParams scanParams) {
-        AstSastConfig astConfig = new AstSastConfig();
-        astConfig.setApiUrl(astProperties.getApiUrl());
-        astConfig.setAccessToken(astProperties.getToken());
-        astConfig.setPresetName(astProperties.getPreset());
-        astConfig.setIncremental(!StringUtils.isEmpty(astProperties.getIncremental()) && Boolean.parseBoolean(astProperties.getIncremental()));
-
-        setSourceLocation(scanParams, astConfig);
-
-        return astConfig;
+    private AstSastConfig getAstSpecificConfig() {
+        return AstSastConfig.builder()
+                .apiUrl(astProperties.getApiUrl())
+                .accessToken(astProperties.getToken())
+                .presetName(astProperties.getPreset())
+                .incremental(Boolean.parseBoolean(astProperties.getIncremental()))
+                .build();
     }
 
     @Override

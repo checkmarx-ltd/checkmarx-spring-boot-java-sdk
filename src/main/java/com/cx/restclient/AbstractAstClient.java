@@ -24,7 +24,7 @@ public abstract class AbstractAstClient implements AstClient {
     protected static final String ERROR_PREFIX = "Scan cannot be initiated.";
 
     @Override
-    public ASTResultsWrapper scanRemoteRepo(ScanParams scanParams) {
+    public ASTResultsWrapper scan(ScanParams scanParams) {
         validate(scanParams);
 
         CxScanConfig scanConfig = getScanConfig(scanParams);
@@ -37,27 +37,6 @@ public abstract class AbstractAstClient implements AstClient {
         return scaResults;
     }
 
-    @Override
-    public ASTResultsWrapper scanLocalSource(ScanParams scanParams) {
-        validate(scanParams);
-
-        CxScanConfig scanConfig = getScanConfig(scanParams);
-        scanConfig.setZipFile(new File(scanParams.getZipPath()));
-        scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
-        /*
-        TODO
-        ...
-        LOGIC for Resolver functionality (package manager)
-        ...
-         */
-        ScanResults scanResults = executeScan(scanConfig);
-
-        ASTResultsWrapper scaResults = toResults(scanResults);
-        applyScaResultsFilters(scaResults, scanParams);
-
-        return scaResults;
-    }
-    
     protected abstract void applyScaResultsFilters(ASTResultsWrapper scaResults, ScanParams scanParams);
 
     protected abstract ASTResultsWrapper toResults(ScanResults scanResults);
@@ -91,16 +70,29 @@ public abstract class AbstractAstClient implements AstClient {
         }
     }
 
-    protected static void setSourceLocation(ScanParams scanParams, ASTConfig astConfig) {
-        if(scanParams.getZipPath() != null){
+    protected static void setSourceLocation(ScanParams scanParams, CxScanConfig scanConfig, ASTConfig astConfig) {
+        if (localSourcesAreSpecified(scanParams)) {
             astConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
-        }
-        else{
+
+            // If both zip file and source directory are specified, zip file has priority.
+            // This is to conform to Common Client behavior.
+            if (StringUtils.isNotEmpty(scanParams.getZipPath())) {
+                log.debug("Using a local zip file for scanning.");
+                scanConfig.setZipFile(new File(scanParams.getZipPath()));
+            } else {
+                log.debug("Using a local directory for scanning.");
+                scanConfig.setSourceDir(scanParams.getSourceDir());
+            }
+        } else {
             astConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
             RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
             remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
             astConfig.setRemoteRepositoryInfo(remoteRepoInfo);
         }
+    }
+
+    protected static boolean localSourcesAreSpecified(ScanParams scanParams) {
+        return !StringUtils.isAllEmpty(scanParams.getZipPath(), scanParams.getSourceDir());
     }
 
     protected abstract CxScanConfig getScanConfig(ScanParams scaParams);
