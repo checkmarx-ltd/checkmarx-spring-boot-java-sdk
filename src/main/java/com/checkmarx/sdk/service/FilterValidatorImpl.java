@@ -30,7 +30,8 @@ public class FilterValidatorImpl implements FilterValidator {
             "TO VERIFY", "0",
             "CONFIRMED", "2",
             "URGENT", "3",
-            "PROPOSED NOT EXPLOITABLE", "4"
+            "PROPOSED NOT EXPLOITABLE", "4",
+            "SUSPICIOUS", "5"
     );
     private static final Map<String, String> STATE_ID_TO_NAME = getInvertedStateMap();
 

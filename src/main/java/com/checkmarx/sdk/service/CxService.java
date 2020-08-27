@@ -75,7 +75,8 @@ public class CxService implements CxClient{
             "TO VERIFY", 0,
             "CONFIRMED", 2,
             "URGENT", 3,
-            "PROPOSED NOT EXPLOITABLE",4
+            "PROPOSED NOT EXPLOITABLE", 4,
+            "SUSPICIOUS", 5
     );
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
     private static final String TEAMS = "/auth/teams";
