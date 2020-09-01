@@ -1,0 +1,51 @@
+checkmarx:
+  enable-shard-manager: true
+
+shardmanager:
+  # Currently supports: Postgres = postgres, Mysql = mysql
+  db-engine: postgres
+  db-username: postgres
+  db-password: XXXXX
+  #db-engine: mysql
+  #db-username: root
+  #db-password: password1
+  script-path: "<path-to-resources>/resources/shard-manager"
+  script-name: "ShardManager.groovy"
+  script-setup: "ShardSetup.groovy"
+  shardConfig:
+    - name: Shard A
+      url: http://<URL>
+      is-credential-override: 1
+      username: cxadmin
+      password: "XXXXXXX"
+      project-limit: 2
+      team-limit: 2
+      is-disabled: 1
+      force-setting-reload: 1
+    - name: Shard B
+      url: http://<URL>
+      project-limit: 1
+      is-credential-override: 1
+      username: cxadmin
+      password: "XXXXXXX"
+      team-limit: 5
+      is-disabled: 0
+      force-setting-reload: 1
+    - name: Shard C
+      url: https://<URL>
+      is-credential-override: 1
+      username: jeff.armstrong@checkmarx.com
+      password: "XXXXXX"
+      project-limit: 4
+      team-limit: 2
+      is-disabled: 1
+      force-setting-reload: 1
+    - name: Shard D
+      url: http://<URL>
+      is-credential-override: 1
+      username: cxadmin
+      password: "XXXXXXX"
+      project-limit: 4
+      team-limit: 2
+      is-disabled: 0
+      force-setting-reload: 1

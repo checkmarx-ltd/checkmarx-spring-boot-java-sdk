@@ -1,5 +1,8 @@
 package com.checkmarx.sdk.service;
 
+import checkmarx.wsdl.portal.Credentials;
+import com.checkmarx.sdk.ShardManager.ShardSession;
+import com.checkmarx.sdk.ShardManager.ShardSessionTracker;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.cx.CxAuthResponse;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
@@ -16,6 +19,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.ws.client.core.WebServiceTemplate;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -31,6 +36,7 @@ public class CxAuthService implements CxAuthClient{
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
     private final RestTemplate restTemplate;
+    private final ShardSessionTracker sessionTracker;
     private String token = null;
     private String soapToken = null;
     private String session = null;
@@ -38,10 +44,14 @@ public class CxAuthService implements CxAuthClient{
     private LocalDateTime soapTokenExpires = null;
     private LocalDateTime sessionTokenExpires = null;
 
-    public CxAuthService(CxProperties cxProperties, CxLegacyService cxLegacyService, @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
+    public CxAuthService(CxProperties cxProperties,
+                         CxLegacyService cxLegacyService,
+                         @Qualifier("cxRestTemplate") RestTemplate restTemplate,
+                         ShardSessionTracker sessionTracker) {
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
         this.restTemplate = restTemplate;
+        this.sessionTracker = sessionTracker;
     }
 
 
@@ -92,6 +102,11 @@ public class CxAuthService implements CxAuthClient{
             }
             token = response.getAccessToken();
             tokenExpires = LocalDateTime.now().plusSeconds(response.getExpiresIn()-500); //expire 500 seconds early
+            if(cxProperties.getEnableShardManager()) {
+                ShardSession shard = sessionTracker.getShardSession();
+                shard.setAccessToken(token);
+                shard.setTokenExpires(tokenExpires);
+            }
         }
         catch (NullPointerException | HttpStatusCodeException e) {
             log.error("Error occurred white obtaining Access Token.  Possibly incorrect credentials");
@@ -109,6 +124,11 @@ public class CxAuthService implements CxAuthClient{
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        if(cxProperties.getEnableShardManager()) {
+            ShardSession shard = sessionTracker.getShardSession();
+            username = shard.getUsername();
+            password = shard.getPassword();
+        }
         map.add("username", username);
         map.add("password", password);
         map.add("grant_type", "password");
@@ -163,10 +183,18 @@ public class CxAuthService implements CxAuthClient{
     }
 
     private boolean isTokenExpired() {
-        if (tokenExpires == null) {
+        //
+        /// If sharding enabled then use Shards token
+        //
+        LocalDateTime curTokenExpires = tokenExpires;
+        if(cxProperties.getEnableShardManager()) {
+            ShardSession shard = sessionTracker.getShardSession();
+            curTokenExpires = shard.getTokenExpires();
+        }
+        if (curTokenExpires == null) {
             return true;
         }
-        return LocalDateTime.now().isAfter(tokenExpires);
+        return LocalDateTime.now().isAfter(curTokenExpires);
     }
 
     private boolean isSoapTokenExpired() {
@@ -184,12 +212,26 @@ public class CxAuthService implements CxAuthClient{
     }
 
     public HttpHeaders createAuthHeaders() {
-        //get a new access token if the current one is expired.
-        if (token == null || isTokenExpired()) {
-            getAuthToken();
+        //
+        /// If shards are enabled then fetch the token from the shard; otherwise, use the local one
+        //
+        String authToken = token;
+        if(cxProperties.getEnableShardManager()) {
+            ShardSession shard = sessionTracker.getShardSession();
+            authToken = shard.getAccessToken();
         }
+        //
+        /// Get a new access token if missing or has expired.
+        //
+        if (authToken == null || isTokenExpired()) {
+            getAuthToken();
+            authToken = token;
+        }
+        //
+        /// Go ahead and create the headers
+        //
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.AUTHORIZATION, "Bearer ".concat(token));
+        httpHeaders.set(HttpHeaders.AUTHORIZATION, "Bearer ".concat(authToken));
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         return httpHeaders;
     }
