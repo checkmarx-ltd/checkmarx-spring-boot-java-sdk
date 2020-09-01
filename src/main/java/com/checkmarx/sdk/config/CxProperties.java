@@ -54,6 +54,7 @@ public class CxProperties {
     private Integer codeSnippetLength = 2500;
     private String TEAM_PATH_SEPARATOR_9 = "/";
     private String TEAM_PATH_SEPARATOR_8 = "\\";
+    private Boolean enableShardManager = false;
 
     private String portalUrl;
 
@@ -67,6 +68,10 @@ public class CxProperties {
 
     public String getPassword() {
         return this.password;
+    }
+
+    public boolean getEnableShardManager() {
+        return this.enableShardManager;
     }
 
     public String getClientId() {
@@ -203,6 +208,10 @@ public class CxProperties {
 
     public void setIncrementalThreshold(Integer incrementalThreshold){
         this.incrementalThreshold = incrementalThreshold;
+    }
+
+    public void setEnableShardManager(boolean enableShardManager) {
+        this.enableShardManager = enableShardManager;
     }
 
     public void setIncrementalNumScans(Integer incrementalNumScans){

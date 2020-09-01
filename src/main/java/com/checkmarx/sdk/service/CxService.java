@@ -964,13 +964,19 @@ public class CxService implements CxClient{
 
     @Override
     public void deleteProject(Integer projectId) {
-        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        deleteProject(projectId, false);
+    }
 
-        log.info("Deleting Project id {}", projectId);
+    @Override
+    public void deleteProject(Integer projectId, boolean deleteRunningScans) {
+        String request = new JSONObject().put("deleteRunningScans", deleteRunningScans).toString();
+        HttpEntity<String> requestEntity = new HttpEntity<>(request, authClient.createAuthHeaders());
+
+        log.info("Deleting Project id {} with deleteRunningScans={}", projectId, deleteRunningScans);
         try {
             restTemplate.exchange(cxProperties.getUrl().concat(PROJECT), HttpMethod.DELETE, requestEntity, String.class, projectId);
         } catch (HttpStatusCodeException e) {
-            log.error("HTTP error code {} while deleting project with id {}", e.getStatusCode(), projectId);
+            log.error("HTTP error code {} while deleting project with id {} and deleteRunningScans={}", e.getStatusCode(), projectId, deleteRunningScans);
             log.error(ExceptionUtils.getStackTrace(e));
         }
     }

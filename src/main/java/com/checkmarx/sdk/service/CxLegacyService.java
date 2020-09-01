@@ -1,6 +1,8 @@
 package com.checkmarx.sdk.service;
 
 import checkmarx.wsdl.portal.*;
+import com.checkmarx.sdk.ShardManager.ShardSession;
+import com.checkmarx.sdk.ShardManager.ShardSessionTracker;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.CxUser;
 import com.checkmarx.sdk.exception.CheckmarxException;
@@ -18,8 +20,6 @@ import org.springframework.ws.soap.client.core.SoapActionCallback;
 import org.springframework.ws.transport.context.TransportContext;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpUrlConnection;
-
-import java.beans.ConstructorProperties;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +35,7 @@ public class CxLegacyService {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxLegacyService.class);
     private final CxProperties properties;
     private final WebServiceTemplate ws;
+    private final ShardSessionTracker sessionTracker;
 
     private static final String CX_WS_PREFIX= "http://Checkmarx.com/";
     private static final String CX_WS_LOGIN_URI = CX_WS_PREFIX + "LoginV2";
@@ -58,9 +59,10 @@ public class CxLegacyService {
             5, CxUser.Role8x.SERVERMANAGER
     );
 
-    public CxLegacyService(CxProperties properties, WebServiceTemplate ws) {
+    public CxLegacyService(CxProperties properties, WebServiceTemplate ws, ShardSessionTracker sessionTracker) {
         this.properties = properties;
         this.ws = ws;
+        this.sessionTracker = sessionTracker;
     }
 
     /**
@@ -72,11 +74,19 @@ public class CxLegacyService {
      */
     public String login(String username, String password) throws CheckmarxLegacyException {
         LoginV2 request = new LoginV2();
+        WebServiceTemplate wsInstance = ws;
+        // If shards are enabled then fetch the current shard info for override.
+        if(properties.getEnableShardManager()) {
+            ShardSession shard = sessionTracker.getShardSession();
+            wsInstance = shard.getShardWs();
+            username = shard.getUsername();
+            password = shard.getPassword();
+        }
         request.setApplicationCredentials(new Credentials(username, password));
         if(properties.getVersion() >= 9.0){
             return "-1";
         }
-        LoginV2Response response = (LoginV2Response) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_LOGIN_URI));
+        LoginV2Response response = (LoginV2Response) wsInstance.marshalSendAndReceive(wsInstance.getDefaultUri(), request, new SoapActionCallback(CX_WS_LOGIN_URI));
         try {
             if(!response.getLoginV2Result().isIsSuccesfull())
                 throw new CheckmarxLegacyException("Authentication Error");
@@ -328,9 +338,15 @@ public class CxLegacyService {
         request.setNewTeamName(teamName);
         request.setParentTeamID(parentId);
         log.info("Creating team {} ({})", teamName, parentId);
+        // If shards are enabled then fetch the current shard info for override.
+        WebServiceTemplate wsInstance = ws;
+        if(properties.getEnableShardManager()) {
+            ShardSession shard = sessionTracker.getShardSession();
+            wsInstance = shard.getShardWs();
+        }
 
         try {
-            CreateNewTeamResponse response = (CreateNewTeamResponse) ws.marshalSendAndReceive(ws.getDefaultUri(), request, new SoapActionCallback(CX_WS_CREATE_TEAM_URI));
+            CreateNewTeamResponse response = (CreateNewTeamResponse) wsInstance.marshalSendAndReceive(wsInstance.getDefaultUri(), request, new SoapActionCallback(CX_WS_CREATE_TEAM_URI));
             if(!response.getCreateNewTeamResult().isIsSuccesfull()){
                 log.error("Error occurred while creating Team {} with parentId {}", teamName, parentId);
                 throw new CheckmarxException("Error occurred during team creation");
@@ -382,11 +398,17 @@ public class CxLegacyService {
         GetResultDescription request = new GetResultDescription(session);
         request.setPathID(pathId);
         request.setScanID(scanId);
-
         log.debug("Retrieving description for {} / {} ", scanId, pathId);
-
+        WebServiceTemplate wsInstance = ws;
+        String shardURI = wsInstance.getDefaultUri();
+        // If shards are enabled then fetch the current shard info for override.
+        if(properties.getEnableShardManager()) {
+            ShardSession shard = sessionTracker.getShardSession();
+            wsInstance = shard.getShardWs();
+            shardURI = shard.getUrl() + "/cxwebinterface/Portal/CxWebService.asmx";
+        }
         GetResultDescriptionResponse response = (GetResultDescriptionResponse)
-                ws.marshalSendAndReceive(ws.getDefaultUri(), request, getWSCallback(CX_WS_DESCRIPTION_URI, session));
+                wsInstance.marshalSendAndReceive(shardURI, request, getWSCallback(CX_WS_DESCRIPTION_URI, session));
         try{
             if(!response.getGetResultDescriptionResult().isIsSuccesfull()){
                 log.error(response.getGetResultDescriptionResult().getErrorMessage());

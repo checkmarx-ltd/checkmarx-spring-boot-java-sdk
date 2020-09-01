@@ -141,6 +141,17 @@ public interface CxClient {
     public void deleteProject(Integer projectId);
 
     /**
+     * Delete a project by Id and, optionally, any related running scans
+     * <p/>
+     * If the project to be deleted has any running scans, the project will <b>not</b> be deleted unless
+     * {@code deleteRunningScans} is {@code true}.
+     *
+     * @param projectId Id of the existing project to delete
+     * @param deleteRunningScans if {@code true}, delete any in-progress scans for the project before deleting the project
+     */
+    public void deleteProject(Integer projectId, boolean deleteRunningScans);
+
+    /**
      * Branch an existing project
      *
      * @param projectId Id of the existing project to branch
