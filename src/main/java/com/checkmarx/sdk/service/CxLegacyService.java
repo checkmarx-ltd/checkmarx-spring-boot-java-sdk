@@ -90,6 +90,10 @@ public class CxLegacyService {
         try {
             if(!response.getLoginV2Result().isIsSuccesfull())
                 throw new CheckmarxLegacyException("Authentication Error");
+            if(properties.getEnableShardManager()) {
+                ShardSession shard = sessionTracker.getShardSession();
+                shard.setSoapToken(response.getLoginV2Result().getSessionId());
+            }
             return response.getLoginV2Result().getSessionId();
         }
         catch(NullPointerException e){
@@ -545,13 +549,20 @@ public class CxLegacyService {
     }
 
     private WebServiceMessageCallback getWSCallback(String callbackUri, String token){
+        String curToken;
+        if(properties.getEnableShardManager()) {
+            ShardSession shard = sessionTracker.getShardSession();
+            curToken = shard.getSoapToken();
+        } else {
+            curToken = token;
+        }
         return message -> {
             SoapMessage soapMessage = (SoapMessage) message;
             soapMessage.setSoapAction(callbackUri);
             TransportContext context = TransportContextHolder.getTransportContext();
             HttpUrlConnection connection = (HttpUrlConnection) context.getConnection();
             try {
-                if(!ScanUtils.empty(token) && properties.getVersion() >= 9.0) {
+                if(!ScanUtils.empty(curToken) && properties.getVersion() >= 9.0) {
                     connection.addRequestHeader(HttpHeaders.AUTHORIZATION, "Bearer ".concat(token));
                 }
             }catch (IOException e){

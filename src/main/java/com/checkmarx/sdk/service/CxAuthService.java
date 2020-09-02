@@ -148,6 +148,11 @@ public class CxAuthService implements CxAuthClient{
             }
             soapToken = response.getAccessToken();
             soapTokenExpires = LocalDateTime.now().plusSeconds(response.getExpiresIn()-500); //expire 500 seconds early
+            if(cxProperties.getEnableShardManager()) {
+                ShardSession shard = sessionTracker.getShardSession();
+                shard.setSoapToken(soapToken);
+                shard.setSoapTokenExpires(soapTokenExpires);
+            }
         }
         catch (NullPointerException | HttpStatusCodeException e) {
             log.error("Error occurred white obtaining Access Token.  Possibly incorrect credentials");
@@ -198,10 +203,15 @@ public class CxAuthService implements CxAuthClient{
     }
 
     private boolean isSoapTokenExpired() {
-        if (soapTokenExpires == null) {
+        LocalDateTime curTokenExpires = soapTokenExpires;
+        if(cxProperties.getEnableShardManager()) {
+            ShardSession shard = sessionTracker.getShardSession();
+            curTokenExpires = shard.getSoapTokenExpires();
+        }
+        if (curTokenExpires == null) {
             return true;
         }
-        return LocalDateTime.now().isAfter(soapTokenExpires);
+        return LocalDateTime.now().isAfter(curTokenExpires);
     }
 
     private boolean isSessionTokenExpired() {

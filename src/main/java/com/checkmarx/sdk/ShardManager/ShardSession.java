@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 public class ShardSession {
     private WebServiceTemplate ws = null;
     private WebServiceTemplate shardWs = null;
+    private String soapToken = "";
+    private LocalDateTime soapTokenExpires = null;
     private String name = "";
     private String team = "";
     private String project = "";
@@ -31,6 +33,22 @@ public class ShardSession {
 
     public WebServiceTemplate getShardWs() {
         return shardWs;
+    }
+
+    public String getSoapToken() {
+        return soapToken;
+    }
+
+    public void setSoapToken(String soapToken) {
+        this.soapToken = soapToken;
+    }
+
+    public LocalDateTime getSoapTokenExpires() {
+        return soapTokenExpires;
+    }
+
+    public void setSoapTokenExpires(LocalDateTime soapTokenExpires) {
+        this.soapTokenExpires = soapTokenExpires;
     }
 
     public boolean getShardFound() {
