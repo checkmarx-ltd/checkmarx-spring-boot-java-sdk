@@ -10,9 +10,12 @@ import java.sql.*
 //
 Binding binding = new Binding();
 binding.setProperty("shardProperties", shardProperties);
+binding.setProperty("cxFlowLog", cxFlowLog);
+cxFlowLog.info("Trying to CxFlow thing")
+
 GroovyShell shell = new GroovyShell(binding)
 String scriptDir = shardProperties.getScriptPath();
-println "Running Shard Setup Script."
+cxFlowLog.info("Running Shard Setup Script.")
 def dbTools = shell.parse(new File("${scriptDir}/dbtools.groovy"))
 def shardConfig = shardProperties.getShardConfig()
 def conn = dbTools.createDbConnection()
@@ -82,7 +85,7 @@ def doesShardProjectTableExist(conn) {
 }
 
 def createShardProjectTable(conn) {
-    println "CxFlow Shards project table does not exist, creating it!"
+    cxFlowLog.info("CxFlow Shards project table does not exist, creating it!")
     def dbEngine = shardProperties.getDbEngine()
     String mySqlCreateShardProjectTable = """
         CREATE TABLE `shard_to_project` (
@@ -131,7 +134,7 @@ def doesShardExist(conn, shardName) {
 }
 
 def createShard(conn, opts) {
-    println "Creating shard ${opts.getName()}"
+    cxFlowLog.info("Creating shard ${opts.getName()}")
     def dbEngine = shardProperties.getDbEngine()
     String insertShardQuery = """        
         INSERT INTO shard ( 
@@ -155,7 +158,7 @@ def createShard(conn, opts) {
 }
 
 def updateShard(conn, opts) {
-    println "Updating shard ${opts.getName()}"
+    cxFlowLog.info("Updating shard ${opts.getName()}")
     def dbEngine = shardProperties.getDbEngine()
     String updateShardQry = """        
         UPDATE shard SET
@@ -192,7 +195,7 @@ def doesShardTableExist(conn) {
 }
 
 def createShardsTable(conn) {
-    println "CxFlow Shards table does not exist, creating it!"
+    cxFlowLog.info("CxFlow Shards table does not exist, creating it!")
     def dbEngine = shardProperties.getDbEngine()
     String mySqlCreateShardTable = """
         CREATE TABLE `shard` (
