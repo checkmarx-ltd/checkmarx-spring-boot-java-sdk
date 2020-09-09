@@ -75,7 +75,9 @@ if (!shardFound) {
     }
     cxFlowLog.info("Updating shard tracking information.")
     dbTools.addShardProject(conn, projectShard.id, projectName, teamName)
+    println("DONE ADDING SHARD")
     dbTools.updateShard(conn, projectShard)
+    println("DONE UPDATING CNT INFO")
 }
 //
 /// Now know the shard to work with. Simply send its URL back to the client

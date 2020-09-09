@@ -1,7 +1,12 @@
 package com.checkmarx.shardmanager
 @Grapes([
-        @Grab('org.postgresql:postgresql:42.2.16'),
-        @Grab('mysql:mysql-connector-java:5.1.39')
+  @Grab('org.postgresql:postgresql:42.2.16'),
+  @Grab('mysql:mysql-connector-java:5.1.39'),
+  //
+  /// NOTE: you need to load the correct SQL Server driver for the JRE you're using
+  //
+  @Grab('com.microsoft.sqlserver:mssql-jdbc:8.4.1.jre11')
+  //@Grab('com.microsoft.sqlserver:mssql-jdbc:8.4.1.jre8')
 ])
 import java.sql.*
 
@@ -31,12 +36,26 @@ def createDbConnection() {
     } else if (dbEngine == "mysql") {
         try {
             def cn = Class.forName('com.mysql.jdbc.Driver').getDeclaredConstructor().newInstance()
-            def dbUrl = "jdbc:mysql://localhost/cxshards"
+            def dbUrl = "jdbc:mysql://${dbHost}/${dbName}"
             def props = new Properties()
             props.setProperty("user", dbUsername)
             props.setProperty("password", dbPassword)
             Connection conn = cn.connect(dbUrl, props)
             cxFlowLog.info("Connected to MySql database.")
+            return conn
+        } catch(Exception e) {
+            println(e)
+            throw new Exception("Error connect to database.")
+        }
+    } else if (dbEngine == "mssql") {
+        try {
+            def cn = Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver").getDeclaredConstructor().newInstance()
+            def dbUrl = "jdbc:sqlserver://${dbHost}:1433;databaseName=${dbName}"
+            def props = new Properties()
+            props.setProperty("user", dbUsername)
+            props.setProperty("password", dbPassword)
+            Connection conn = cn.connect(dbUrl, props)
+            cxFlowLog.info("Connected to Microsoft SQL Server database.")
             return conn
         } catch(Exception e) {
             println(e)

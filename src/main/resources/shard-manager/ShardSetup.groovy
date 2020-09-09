@@ -1,7 +1,12 @@
 package com.checkmarx.shardmanager
 @Grapes([
   @Grab('org.postgresql:postgresql:42.2.16'),
-  @Grab('mysql:mysql-connector-java:5.1.39')
+  @Grab('mysql:mysql-connector-java:5.1.39'),
+  //
+  /// NOTE: you need to load the correct SQL Server driver for the JRE you're using
+  //
+  @Grab('com.microsoft.sqlserver:mssql-jdbc:8.4.1.jre11')
+  //@Grab('com.microsoft.sqlserver:mssql-jdbc:8.4.1.jre8')
 ])
 import java.sql.*
 
@@ -66,18 +71,14 @@ def doesShardProjectExist(conn, shardID) {
 }
 
 def doesShardProjectTableExist(conn) {
-    def dbEngine = shardProperties.getDbEngine()
-    String qry = """
-        SELECT EXISTS (
-           SELECT * FROM information_schema.tables WHERE table_name = 'shard_to_project'
-        );
+    String existsQry = """
+        SELECT 1 as table_found FROM information_schema.tables WHERE TABLE_NAME = 'shard_to_project'
     """
     def exists = false
     def stmt = conn.createStatement()
-    ResultSet rs = stmt.executeQuery(qry)
+    ResultSet rs = stmt.executeQuery(existsQry)
     if (rs.next()) {
-        if (dbEngine == "postgres" && rs.getString(1) == "t") exists = true
-        if (dbEngine == "mysql" && rs.getInt(1) == 1) exists = true
+        if (rs.getInt(1) == 1) exists = true
     }
     rs.close()
     stmt.close()
@@ -87,11 +88,19 @@ def doesShardProjectTableExist(conn) {
 def createShardProjectTable(conn) {
     cxFlowLog.info("CxFlow Shards project table does not exist, creating it!")
     def dbEngine = shardProperties.getDbEngine()
+    String msSqlCreateShardProjectTable = """
+        CREATE TABLE shard_to_project (
+          id int IDENTITY(1,1) PRIMARY KEY,
+          shard_id int NOT NULL,
+          project_name varchar(MAX) DEFAULT NULL,
+          team_name varchar(MAX) DEFAULT NULL
+        )
+    """
     String mySqlCreateShardProjectTable = """
         CREATE TABLE `shard_to_project` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `shard_id` int(11) unsigned NOT NULL,
-          `shard_name` text DEFAULT NULL,
+          `project_name` text DEFAULT NULL,
           `team_name` text DEFAULT NULL,
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
@@ -114,9 +123,9 @@ def createShardProjectTable(conn) {
     def stmt = conn.createStatement()
     if (dbEngine == "postgres") stmt.execute(pgCreateShardProjectTable)
     if (dbEngine == "mysql") stmt.execute(mySqlCreateShardProjectTable)
+    if (dbEngine == "mssql") stmt.execute(msSqlCreateShardProjectTable)
     stmt.close()
 }
-
 
 def doesShardExist(conn, shardName) {
     String countShardQuery = """
@@ -159,7 +168,6 @@ def createShard(conn, opts) {
 
 def updateShard(conn, opts) {
     cxFlowLog.info("Updating shard ${opts.getName()}")
-    def dbEngine = shardProperties.getDbEngine()
     String updateShardQry = """        
         UPDATE shard SET
             url = '${opts.getUrl()}',
@@ -176,18 +184,14 @@ def updateShard(conn, opts) {
 }
 
 def doesShardTableExist(conn) {
-    def dbEngine = shardProperties.getDbEngine()
     String existsQry = """
-        SELECT EXISTS (
-           SELECT * FROM information_schema.tables WHERE table_name = 'shard'
-        );
+        SELECT 1 as table_found FROM information_schema.tables WHERE TABLE_NAME = 'shard'
     """
     def exists = false
     def stmt = conn.createStatement()
     ResultSet rs = stmt.executeQuery(existsQry)
     if (rs.next()) {
-        if (dbEngine == "postgres" && rs.getString(1) == "t") exists = true
-        if (dbEngine == "mysql" && rs.getInt(1) == 1) exists = true
+        if (rs.getInt(1) == 1) exists = true
     }
     rs.close()
     stmt.close()
@@ -197,6 +201,19 @@ def doesShardTableExist(conn) {
 def createShardsTable(conn) {
     cxFlowLog.info("CxFlow Shards table does not exist, creating it!")
     def dbEngine = shardProperties.getDbEngine()
+    String msSqlCreateShardTable = """
+        CREATE TABLE shard (
+          id int IDENTITY(1,1) PRIMARY KEY,
+          shard_name varchar(MAX) DEFAULT NULL,
+          url varchar(MAX) DEFAULT NULL,
+          is_disabled int DEFAULT 0,
+          project_limit int DEFAULT 1,
+          team_limit int DEFAULT 1,
+          project_cnt int DEFAULT 0,
+          team_cnt int DEFAULT 0,
+          is_credential_override int DEFAULT 0
+        ) 
+    """
     String mySqlCreateShardTable = """
         CREATE TABLE `shard` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -205,8 +222,8 @@ def createShardsTable(conn) {
           `is_disabled` int(11) DEFAULT 0,
           `project_limit` int(11) DEFAULT 1,
           `team_limit` int(11) DEFAULT 1,
-          `project_cnt` int(11) DEFAULT 1,
-          `team_cnt` int(11) DEFAULT 1,
+          `project_cnt` int(11) DEFAULT 0,
+          `team_cnt` int(11) DEFAULT 0,
           `is_credential_override` int(11) DEFAULT 0,
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
@@ -234,5 +251,6 @@ def createShardsTable(conn) {
     def stmt = conn.createStatement()
     if (dbEngine == "postgres") stmt.execute(pgCreateShardTable)
     if (dbEngine == "mysql") stmt.execute(mySqlCreateShardTable)
+    if (dbEngine == "mssql") stmt.execute(msSqlCreateShardTable)
     stmt.close()
 }
