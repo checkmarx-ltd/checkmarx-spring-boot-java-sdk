@@ -9,6 +9,8 @@ import java.util.List;
 public class ShardProperties {
     private Double version = 8.9;
     private String dbEngine = "postgres";
+    private String dbHost = "";
+    private String dbName = "";
     private String dbUsername = "";
     private String dbPassword = "";
     private String scriptPath = "";
@@ -31,6 +33,14 @@ public class ShardProperties {
     public String getDbEngine() { return this.dbEngine; }
 
     public void setDbEngine(String dbEngine) { this.dbEngine = dbEngine; }
+
+    public String getDbHost() { return this.dbHost; }
+
+    public void setDbHost(String dbHost) { this.dbHost = dbHost; }
+
+    public String getDbName() { return this.dbName; }
+
+    public void setDbName(String dbName) { this.dbName = dbName; }
 
     public String getDbUsername() { return this.dbUsername; }
 

@@ -51,6 +51,7 @@ public class ShardManagerInterceptorConfig {
     public String loadShardSettings() {
         Binding binding = new Binding();
         binding.setProperty("shardProperties", shardProperties);
+        binding.setProperty("cxFlowLog", log);
         try {
             String scriptName = shardProperties.getScriptSetup();
             String scriptDir = shardProperties.getScriptPath();

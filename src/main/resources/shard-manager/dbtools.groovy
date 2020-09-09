@@ -1,7 +1,12 @@
 package com.checkmarx.shardmanager
 @Grapes([
-        @Grab('org.postgresql:postgresql:42.2.16'),
-        @Grab('mysql:mysql-connector-java:5.1.39')
+  @Grab('org.postgresql:postgresql:42.2.16'),
+  @Grab('mysql:mysql-connector-java:5.1.39'),
+  //
+  /// NOTE: you need to load the correct SQL Server driver for the JRE you're using
+  //
+  @Grab('com.microsoft.sqlserver:mssql-jdbc:8.4.1.jre11')
+  //@Grab('com.microsoft.sqlserver:mssql-jdbc:8.4.1.jre8')
 ])
 import java.sql.*
 
@@ -12,15 +17,17 @@ def createDbConnection() {
     def dbEngine = shardProperties.getDbEngine()
     def dbUsername = shardProperties.getDbUsername()
     def dbPassword = shardProperties.getDbPassword()
+    def dbHost = shardProperties.getDbHost()
+    def dbName = shardProperties.getDbName()
     if (dbEngine == "postgres") {
         try{
             def cn = Class.forName('org.postgresql.Driver').getDeclaredConstructor().newInstance()
-            def dbUrl = "jdbc:postgresql://localhost/cxshards"
+            def dbUrl = "jdbc:postgresql://${dbHost}/${dbName}"
             def props = new Properties()
             props.setProperty("user", dbUsername)
             props.setProperty("password", dbPassword)
             Connection conn = cn.connect(dbUrl, props)
-            println "connected to Postgres database."
+            cxFlowLog.info("connected to Postgres database.")
             return conn
         } catch(Exception e) {
             println(e)
@@ -29,12 +36,26 @@ def createDbConnection() {
     } else if (dbEngine == "mysql") {
         try {
             def cn = Class.forName('com.mysql.jdbc.Driver').getDeclaredConstructor().newInstance()
-            def dbUrl = "jdbc:mysql://localhost/cxshards"
+            def dbUrl = "jdbc:mysql://${dbHost}/${dbName}"
             def props = new Properties()
             props.setProperty("user", dbUsername)
             props.setProperty("password", dbPassword)
             Connection conn = cn.connect(dbUrl, props)
-            println "Connected to MySql database."
+            cxFlowLog.info("Connected to MySql database.")
+            return conn
+        } catch(Exception e) {
+            println(e)
+            throw new Exception("Error connect to database.")
+        }
+    } else if (dbEngine == "mssql") {
+        try {
+            def cn = Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver").getDeclaredConstructor().newInstance()
+            def dbUrl = "jdbc:sqlserver://${dbHost}:1433;databaseName=${dbName}"
+            def props = new Properties()
+            props.setProperty("user", dbUsername)
+            props.setProperty("password", dbPassword)
+            Connection conn = cn.connect(dbUrl, props)
+            cxFlowLog.info("Connected to Microsoft SQL Server database.")
             return conn
         } catch(Exception e) {
             println(e)
@@ -50,7 +71,7 @@ def closeConnection(conn) {
 }
 
 def addShardProject(conn, shardID, projectName, teamName) {
-    println "Creating shard project for ${shardID} project ${projectName} and team ${teamName}"
+    cxFlowLog.info("Creating shard project for ${shardID} project ${projectName} and team ${teamName}")
     String insertShardProjectQuery = """        
         INSERT INTO shard_to_project ( 
             shard_id, 
@@ -68,7 +89,7 @@ def addShardProject(conn, shardID, projectName, teamName) {
 }
 
 def updateShardProject(conn, sp) {
-    println "Updating shard project for project ${sp.project_name} and team ${sp.team_name}"
+    cxFlowLog.info("Updating shard project for project ${sp.project_name} and team ${sp.team_name}")
     String updateShardProjectQry = """        
         UPDATE shard_to_project SET
             project_name = '${sp.project_name}',
@@ -102,7 +123,7 @@ def getShardProjects(conn, shardId) {
 }
 
 def updateShard(conn, shard) {
-    println "Updating shard ${shard.name}"
+    cxFlowLog.info("Updating shard ${shard.name}")
     String updateShardQry = """        
         UPDATE shard SET
             project_cnt = ${shard.projectCnt},

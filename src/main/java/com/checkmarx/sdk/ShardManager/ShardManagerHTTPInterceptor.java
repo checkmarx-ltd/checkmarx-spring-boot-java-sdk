@@ -96,6 +96,7 @@ public class ShardManagerHTTPInterceptor implements ClientHttpRequestInterceptor
     public void runShardManager(String scanID, ShardSession shard) {
         Binding bindings = new Binding();
         bindings.setProperty("shardProperties", shardProperties);
+        bindings.setProperty("cxFlowLog", log);
         bindings.setVariable("teamName", shard.getTeam());
         bindings.setVariable("projectName", shard.getProject());
         try {
