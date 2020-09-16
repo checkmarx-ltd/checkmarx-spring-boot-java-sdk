@@ -78,7 +78,8 @@ public class AstClientImpl extends AbstractAstClient {
     private AstSastConfig getAstSpecificConfig() {
         return AstSastConfig.builder()
                 .apiUrl(astProperties.getApiUrl())
-                .accessToken(astProperties.getToken())
+                .clientId(astProperties.getClientId())
+                .clientSecret(astProperties.getClientSecret())
                 .presetName(astProperties.getPreset())
                 .incremental(Boolean.parseBoolean(astProperties.getIncremental()))
                 .build();
@@ -90,7 +91,8 @@ public class AstClientImpl extends AbstractAstClient {
             throw new ASTRuntimeException(String.format("%s Scan parameters weren't provided.", ERROR_PREFIX));
         }
         validateNotEmpty(astProperties.getApiUrl(), "AST API URL");
-        validateNotEmpty(astProperties.getToken(), "AST Access Token");
+        validateNotEmpty(astProperties.getClientId(), "AST client ID");
+        validateNotEmpty(astProperties.getClientSecret(), "AST client secret");
         validateNotEmpty(astProperties.getPreset(), "AST preset");
         validateNotEmpty(astProperties.getIncremental(), "Is Incremental flag");
     }
