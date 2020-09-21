@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.dto;
 
+import javax.xml.bind.annotation.XmlType;
 import java.beans.ConstructorProperties;
 import java.util.Objects;
 
@@ -74,6 +75,7 @@ public class Filter {
         }
     }
 
+    @XmlType(name="filterSeverity")
     public enum Severity {
         CRITICAL("Critical"),
         HIGH("High"),
