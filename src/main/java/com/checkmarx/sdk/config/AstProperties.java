@@ -16,6 +16,7 @@ public class AstProperties {
 
     private String apiUrl;
     private String clientId;
+    private String webAppUrl;
     private String clientSecret;
     private String preset;
     private String incremental;

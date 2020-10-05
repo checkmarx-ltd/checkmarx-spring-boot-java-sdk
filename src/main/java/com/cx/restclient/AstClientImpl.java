@@ -78,6 +78,7 @@ public class AstClientImpl extends AbstractAstClient {
     private AstSastConfig getAstSpecificConfig() {
         return AstSastConfig.builder()
                 .apiUrl(astProperties.getApiUrl())
+                .webAppUrl(astProperties.getWebAppUrl())
                 .clientId(astProperties.getClientId())
                 .clientSecret(astProperties.getClientSecret())
                 .presetName(astProperties.getPreset())
