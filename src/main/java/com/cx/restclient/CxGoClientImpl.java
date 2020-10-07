@@ -7,12 +7,13 @@ import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.Summary;
 import com.checkmarx.sdk.dto.cx.*;
-import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
+
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.od.*;
 import com.checkmarx.sdk.exception.CheckmarxException;
-import com.checkmarx.sdk.service.CxAuthClient;
-import com.checkmarx.sdk.service.CxClient;
+
+
+import com.checkmarx.sdk.service.CxGoAuthService;
 import com.checkmarx.sdk.service.CxRepoFileService;
 import com.cx.restclient.ast.dto.sca.report.Finding;
 import com.cx.restclient.ast.dto.sca.report.Package;
@@ -45,7 +46,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class CxGoClientImpl implements CxClient {
+public class CxGoClientImpl implements ScannerClient {
     private static final String UNKNOWN = "-1";
     private static final Integer UNKNOWN_INT = -1;
 
@@ -94,12 +95,12 @@ public class CxGoClientImpl implements CxClient {
     private static List<CxScanParams> scanProbeMap = new LinkedList<>();
 
     private final CxGoProperties goProperties;
-    private final CxAuthClient authClient;
+    private final CxGoAuthService authClient;
     private final RestTemplate restTemplate;
     private Map<String, Object> codeCache = new HashMap<>();
     private CxRepoFileService cxRepoFileService;
 
-    public CxGoClientImpl(CxGoProperties cxProperties, CxAuthClient authClient,
+    public CxGoClientImpl(CxGoProperties cxProperties, CxGoAuthService authClient,
                      @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
         this.goProperties = cxProperties;
         this.authClient = authClient;
@@ -142,7 +143,7 @@ public class CxGoClientImpl implements CxClient {
         return requestBody.toString();
     }
 
-    private String createCxGoProject(String appId, String projectName, String presets) {
+    public String createCxGoProject(String appId, String projectName, String presets) {
         log.info("Creating new CxGo project.");
         HttpEntity<?> httpEntity = new HttpEntity<>(
                 getJSONCreateProjectReq(appId, projectName, presets),
@@ -486,9 +487,15 @@ public class CxGoClientImpl implements CxClient {
         result.put("sink",getNodeData(sastResult.getSinkNode()));
         result.put("state", sastResult.getState());
 
-        List<Map<String, Object>> resultList = (List<Map<String, Object>>) xIssue.getAdditionalDetails().get(ADDITIONAL_DETAILS_KEY);
-        if(resultList == null){  //new list
+        List<Map<String, Object>> resultList;
+        if (xIssue.getAdditionalDetails() == null || xIssue.getAdditionalDetails().get(ADDITIONAL_DETAILS_KEY) == null) {  //new list
             resultList = new ArrayList<>();
+            if (xIssue.getAdditionalDetails() == null){
+                xIssue.setAdditionalDetails(new HashMap<>());
+            }
+        } else {
+            resultList = (List<Map<String, Object>>) xIssue.getAdditionalDetails().get(ADDITIONAL_DETAILS_KEY);
+
         }
         resultList.add(result);
 
@@ -996,300 +1003,7 @@ public class CxGoClientImpl implements CxClient {
                         i -> i.getId().toString(), i -> i, (a, b) -> b)
                 );
     }
-
-    @Override
-    public JSONObject getScanData(String scanId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public LocalDateTime getLastScanDate(Integer projectId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Integer createScanReport(Integer scanId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Integer getReportStatus(Integer reportId) throws CheckmarxException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ScanResults getReportContent(Integer reportId, FilterConfiguration filter) throws CheckmarxException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CxXMLResultsType getXmlReportContent(Integer reportId) throws CheckmarxException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Map<String, String> getCustomFields(Integer projectId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ScanResults getReportContent(File file, FilterConfiguration filter) throws CheckmarxException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ScanResults getOsaReportContent(File vulnsFile, File libsFile, List<Filter> filter) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public String getIssueDescription(Long scanId, Long pathId) {
-        return null;
-    }
-
-    @Override
-    public Integer createProject(String ownerId, String name) {
-        return null;
-    }
-
-    @Override
-    public void deleteProject(Integer projectId) {
-
-    }
-
-    @Override
-    public void deleteProject(Integer projectId, boolean deleteRunningScans) {
-
-    }
-
-    @Override
-    public Integer branchProject(Integer projectId, String name) {
-        return null;
-    }
-
-    @Override
-    public List<CxProject> getProjects() throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public List<CxProject> getProjects(String teamId) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public boolean scanExists(Integer projectId) {
-        return false;
-    }
-
-    @Override
-    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId) {
-        return null;
-    }
-
-    @Override
-    public String getScanSetting(Integer projectId) {
-        return null;
-    }
-
-    @Override
-    public CxScanSettings getScanSettingsDto(int projectId) {
-        return null;
-    }
-
-    @Override
-    public String getPresetName(Integer presetId) {
-        return null;
-    }
-
-    @Override
-    public Integer getProjectPresetId(Integer projectId) {
-        return UNKNOWN_INT;
-    }
-
-    @Override
-    public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void updateProjectDetails(CxProject project) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void uploadProjectSource(Integer projectId, File file) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void setProjectExcludeDetails(Integer projectId, List<String> excludeFolders, List<String> excludeFiles) {
-
-    }
-
-    @Override
-    public Integer getLdapTeamMapId(Integer ldapServerId, String teamId, String ldapGroupDn) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public List<CxTeam> getTeams() throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public void mapTeamLdap(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
-
-    }
-
-    @Override
-    public List<CxTeamLdap> getTeamLdap(Integer ldapServerId) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public void removeTeamLdap(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
-
-    }
-
-    @Override
-    public List<CxRole> getRoles() throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public Integer getRoleId(String roleName) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public List<CxRoleLdap> getRoleLdap(Integer ldapServerId) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public Integer getLdapRoleMapId(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public void mapRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void removeRoleLdap(Integer roleMapId) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void removeRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void mapTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void removeTeamLdapWS(Integer ldapServerId, String teamId, String teamName, String ldapGroupDn) throws CheckmarxException {
-
-    }
-
-    @Override
-    public String createTeamWS(String parentTeamId, String teamName) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public void moveTeam(String teamId, String newParentTeamId) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void renameTeam(String teamId, String newTeamName) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void deleteTeam(String teamId) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void deleteTeamWS(String teamId) throws CheckmarxException {
-
-    }
-
-    @Override
-    public Integer getScanConfiguration(String configuration) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public String getScanConfigurationName(int configurationId) {
-        return null;
-    }
-
-    @Override
-    public Integer getPresetId(String preset) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public CxScanSummary getScanSummaryByScanId(Integer scanId) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public CxScanSummary getScanSummary(Integer projectId) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public CxScanSummary getScanSummary(String teamName, String projectName) throws CheckmarxException {
-        return null;
-    }
-
-    public Integer getScanIdOfExistingScanIfExists(Integer projectId) {
-        return UNKNOWN_INT;
-    }
-
-    @Override
-    public void deleteScan(Integer scanId) throws CheckmarxException {
-
-    }
-
-    @Override
-    public void cancelScan(Integer scanId) throws CheckmarxException {
-
-    }
-
-    @Override
-    public CxXMLResultsType createScanAndReport(CxScanParams params, String comment) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public ScanResults createScanAndReport(CxScanParams params, String comment, FilterConfiguration filter) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public CxXMLResultsType getLatestScanReport(String teamName, String projectName) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public ScanResults getLatestScanResults(String teamName, String projectName, FilterConfiguration filter) throws CheckmarxException {
-        return null;
-    }
-
-    @Override
-    public Integer getLdapServerId(String serverName) throws CheckmarxException {
-        return null;
-    }
+    
 
     @Autowired
     public void setCxRepoFileService(CxRepoFileService cxRepoFileService) {
