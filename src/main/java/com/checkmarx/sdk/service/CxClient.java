@@ -6,6 +6,7 @@ import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.exception.CheckmarxException;
+import com.cx.restclient.ScannerClient;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -16,7 +17,7 @@ import java.util.Map;
 /**
  * Class used to orchestrate submitting scans and retrieving results
  */
-public interface CxClient {
+public interface CxClient extends ScannerClient {
 
     /**
      * Get the last scan Id of a given project Id
