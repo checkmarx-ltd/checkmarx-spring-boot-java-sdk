@@ -9,7 +9,7 @@ import com.checkmarx.sdk.dto.ast.Summary;
 import com.checkmarx.sdk.dto.cx.*;
 
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
-import com.checkmarx.sdk.dto.od.*;
+import com.checkmarx.sdk.dto.cxgo.*;
 import com.checkmarx.sdk.exception.CheckmarxException;
 
 
@@ -36,7 +36,6 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import java.io.*;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -375,7 +374,7 @@ public class CxGoClientImpl implements ScannerClient {
         //CompletableFuture<Map<String, OdScanResultItem>> scanResultItemsFuture = resultService.getScanResultsPage(projectId, scanId);
         //CompletableFuture<com.checkmarx.sdk.dto.od.ScanResults> scanResultsFuture = resultService.getScanResults(scanId);
         Map<String, OdScanResultItem> scanResultItems = getScanResultsPage(projectId, scanId);
-        com.checkmarx.sdk.dto.od.ScanResults scanResults = getScanResults(scanId);
+        com.checkmarx.sdk.dto.cxgo.ScanResults scanResults = getScanResults(scanId);
         /*CompletableFuture.allOf(scanResultItemsFuture, scanResultsFuture);
         if(scanResultItemsFuture.isCompletedExceptionally() || scanResultsFuture.isCompletedExceptionally()){
             throw new CheckmarxException("Error retrieving results for Scan ".concat(scanId.toString()));
@@ -946,17 +945,17 @@ public class CxGoClientImpl implements ScannerClient {
         }
     }
 
-    private com.checkmarx.sdk.dto.od.ScanResults getScanResults(Integer scanId) throws CheckmarxException {
+    private com.checkmarx.sdk.dto.cxgo.ScanResults getScanResults(Integer scanId) throws CheckmarxException {
         HttpEntity<?> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
         try {
             log.info("Retrieving Scan Results for Scan Id {} ", scanId);
-            ResponseEntity<com.checkmarx.sdk.dto.od.ScanResults> response = restTemplate.exchange(
+            ResponseEntity<com.checkmarx.sdk.dto.cxgo.ScanResults> response = restTemplate.exchange(
                     //ResponseEntity<String> response = restTemplate.exchange(
                     goProperties.getUrl().concat(SCAN_RESULTS),
                     HttpMethod.GET,
                     httpEntity,
-                    com.checkmarx.sdk.dto.od.ScanResults.class,
+                    com.checkmarx.sdk.dto.cxgo.ScanResults.class,
                     //String.class,
                     scanId);
             //return null;
