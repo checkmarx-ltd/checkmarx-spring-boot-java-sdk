@@ -39,11 +39,8 @@ public class CxProperties extends CxPropertiesBase{
     private Integer reportPolling = 5000;
     private Integer reportTimeout = 300000;
     private Integer codeSnippetLength = 2500;
-    private String TEAM_PATH_SEPARATOR_9 = "/";
-    private String TEAM_PATH_SEPARATOR_8 = "\\";
-    private Boolean enableShardManager = false;
-    private Boolean enablePostActionMonitor = false;
-    private Integer postActionPostbackId = 0;
+
+
 
     private String portalPackage = "checkmarx.wsdl.portal";
 
@@ -56,18 +53,7 @@ public class CxProperties extends CxPropertiesBase{
     public String getPassword() {
         return this.password;
     }
-
-    public boolean getEnablePostActionMonitor() {
-        return this.enablePostActionMonitor;
-    }
-
-    public Integer getPostActionPostbackId() {
-        return this.postActionPostbackId;
-    }
-
-    public boolean getEnableShardManager() {
-        return this.enableShardManager;
-    }
+    
 
     public String getClientId() {
         return this.clientId;
@@ -143,17 +129,6 @@ public class CxProperties extends CxPropertiesBase{
         this.incrementalThreshold = incrementalThreshold;
     }
 
-    public void setEnablePostActionMonitor(boolean enablePostActionMonitor) {
-        this.enablePostActionMonitor = enablePostActionMonitor;
-    }
-
-    public void setPostActionPostbackId(Integer postActionPostbackId) {
-        this.postActionPostbackId = postActionPostbackId;
-    }
-
-    public void setEnableShardManager(boolean enableShardManager) {
-        this.enableShardManager = enableShardManager;
-    }
 
     public void setIncrementalNumScans(Integer incrementalNumScans){
         this.incrementalNumScans = incrementalNumScans;

@@ -23,7 +23,8 @@ public abstract class CxPropertiesBase {
     private String TEAM_PATH_SEPARATOR_9 = "/";
     private String TEAM_PATH_SEPARATOR_8 = "\\";
     private String portalUrl;
-
+    private Boolean enableShardManager = false;
+    
     public abstract Boolean getEnableOsa();
     
     public void setGitClonePath(String gitClonePath) {
@@ -45,6 +46,9 @@ public abstract class CxPropertiesBase {
         this.scanPolling = scanPolling;
     }
 
+    public boolean getEnableShardManager() {
+        return this.enableShardManager;
+    }
 
     public String getClientSecret() {
         return this.clientSecret;
@@ -93,6 +97,10 @@ public abstract class CxPropertiesBase {
         else {
             return this.gitClonePath;
         }
+    }
+
+    public void setEnableShardManager(boolean enableShardManager) {
+        this.enableShardManager = enableShardManager;
     }
 
 
