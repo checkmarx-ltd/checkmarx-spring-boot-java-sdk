@@ -9,14 +9,15 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component
-@ConfigurationProperties(prefix = "cxgo")
+@ConfigurationProperties(prefix = CxGoProperties.CONFIG_PREFIX)
 @Validated
 public class CxGoProperties extends CxPropertiesBase {
 
     public static final String CONFIG_PREFIX = "cxgo";
     
     private String postCloneScript;
-    private List<String> engineTypes = Arrays.asList("SAST", "SCA");
+    private List<String> engineTypes = Arrays.asList(CxProperties.CONFIG_PREFIX.toUpperCase(),
+                                                     ScaProperties.CONFIG_PREFIX.toUpperCase());
 
     public Boolean getEnableOsa() {
         return false;
