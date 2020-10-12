@@ -24,6 +24,9 @@ public abstract class CxPropertiesBase {
     private String TEAM_PATH_SEPARATOR_8 = "\\";
     private String portalUrl;
     private Boolean enableShardManager = false;
+    private Boolean incremental = false;
+    private String excludeFiles;
+    private String excludeFolders;
     
     public abstract Boolean getEnableOsa();
     
@@ -193,6 +196,30 @@ public abstract class CxPropertiesBase {
 
     public void setJiraAssigneeField(String jiraAssigneeField) {
         this.jiraAssigneeField = jiraAssigneeField;
+    }
+
+    public void setIncremental(Boolean incremental) {
+        this.incremental = incremental;
+    }
+    
+    public Boolean getIncremental() {
+        return this.incremental;
+    }
+
+    public String getExcludeFiles() {
+        return excludeFiles;
+    }
+
+    public void setExcludeFiles(String excludeFiles) {
+        this.excludeFiles = excludeFiles;
+    }
+
+    public String getExcludeFolders() {
+        return excludeFolders;
+    }
+
+    public void setExcludeFolders(String excludeFolders) {
+        this.excludeFolders = excludeFolders;
     }
 
 }

@@ -24,9 +24,6 @@ public class CxProperties extends CxPropertiesBase{
     private String acUrl;
     private String teamScript;
     private String projectScript;
-    private String excludeFiles;
-    private String excludeFolders;
-    private Boolean incremental = false;
     private Boolean enableOsa = false;
     private Integer incrementalThreshold = 7;
     private Integer incrementalNumScans = 5;
@@ -58,11 +55,7 @@ public class CxProperties extends CxPropertiesBase{
     public String getClientId() {
         return this.clientId;
     }
-    
 
-    public Boolean getIncremental() {
-        return this.incremental;
-    }
 
     public Integer getIncrementalThreshold() {
         return this.incrementalThreshold;
@@ -121,9 +114,6 @@ public class CxProperties extends CxPropertiesBase{
         this.projectScript = projectScript;
     }
 
-    public void setIncremental(Boolean incremental) {
-        this.incremental = incremental;
-    }
 
     public void setIncrementalThreshold(Integer incrementalThreshold){
         this.incrementalThreshold = incrementalThreshold;
@@ -149,22 +139,7 @@ public class CxProperties extends CxPropertiesBase{
     }
 
  
-    public String getExcludeFiles() {
-        return excludeFiles;
-    }
-
-    public void setExcludeFiles(String excludeFiles) {
-        this.excludeFiles = excludeFiles;
-    }
-
-    public String getExcludeFolders() {
-        return excludeFolders;
-    }
-
-    public void setExcludeFolders(String excludeFolders) {
-        this.excludeFolders = excludeFolders;
-    }
-
+ 
     public Integer getHttpConnectionTimeout() {
         return httpConnectionTimeout;
     }
