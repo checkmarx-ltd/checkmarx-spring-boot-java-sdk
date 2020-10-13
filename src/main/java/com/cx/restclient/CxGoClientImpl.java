@@ -2,6 +2,7 @@ package com.cx.restclient;
 
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxGoProperties;
+import com.checkmarx.sdk.config.CxPropertiesBase;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.ast.SCAResults;
@@ -93,7 +94,7 @@ public class CxGoClientImpl implements ScannerClient {
     //
     private static List<CxScanParams> scanProbeMap = new LinkedList<>();
 
-    private final CxGoProperties goProperties;
+    private final CxGoProperties cxGoProperties;
     private final CxGoAuthService authClient;
     private final RestTemplate restTemplate;
     private Map<String, Object> codeCache = new HashMap<>();
@@ -101,7 +102,7 @@ public class CxGoClientImpl implements ScannerClient {
 
     public CxGoClientImpl(CxGoProperties cxProperties, CxGoAuthService authClient,
                      @Qualifier("cxRestTemplate") RestTemplate restTemplate) {
-        this.goProperties = cxProperties;
+        this.cxGoProperties = cxProperties;
         this.authClient = authClient;
         this.restTemplate = restTemplate;
     }
@@ -122,7 +123,7 @@ public class CxGoClientImpl implements ScannerClient {
                 getJSONCreateAppReq(appName, appDesc, baBuId),
                 authClient.createAuthHeaders());
         ResponseEntity<OdApplicationCreate> createResp = restTemplate.exchange(
-                goProperties.getUrl().concat(CREATE_APPLICATION),
+                cxGoProperties.getUrl().concat(CREATE_APPLICATION),
                 HttpMethod.PUT,
                 httpEntity,
                 OdApplicationCreate.class);
@@ -158,7 +159,7 @@ public class CxGoClientImpl implements ScannerClient {
                 getJSONCreateProjectReq(appId, projectName, presets),
                 authClient.createAuthHeaders());
         ResponseEntity<OdProjectCreate> createResp = restTemplate.exchange(
-                goProperties.getUrl().concat(CREATE_PROJECT),
+                cxGoProperties.getUrl().concat(CREATE_PROJECT),
                 HttpMethod.PUT,
                 httpEntity,
                 OdProjectCreate.class);
@@ -179,7 +180,7 @@ public class CxGoClientImpl implements ScannerClient {
             createBody.put("name", projectName);
             createBody.put("description", "");
             if(StringUtils.isEmpty(preset)){
-                preset = goProperties.getScanPreset();
+                preset = cxGoProperties.getScanPreset();
             }
             String [] presets = preset.split(",");
             createBody.put("typeIds", presets);
@@ -206,14 +207,14 @@ public class CxGoClientImpl implements ScannerClient {
             /// Create the scan
             CreateScan scan = CreateScan.builder()
                     .projectId(params.getProjectId())
-                    .engineTypes(goProperties.getEngineTypes())
+                    .engineTypes(cxGoProperties.getEngineTypes())
                     .build();
             log.info("Sending scan to CxGo for projectID {}.", params.getProjectId());
 
             HttpHeaders headers = authClient.createAuthHeaders();
             HttpEntity<CreateScan> httpEntity = new HttpEntity<>(scan, headers);
             ResponseEntity<CreateScanResponse> createResp = restTemplate.exchange(
-                    goProperties.getUrl().concat(CREATE_SCAN),
+                    cxGoProperties.getUrl().concat(CREATE_SCAN),
                     HttpMethod.POST,
                     httpEntity,
                     CreateScanResponse.class);
@@ -345,7 +346,7 @@ public class CxGoClientImpl implements ScannerClient {
         try {
             log.debug("Retrieving OD Navigation Tree");
             ResponseEntity<OdNavigationTree> response = restTemplate.exchange(
-                    goProperties.getUrl().concat("/navigation-tree/navigation-tree"),
+                    cxGoProperties.getUrl().concat("/navigation-tree/navigation-tree"),
                     HttpMethod.GET,
                     httpEntity,
                     OdNavigationTree.class);
@@ -430,7 +431,7 @@ public class CxGoClientImpl implements ScannerClient {
                 summary.setFindingCounts(severityMap);
             }
             scaResults.setSummary(summary);
-            String scaDeepLink = goProperties.getPortalUrl().concat(SCA_DEEP_LINK);
+            String scaDeepLink = cxGoProperties.getPortalUrl().concat(SCA_DEEP_LINK);
             scaDeepLink = String.format(scaDeepLink, buId, appId, projectId, scanId);
             scaResults.setWebReportLink(scaDeepLink);
             results.scaResults(scaResults);
@@ -439,7 +440,7 @@ public class CxGoClientImpl implements ScannerClient {
 
         results.xIssues(xIssues);
         results.projectId(projectId.toString());
-        String deepLink = goProperties.getPortalUrl().concat(DEEP_LINK);
+        String deepLink = cxGoProperties.getPortalUrl().concat(DEEP_LINK);
         deepLink = String.format(deepLink, buId, appId, projectId, scanId);
         results.link(deepLink);
 
@@ -637,7 +638,7 @@ public class CxGoClientImpl implements ScannerClient {
         } else {
             HttpEntity<?> httpEntity = new HttpEntity<>(null, authClient.createAuthHeaders());
             ResponseEntity<OdScanFileResult> response = restTemplate.exchange(
-                    goProperties.getUrl().concat(SCAN_FILE),
+                    cxGoProperties.getUrl().concat(SCAN_FILE),
                     HttpMethod.GET,
                     httpEntity,
                     OdScanFileResult.class,
@@ -696,7 +697,7 @@ public class CxGoClientImpl implements ScannerClient {
         while(morePages) {
             // Fetch the current page
             ResponseEntity<OdProjectList> response = restTemplate.exchange(
-                    goProperties.getUrl().concat(GET_PROJECTS),
+                    cxGoProperties.getUrl().concat(GET_PROJECTS),
                     HttpMethod.GET,
                     httpEntity,
                     OdProjectList.class,
@@ -730,13 +731,13 @@ public class CxGoClientImpl implements ScannerClient {
         try {
             while(!status.equals(ScanStatus.Status.COMPLETED) &&
                     !status.equals(ScanStatus.Status.FAILED)) {
-                Thread.sleep(goProperties.getScanPolling());
+                Thread.sleep(cxGoProperties.getScanPolling());
                 scanStatus = getScanStatusById(scanId);
                 status = scanStatus.getStatus();
-                timer += goProperties.getScanPolling();
+                timer += cxGoProperties.getScanPolling();
                 log.info("scanId: {}, status: {}, progress: {}", scanId, scanStatus.getStatus(), scanStatus.getProgress());
-                if(timer >= (goProperties.getScanTimeout() * 60000)) {
-                    log.error("Scan timeout exceeded.  {} minutes", goProperties.getScanTimeout());
+                if(timer >= (cxGoProperties.getScanTimeout() * 60000)) {
+                    log.error("Scan timeout exceeded.  {} minutes", cxGoProperties.getScanTimeout());
                     throw new CheckmarxException("Timeout exceeded during scan");
                 }
             }
@@ -760,7 +761,7 @@ public class CxGoClientImpl implements ScannerClient {
         while(morePages) {
             // Fetch the current page
             ResponseEntity<OdScanList> response = restTemplate.exchange(
-                    goProperties.getUrl().concat(GET_SCAN_STATUS),
+                    cxGoProperties.getUrl().concat(GET_SCAN_STATUS),
                     HttpMethod.GET,
                     httpEntity,
                     OdScanList.class,
@@ -888,7 +889,7 @@ public class CxGoClientImpl implements ScannerClient {
         try {
             log.debug("Retrieving ScanStatus for Scan Id {}", scanId);
             ResponseEntity<ScanStatus> response = restTemplate.exchange(
-                    goProperties.getUrl().concat(SCAN_STATUS),
+                    cxGoProperties.getUrl().concat(SCAN_STATUS),
                     HttpMethod.GET,
                     httpEntity,
                     ScanStatus.class,
@@ -906,7 +907,7 @@ public class CxGoClientImpl implements ScannerClient {
         try {
             log.debug("Retrieving scan with id {}", scanId);
             ResponseEntity<Scan> response = restTemplate.exchange(
-                    goProperties.getUrl().concat(SCAN),
+                    cxGoProperties.getUrl().concat(SCAN),
                     HttpMethod.GET,
                     httpEntity,
                     Scan.class,
@@ -924,7 +925,7 @@ public class CxGoClientImpl implements ScannerClient {
         try {
             log.debug("Retrieving all scans");
             ResponseEntity<Scan[]> response = restTemplate.exchange(
-                    goProperties.getUrl().concat(SCANS),
+                    cxGoProperties.getUrl().concat(SCANS),
                     HttpMethod.GET,
                     httpEntity,
                     Scan[].class);
@@ -943,7 +944,7 @@ public class CxGoClientImpl implements ScannerClient {
             log.info("Retrieving Scan Results for Scan Id {} ", scanId);
             ResponseEntity<com.checkmarx.sdk.dto.cxgo.ScanResults> response = restTemplate.exchange(
                     //ResponseEntity<String> response = restTemplate.exchange(
-                    goProperties.getUrl().concat(SCAN_RESULTS),
+                    cxGoProperties.getUrl().concat(SCAN_RESULTS),
                     HttpMethod.GET,
                     httpEntity,
                     com.checkmarx.sdk.dto.cxgo.ScanResults.class,
@@ -969,7 +970,7 @@ public class CxGoClientImpl implements ScannerClient {
         while(morePages) {
             // Fetch the current page
             ResponseEntity<OdScanResults> response = restTemplate.exchange(
-                    goProperties.getUrl().concat(SCAN_RESULTS_ENCODED),
+                    cxGoProperties.getUrl().concat(SCAN_RESULTS_ENCODED),
                     HttpMethod.GET,
                     httpEntity,
                     OdScanResults.class,
@@ -1028,5 +1029,10 @@ public class CxGoClientImpl implements ScannerClient {
     @Override
     public CxScanSettings getScanSettingsDto(int projectId) {
         return null;
+    }
+
+    @Override
+    public CxPropertiesBase getCxPropertiesBase() {
+        return cxGoProperties;
     }
 }

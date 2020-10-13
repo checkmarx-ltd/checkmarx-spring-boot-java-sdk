@@ -27,6 +27,9 @@ public abstract class CxPropertiesBase {
     private Boolean incremental = false;
     private String excludeFiles;
     private String excludeFolders;
+    private Boolean offline = false;
+    private String teamScript;
+    private String projectScript;
     
     public abstract Boolean getEnableOsa();
     
@@ -220,6 +223,30 @@ public abstract class CxPropertiesBase {
 
     public void setExcludeFolders(String excludeFolders) {
         this.excludeFolders = excludeFolders;
+    }
+
+    public void setOffline(Boolean offline) {
+        this.offline = offline;
+    }
+
+    public Boolean getOffline() {
+        return this.offline;
+    }
+
+    public String getTeamScript() {
+        return teamScript;
+    }
+
+    public void setTeamScript(String teamScript) {
+        this.teamScript = teamScript;
+    }
+
+    public String getProjectScript() {
+        return projectScript;
+    }
+
+    public void setProjectScript(String projectScript) {
+        this.projectScript = projectScript;
     }
 
 }

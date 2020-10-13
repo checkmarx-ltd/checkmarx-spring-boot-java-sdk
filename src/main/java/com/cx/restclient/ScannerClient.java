@@ -1,5 +1,6 @@
 package com.cx.restclient;
 
+import com.checkmarx.sdk.config.CxPropertiesBase;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.CxProject;
 import com.checkmarx.sdk.dto.cx.CxScanParams;
@@ -64,4 +65,6 @@ public interface ScannerClient {
     String getScanConfigurationName(int configurationId);
 
     CxScanSettings getScanSettingsDto(int projectId);
+
+    CxPropertiesBase getCxPropertiesBase();
 }

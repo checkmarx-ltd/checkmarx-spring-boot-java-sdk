@@ -22,12 +22,11 @@ public class CxProperties extends CxPropertiesBase{
     private String scope = "sast_rest_api";
     private String soapScope = "sast_api";
     private String acUrl;
-    private String teamScript;
-    private String projectScript;
+
     private Boolean enableOsa = false;
     private Integer incrementalThreshold = 7;
     private Integer incrementalNumScans = 5;
-    private Boolean offline = false;
+
     private Boolean preserveXml = false;
     
     private Integer httpConnectionTimeout = 30000;
@@ -65,9 +64,6 @@ public class CxProperties extends CxPropertiesBase{
         return this.incrementalNumScans;
     }
 
-    public Boolean getOffline() {
-        return this.offline;
-    }
 
     public Boolean getPreserveXml() {
         return preserveXml;
@@ -97,38 +93,14 @@ public class CxProperties extends CxPropertiesBase{
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
-    
-    public String getTeamScript() {
-        return teamScript;
-    }
-
-    public void setTeamScript(String teamScript) {
-        this.teamScript = teamScript;
-    }
-
-    public String getProjectScript() {
-        return projectScript;
-    }
-
-    public void setProjectScript(String projectScript) {
-        this.projectScript = projectScript;
-    }
-
 
     public void setIncrementalThreshold(Integer incrementalThreshold){
         this.incrementalThreshold = incrementalThreshold;
     }
-
-
+    
     public void setIncrementalNumScans(Integer incrementalNumScans){
         this.incrementalNumScans = incrementalNumScans;
     }
-
- 
-    public void setOffline(Boolean offline) {
-        this.offline = offline;
-    }
-    
   
     public void setPortalPackage(String portalPackage) {
         this.portalPackage = portalPackage;
