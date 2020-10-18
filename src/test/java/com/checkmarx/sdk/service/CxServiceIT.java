@@ -22,6 +22,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 
@@ -143,10 +144,6 @@ public class CxServiceIT {
         }
     }
 
-    @Test
-    public void getCustomFields() {
-    }
-
     //TODO enable once access to cxprivatecloud is fixed
     @Test
     public void createAndDeleteProject() {
@@ -168,7 +165,7 @@ public class CxServiceIT {
             Integer projectId = service.getProjectId(teamId, "Riches");
             CxProject project = service.getProject(projectId);
             assertNotNull(project);
-            assertNotEquals("-1", project.getId());
+            assertNotEquals(Integer.valueOf(-1), project.getId());
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
         }
@@ -261,7 +258,7 @@ public class CxServiceIT {
         try {
             List<Filter> filters = new ArrayList<>();
             filters.add(new Filter(Filter.Type.SEVERITY, "High"));
-            FilterConfiguration filterConfiguration = FilterConfiguration.builder().simpleFilters(filters).build();
+            FilterConfiguration filterConfiguration = FilterConfiguration.fromSimpleFilters(filters);
             ScanResults results = service.getLatestScanResults(properties.getTeam(), "Riches", filterConfiguration);
             assertNotNull(results);
         }catch (CheckmarxException e){

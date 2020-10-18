@@ -13,10 +13,25 @@ import java.util.List;
 @Builder
 @ToString
 public class FilterConfiguration {
-    private List<Filter> simpleFilters;
-    private ScriptedFilter scriptedFilter;
+    /**
+     * Used for filtering all static code analysis results, independent of platform.
+     */
+    private EngineFilterConfiguration sastFilters;
 
+
+    /**
+     * Used for the filtering all dependency scan results, independent of platform.
+     */
+    private EngineFilterConfiguration scaFilters;
+
+    /**
+     * Shortcut method for populating SAST simple filters.
+     */
     public static FilterConfiguration fromSimpleFilters(List<Filter> simpleFilters) {
-        return FilterConfiguration.builder().simpleFilters(simpleFilters).build();
+        return FilterConfiguration.builder()
+                .sastFilters(EngineFilterConfiguration.builder()
+                        .simpleFilters(simpleFilters)
+                        .build())
+                .build();
     }
 }

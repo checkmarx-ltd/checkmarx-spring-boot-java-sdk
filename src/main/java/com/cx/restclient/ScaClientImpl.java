@@ -152,7 +152,7 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     /**
-     * Convert scaParams to an object that is used by underlying logic in Common Client.
+     * Convert scanParams to an object that is used by underlying logic in Common Client.
      */
     @Override
     protected CxScanConfig getScanConfig(ScanParams scanParams) {
