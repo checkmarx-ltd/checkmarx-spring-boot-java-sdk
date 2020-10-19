@@ -54,12 +54,14 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
     }
 
     @Override
-    public int createScanSettings(int projectId, int presetId, int engineConfigId) {
+    public int createScanSettings(int projectId, int presetId, int engineConfigId, int postActionId) {
         CxScanSettings scanSettings = CxScanSettings.builder()
                 .projectId(projectId)
                 .engineConfigurationId(engineConfigId)
                 .presetId(presetId)
                 .build();
+        if(cxProperties.getEnablePostActionMonitor() && postActionId != 0)
+            scanSettings.setPostScanActionId(postActionId);
         HttpEntity<CxScanSettings> requestEntity = new HttpEntity<>(scanSettings, authClient.createAuthHeaders());
 
         log.info("Creating ScanSettings for project Id {}", projectId);
