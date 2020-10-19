@@ -55,23 +55,25 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     private List<Filter> toStandardFilters(ScanParams scanParams) {
-        List<Filter> result = new ArrayList<>();
         ScaConfig configFromRequest = scanParams.getScaConfig();
-        if (scanParams.getScaConfig() != null) {
-            List<Filter> severityFilters = getEffectiveSeverityFilters(configFromRequest);
-            result.addAll(severityFilters);
+        List<Filter> severityFilters = getEffectiveSeverityFilters(configFromRequest);
+        List<Filter> result = new ArrayList<>(severityFilters);
 
-            Filter scoreFilter = getEffectiveScoreFilter(configFromRequest);
-            result.add(scoreFilter);
-        }
+        Filter scoreFilter = getEffectiveScoreFilter(configFromRequest);
+        result.add(scoreFilter);
+
         return result;
     }
 
     private Filter getEffectiveScoreFilter(ScaConfig configFromRequest) {
-        Double numericScore = Optional.ofNullable(configFromRequest.getFilterScore())
+        Double numericScore = Optional.ofNullable(configFromRequest)
+                .map(ScaConfig::getFilterScore)
                 .orElse(scaProperties.getFilterScore());
 
-        String score = Optional.ofNullable(numericScore).map(neutralFormat::format).orElse(null);
+        String score = Optional.ofNullable(numericScore)
+                .map(neutralFormat::format)
+                .orElse(null);
+
         return Filter.builder()
                 .type(Filter.Type.SCORE)
                 .value(score)
@@ -79,17 +81,21 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     private List<Filter> getEffectiveSeverityFilters(ScaConfig configFromRequest) {
-        List<String> filtersFromRequest = configFromRequest.getFilterSeverity();
+        List<String> filtersFromRequest = Optional.ofNullable(configFromRequest)
+                .map(ScaConfig::getFilterSeverity)
+                .orElse(null);
+
         List<String> filtersFromProperties = scaProperties.getFilterSeverity();
 
-        List<String> result = CollectionUtils.isNotEmpty(filtersFromRequest) ? filtersFromRequest : filtersFromProperties;
-        result = Optional.ofNullable(result).orElseGet(ArrayList::new);
+        List<String> filterValues = CollectionUtils.isNotEmpty(filtersFromRequest) ? filtersFromRequest : filtersFromProperties;
+        List<String> nullSafeResult = Optional.ofNullable(filterValues).orElseGet(ArrayList::new);
 
-        return result.stream().map(severity ->
-                Filter.builder()
-                        .type(Filter.Type.SEVERITY)
-                        .value(severity)
-                        .build())
+        return nullSafeResult.stream()
+                .map(severity ->
+                        Filter.builder()
+                                .type(Filter.Type.SEVERITY)
+                                .value(severity)
+                                .build())
                 .collect(Collectors.toList());
     }
 
