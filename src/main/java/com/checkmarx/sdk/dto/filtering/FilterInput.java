@@ -2,6 +2,7 @@ package com.checkmarx.sdk.dto.filtering;
 
 import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
+import com.cx.restclient.ast.dto.sca.report.Finding;
 import com.google.common.collect.ImmutableMap;
 import lombok.Builder;
 import lombok.Getter;
@@ -55,6 +56,16 @@ public class FilterInput {
                 .severity(findingGroup.getSeverity().toUpperCase(Locale.ROOT))
                 .status(finding.getStatus().toUpperCase(Locale.ROOT))
                 .state(stateName)
+                .build();
+    }
+
+    public static FilterInput getInstance(Finding scaFinding) {
+        return FilterInput.builder()
+                .id(scaFinding.getId())
+                .category(scaFinding.getCveName())
+                .cwe(scaFinding.getCveName())
+                .severity(scaFinding.getSeverity().toString())
+                .score(scaFinding.getScore())
                 .build();
     }
 }
