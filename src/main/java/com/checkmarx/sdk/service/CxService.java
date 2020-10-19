@@ -1172,8 +1172,8 @@ public class CxService implements CxClient{
      *
      * @return Scan setting ID.
      */
-    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId) {
-        return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId);
+    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId, Integer postActionId) {
+        return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId, postActionId);
     }
 
     /**
@@ -1639,7 +1639,6 @@ public class CxService implements CxClient{
         validateScanParams(params);
         String teamId = determineTeamId(params);
         Integer projectId = determineProjectId(params, teamId);
-
         boolean projectExistedBeforeScan = !projectId.equals(UNKNOWN_INT);
         if (!projectExistedBeforeScan) {
             projectId = createProject(teamId, params.getProjectName());
@@ -1647,11 +1646,9 @@ public class CxService implements CxClient{
                 throw new CheckmarxException("Project was not created successfully: ".concat(params.getProjectName()));
             }
         }
-
         Integer presetId = getPresetId(params.getScanPreset());
         Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
-        createScanSetting(projectId, presetId, engineConfigurationId);
-
+        createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
         switch (params.getSourceType()) {
             case GIT:
                 setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());

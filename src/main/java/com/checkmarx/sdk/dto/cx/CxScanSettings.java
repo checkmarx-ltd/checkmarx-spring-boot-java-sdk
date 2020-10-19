@@ -6,7 +6,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({
         "projectId",
         "presetId",
-        "engineConfigurationId"
+        "engineConfigurationId",
+        "postScanActionId"
 })
 
 public class CxScanSettings {
@@ -16,12 +17,16 @@ public class CxScanSettings {
     public Integer presetId;
     @JsonProperty("engineConfigurationId")
     public Integer engineConfigurationId;
+    @JsonProperty("postScanActionId")
+    public Integer postScanActionId;
+
 
     @java.beans.ConstructorProperties({"projectId", "presetId", "engineConfigurationId"})
-    CxScanSettings(Integer projectId, Integer presetId, Integer engineConfigurationId) {
+    CxScanSettings(Integer projectId, Integer presetId, Integer engineConfigurationId, Integer postScanActionId) {
         this.projectId = projectId;
         this.presetId = presetId;
         this.engineConfigurationId = engineConfigurationId;
+        this.postScanActionId = postScanActionId;
     }
 
     public static CxScanSettingsBuilder builder() {
@@ -36,6 +41,10 @@ public class CxScanSettings {
         return this.presetId;
     }
 
+    public Integer getPostScanActionId() {
+        return this.postScanActionId;
+    }
+
     public Integer getEngineConfigurationId() {
         return this.engineConfigurationId;
     }
@@ -48,18 +57,23 @@ public class CxScanSettings {
         this.presetId = presetId;
     }
 
+    public void setPostScanActionId(Integer postScanActionId) {
+        this.postScanActionId = postScanActionId;
+    }
+
     public void setEngineConfigurationId(Integer engineConfigurationId) {
         this.engineConfigurationId = engineConfigurationId;
     }
 
     public String toString() {
-        return "CxScanSettings(projectId=" + this.getProjectId() + ", presetId=" + this.getPresetId() + ", engineConfigurationId=" + this.getEngineConfigurationId() + ")";
+        return "CxScanSettings(projectId=" + this.getProjectId() + ", presetId=" + this.getPresetId() + ", engineConfigurationId=" + this.getEngineConfigurationId() + ", postScanActionId=" + this.postScanActionId + ")";
     }
 
     public static class CxScanSettingsBuilder {
         private Integer projectId;
         private Integer presetId;
         private Integer engineConfigurationId;
+        private Integer postScanActionId;
 
         CxScanSettingsBuilder() {
         }
@@ -79,8 +93,13 @@ public class CxScanSettings {
             return this;
         }
 
+        public CxScanSettings.CxScanSettingsBuilder postScanActionId(Integer postScanActionId) {
+            this.postScanActionId = postScanActionId;
+            return this;
+        }
+
         public CxScanSettings build() {
-            return new CxScanSettings(projectId, presetId, engineConfigurationId);
+            return new CxScanSettings(projectId, presetId, engineConfigurationId, postScanActionId);
         }
 
         public String toString() {
