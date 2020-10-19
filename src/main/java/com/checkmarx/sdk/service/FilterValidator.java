@@ -30,12 +30,14 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class FilterValidator {
+    public static final Locale NUMERIC_CONVERSION_LOCALE = Locale.ROOT;
+
     /**
      * An object variable with this name will be passed to the filtering script.
      */
     private static final String INPUT_VARIABLE_NAME = "finding";
 
-    private final NumberFormat numberFormat = NumberFormat.getInstance(Locale.ROOT);
+    private final NumberFormat numberFormat = NumberFormat.getInstance(NUMERIC_CONVERSION_LOCALE);
 
     /**
      * @param filterConfiguration filters to check against
