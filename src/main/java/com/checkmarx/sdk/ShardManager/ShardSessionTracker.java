@@ -47,7 +47,8 @@ public class ShardSessionTracker {
             System.setOut(new PrintStream(baos, true, StandardCharsets.UTF_8.name()));
             r.run();
             String tokenStr = new String(baos.toByteArray());
-            return tokenStr.substring(174, 183);
+            int tokenPos = tokenStr.indexOf("ScanID") + 13;
+            return tokenStr.substring(tokenPos, (tokenPos+8));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("End of the world, Java doesn't recognise UTF-8");
         } finally {

@@ -9,7 +9,7 @@ import com.checkmarx.sdk.exception.CheckmarxException;
  * - scan presets
  */
 public interface ScanSettingsClient {
-    int createScanSettings(int projectId, int presetId, int engineConfigId);
+    int createScanSettings(int projectId, int presetId, int engineConfigId, int postScanId);
 
     String getScanSettings(int projectId);
 
