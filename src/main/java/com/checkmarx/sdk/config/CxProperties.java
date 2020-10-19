@@ -55,6 +55,8 @@ public class CxProperties {
     private String TEAM_PATH_SEPARATOR_9 = "/";
     private String TEAM_PATH_SEPARATOR_8 = "\\";
     private Boolean enableShardManager = false;
+    private Boolean enablePostActionMonitor = false;
+    private Integer postActionPostbackId = 0;
 
     private String portalUrl;
 
@@ -68,6 +70,14 @@ public class CxProperties {
 
     public String getPassword() {
         return this.password;
+    }
+
+    public boolean getEnablePostActionMonitor() {
+        return this.enablePostActionMonitor;
+    }
+
+    public Integer getPostActionPostbackId() {
+        return this.postActionPostbackId;
     }
 
     public boolean getEnableShardManager() {
@@ -208,6 +218,14 @@ public class CxProperties {
 
     public void setIncrementalThreshold(Integer incrementalThreshold){
         this.incrementalThreshold = incrementalThreshold;
+    }
+
+    public void setEnablePostActionMonitor(boolean enablePostActionMonitor) {
+        this.enablePostActionMonitor = enablePostActionMonitor;
+    }
+
+    public void setPostActionPostbackId(Integer postActionPostbackId) {
+        this.postActionPostbackId = postActionPostbackId;
     }
 
     public void setEnableShardManager(boolean enableShardManager) {
