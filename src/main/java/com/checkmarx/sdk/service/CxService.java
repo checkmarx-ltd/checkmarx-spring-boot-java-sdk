@@ -767,7 +767,9 @@ public class CxService implements CxClient{
      */
     private Map<String, Integer> getIssues(FilterConfiguration filter, String session, List<ScanResults.XIssue> cxIssueList, CxXMLResultsType cxResults) {
         Map<String, Integer> summary = new HashMap<>();
-        EngineFilterConfiguration sastFilters = filter.getSastFilters();
+        EngineFilterConfiguration sastFilters = Optional.ofNullable(filter)
+                .map(FilterConfiguration::getSastFilters)
+                .orElse(null);
 
         for (QueryType result : cxResults.getQuery()) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
