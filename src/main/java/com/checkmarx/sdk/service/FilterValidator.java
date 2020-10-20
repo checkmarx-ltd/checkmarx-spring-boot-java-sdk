@@ -175,8 +175,10 @@ public class FilterValidator {
     }
 
     private static void logFilteringResult(FilterInput finding, boolean passes) {
-        String idForLog = StringUtils.isNotEmpty(finding.getId()) ? finding.getId() : "n/a";
-        String message = (passes ? "passes" : "does not pass");
-        log.debug("Finding (ID: {}) {} the filter.", idForLog, message);
+        if (log.isDebugEnabled()) {
+            String idForLog = StringUtils.isNotEmpty(finding.getId()) ? finding.getId() : "n/a";
+            String message = (passes ? "passes" : "does not pass");
+            log.debug("Finding (ID: {}) {} the filter.", idForLog, message);
+        }
     }
 }

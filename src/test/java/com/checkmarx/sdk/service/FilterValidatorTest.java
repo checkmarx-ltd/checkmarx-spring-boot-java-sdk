@@ -35,7 +35,7 @@ public class FilterValidatorTest {
     private static final String CWE1 = "203";
     private static final String CWE2 = "611";
     public static final String PERFORMANCE_TEST_SCRIPT = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
-    public static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(10);
+    public static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(20);
 
     @Test
     public void passesFilter_scriptTypicalExample() {
