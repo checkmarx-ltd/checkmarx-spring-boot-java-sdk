@@ -35,7 +35,8 @@ public class CxProperties extends CxPropertiesBase{
     private Integer reportPolling = 5000;
     private Integer reportTimeout = 300000;
     private Integer codeSnippetLength = 2500;
-
+    private Boolean enablePostActionMonitor = false;
+    private Integer postActionPostbackId = 0;
 
 
     private String portalPackage = "checkmarx.wsdl.portal";
@@ -203,6 +204,14 @@ public class CxProperties extends CxPropertiesBase{
     public void setSoapScope(String soapScope) {
         this.soapScope = soapScope;
     }
-    
+
+    public boolean getEnablePostActionMonitor() {
+        return this.enablePostActionMonitor;
+    }
+
+    public Integer getPostActionPostbackId() {
+        return this.postActionPostbackId;
+    }
+
 }
 
