@@ -6,26 +6,26 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
+import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
+import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.service.FilterValidator;
+import com.checkmarx.sdk.service.ScaFilterFactory;
 import com.cx.restclient.ast.dto.sca.AstScaConfig;
 import com.cx.restclient.ast.dto.sca.AstScaResults;
 import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
+import com.cx.restclient.ast.dto.sca.report.Finding;
 import com.cx.restclient.configuration.CxScanConfig;
 import com.cx.restclient.dto.ScanResults;
 import com.cx.restclient.dto.ScannerType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.util.EnumSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -33,83 +33,23 @@ import java.util.Optional;
 @Service
 public class ScaClientImpl extends AbstractAstClient {
     private final ScaProperties scaProperties;
+    private final FilterValidator filterValidator;
+    private final ScaFilterFactory filterFactory;
+
 
     @Override
     protected void applyScaResultsFilters(ASTResultsWrapper combinedResults, ScanParams scanParams) {
+        ScaConfig scaConfig = Optional.ofNullable(scanParams).map(ScanParams::getScaConfig).orElse(null);
 
-        SCAResults scaResults = combinedResults.getScaResults();
-        List<String> filterSeverityFromRequest = null;
-        Double filterScoreFromRequest = null;
+        EngineFilterConfiguration filters = filterFactory.getFilterConfiguration(scaConfig);
 
-        if (Optional.ofNullable(scanParams.getScaConfig()).isPresent()) {
-            filterSeverityFromRequest = scanParams.getScaConfig().getFilterSeverity();
-            filterScoreFromRequest = scanParams.getScaConfig().getFilterScore();
-        }
-
-        List<String> appliedFilterSeverity;
-        appliedFilterSeverity = getFilterSeverity(filterSeverityFromRequest);
-
-        if (appliedFilterSeverity != null && !Objects.requireNonNull(appliedFilterSeverity).isEmpty()) {
-            filterResultsBySeverity(scaResults, appliedFilterSeverity);
-        }
-
-        Double appliedFilterScore;
-        appliedFilterScore = getFilterScore(filterScoreFromRequest);
-
-        if (isNotEmptyDouble(appliedFilterScore)) {
-            filterResultsByScore(scaResults, appliedFilterScore);
-        } else  {
-            log.info("CxSCA filter score is not defined");
-        }
+        combinedResults.getScaResults().getFindings()
+                .removeIf(finding -> !passesFilter(finding, filters));
     }
 
-    private Double getFilterScore(Double filterScoreFromRequest) {
-        Double appliedFilterScore;
-
-        if (isNotEmptyDouble(filterScoreFromRequest)) {
-            appliedFilterScore = filterScoreFromRequest;
-        } else {
-            appliedFilterScore = scaProperties.getFilterScore();
-        }
-        return appliedFilterScore;
-    }
-
-    private List<String> getFilterSeverity(List<String> filterSeverityFromRequest) {
-        List<String> appliedFilterSeverity;
-
-        if (CollectionUtils.isNotEmpty(filterSeverityFromRequest)) {
-            appliedFilterSeverity = filterSeverityFromRequest;
-        } else {
-            appliedFilterSeverity = scaProperties.getFilterSeverity();
-        }
-        return appliedFilterSeverity;
-    }
-
-    private void filterResultsBySeverity(SCAResults scaResults, List<String> filerSeverity) {
-        List<String> validateFilterSeverity = validateFilterSeverity(filerSeverity);
-        log.info("Applying Cx-SCA results filter severities: [{}]", validateFilterSeverity.toString());
-        scaResults.getFindings().removeIf(finding -> (
-                !StringUtils.containsIgnoreCase(validateFilterSeverity.toString(), finding.getSeverity().name())
-                ));
-    }
-
-    private void filterResultsByScore(SCAResults scaResults, double score) {
-        log.info("Applying Cx-SCA results filter score: [{}]", score);
-        scaResults.getFindings().removeIf(finding -> (
-                finding.getScore() < score
-        ));
-    }
-
-    private List<String> validateFilterSeverity(List<String> filerSeverity) {
-        Iterator<String> iterator = filerSeverity.iterator();
-        while (iterator.hasNext()) {
-            String nextFilter = iterator.next();
-            if (!StringUtils.containsIgnoreCase(EnumSet.range(Filter.Severity.HIGH, Filter.Severity.LOW).toString(), nextFilter)) {
-                log.warn("Severity: [{}] is not a supported filter", nextFilter);
-                iterator.remove();
-            }
-        }
-        return filerSeverity;
+    private boolean passesFilter(Finding finding, EngineFilterConfiguration filterConfig) {
+        FilterInput filterInput = FilterInput.getInstance(finding);
+        return filterValidator.passesFilter(filterInput, filterConfig);
     }
 
     /**
@@ -152,7 +92,7 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     /**
-     * Convert scaParams to an object that is used by underlying logic in Common Client.
+     * Convert scanParams to an object that is used by underlying logic in Common Client.
      */
     @Override
     protected CxScanConfig getScanConfig(ScanParams scanParams) {
@@ -249,7 +189,4 @@ public class ScaClientImpl extends AbstractAstClient {
         }
     }
 
-    private boolean isNotEmptyDouble(Double d) {
-        return (d != null && d >= 0.0);
-    }
 }
