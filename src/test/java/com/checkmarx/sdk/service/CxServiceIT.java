@@ -6,12 +6,17 @@ import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.CxUser;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
-import com.checkmarx.sdk.dto.cx.*;
+import com.checkmarx.sdk.dto.cx.CxProject;
+import com.checkmarx.sdk.dto.cx.CxRole;
+import com.checkmarx.sdk.dto.cx.CxScanParams;
+import com.checkmarx.sdk.dto.cx.CxScanSummary;
+import com.checkmarx.sdk.dto.cx.CxTeam;
 import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.cx.restclient.CxOsaService;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +26,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -42,7 +48,35 @@ public class CxServiceIT {
     private CxUserService userService;
 
     @Test
-    public void Login() {
+    @Ignore("Stable environment required")
+    public void completeScanFlow() throws CheckmarxException {
+        final String PROJECT_NAME = "my-project-name";
+        final String GIT_REPO_URL = "https://github.com/my-organization/my-repo.git";
+        final String BRANCH_NAME = "refs/heads/develop";
+
+        String teamId = service.getTeamId(properties.getTeam());
+        Integer projectId = service.getProjectId(teamId, PROJECT_NAME);
+        CxScanParams params = new CxScanParams();
+        params.setProjectName(PROJECT_NAME);
+        params.setTeamId(teamId);
+        params.setProjectId(projectId);
+        params.setGitUrl(GIT_REPO_URL);
+        params.setBranch(BRANCH_NAME);
+        params.setSourceType(CxScanParams.Type.GIT);
+        //run the scan and wait for it to finish
+        Integer x = service.createScan(params, "CxSDK Scan");
+        service.waitForScanCompletion(x);
+
+        List<Filter> highSeverityOnly = Collections.singletonList(new Filter(Filter.Type.SEVERITY, "High"));
+        FilterConfiguration filterConfiguration = FilterConfiguration.fromSimpleFilters(highSeverityOnly);
+
+        //generate the results
+        ScanResults results = service.getReportContentByScanId(x, filterConfiguration);
+        assertNotNull(results);
+    }
+
+    @Test
+    public void login() {
         try {
             String token = authService.getAuthToken(
                     properties.getUsername(),
@@ -143,10 +177,6 @@ public class CxServiceIT {
         }
     }
 
-    @Test
-    public void getCustomFields() {
-    }
-
     //TODO enable once access to cxprivatecloud is fixed
     @Test
     public void createAndDeleteProject() {
@@ -168,7 +198,7 @@ public class CxServiceIT {
             Integer projectId = service.getProjectId(teamId, "Riches");
             CxProject project = service.getProject(projectId);
             assertNotNull(project);
-            assertNotEquals("-1", project.getId());
+            assertNotEquals(Integer.valueOf(-1), project.getId());
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
         }
@@ -261,7 +291,7 @@ public class CxServiceIT {
         try {
             List<Filter> filters = new ArrayList<>();
             filters.add(new Filter(Filter.Type.SEVERITY, "High"));
-            FilterConfiguration filterConfiguration = FilterConfiguration.builder().simpleFilters(filters).build();
+            FilterConfiguration filterConfiguration = FilterConfiguration.fromSimpleFilters(filters);
             ScanResults results = service.getLatestScanResults(properties.getTeam(), "Riches", filterConfiguration);
             assertNotNull(results);
         }catch (CheckmarxException e){
