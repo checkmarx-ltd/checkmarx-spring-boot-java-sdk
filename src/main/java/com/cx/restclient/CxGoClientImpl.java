@@ -524,10 +524,16 @@ public class CxGoClientImpl implements ScannerClient {
         result.put("sink",getNodeData(sastResult.getSinkNode()));
         result.put("state", sastResult.getState());
 
-        List<Map<String, Object>> resultList = (List<Map<String, Object>>) xIssue.getAdditionalDetails().get(ADDITIONAL_DETAILS_KEY);
-        if(resultList == null){  //new list
+        List<Map<String, Object>> resultList;
+        if (xIssue.getAdditionalDetails() == null || xIssue.getAdditionalDetails().get(ADDITIONAL_DETAILS_KEY) == null) {  //new list
             resultList = new ArrayList<>();
+            if (xIssue.getAdditionalDetails() == null){
+                xIssue.setAdditionalDetails(new HashMap<>());
+            }
+        } else {
+            resultList = (List<Map<String, Object>>) xIssue.getAdditionalDetails().get(ADDITIONAL_DETAILS_KEY);
         }
+        
         resultList.add(result);
 
         int loc = sastResult.getSourceNode().getLine();

@@ -118,12 +118,12 @@ public class CxService implements CxClient{
     public static final String ERROR_GETTING_TEAMS = "Error occurred while retrieving Teams";
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
-    private final CxAuthClient authClient;
+    private final CxAuthService authClient;
     private final RestTemplate restTemplate;
     private final ScanSettingsClient scanSettingsClient;
     private final FilterValidator filterValidator;
 
-    public CxService(CxAuthClient authClient,
+    public CxService(CxAuthService authClient,
                      CxProperties cxProperties,
                      CxLegacyService cxLegacyService,
                      @Qualifier("cxRestTemplate") RestTemplate restTemplate,
