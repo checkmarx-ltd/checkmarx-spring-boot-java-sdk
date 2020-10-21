@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.dto.cxgo;
 
 import com.fasterxml.jackson.annotation.*;
+import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -265,6 +266,20 @@ public class SASTScanResult {
 
         public void setSeverity(String s) {
             this.s = s;
+        }
+    }
+
+    @Getter
+    public enum State {
+        TO_VERIFY(1),
+        NOT_EXPLOITABLE(2),
+        CONFIRMED(3),
+        URGENT(4);
+
+        private final int value;
+
+        State(int value) {
+            this.value = value;
         }
     }
 }

@@ -44,7 +44,7 @@ public class SCAScanResult {
     private String cwe;
 
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
 
     @JsonProperty("scan_id")
     public Integer getScanId() {
@@ -227,10 +227,6 @@ public class SCAScanResult {
     }
 
     public enum Severity {
-        HIGH("HIGH"),
-        MEDIUM("MEDIUM"),
-        LOW("LOW"),
-        INFO("INFO"),
         High("High"),
         Medium("Medium"),
         Low("Low"),
@@ -238,7 +234,7 @@ public class SCAScanResult {
 
         private String s;
 
-        private Severity(String s) {
+        Severity(String s) {
             this.s = s;
         }
 
