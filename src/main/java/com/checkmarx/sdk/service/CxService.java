@@ -6,7 +6,9 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.*;
+import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
+import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.utils.ScanUtils;
@@ -109,6 +111,10 @@ public class CxService implements CxClient{
     public static final String ERROR_PROCESSING_RESULTS = "Error while processing scan results for report Id ";
     public static final String ERROR_WITH_XML_REPORT = "Error with XML report";
     public static final String ERROR_PROCESSING_SCAN_RESULTS = "Error while processing scan results";
+    public static final String ERROR_GETTING_PROJECT = "Error occurred while retrieving project with id {}, http error {}";
+    public static final String FOUND_TEAM = "Found team {} with ID {}";
+    public static final String ONLY_SUPPORTED_IN_90_PLUS = "Operation only supported in 9.0+";
+    public static final String ERROR_GETTING_TEAMS = "Error occurred while retrieving Teams";
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
     private final CxAuthClient authClient;
@@ -761,11 +767,16 @@ public class CxService implements CxClient{
      */
     private Map<String, Integer> getIssues(FilterConfiguration filter, String session, List<ScanResults.XIssue> cxIssueList, CxXMLResultsType cxResults) {
         Map<String, Integer> summary = new HashMap<>();
+        EngineFilterConfiguration sastFilters = Optional.ofNullable(filter)
+                .map(FilterConfiguration::getSastFilters)
+                .orElse(null);
+
         for (QueryType result : cxResults.getQuery()) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
                 for (ResultType resultType : result.getResult()) {
-                    if (filterValidator.passesFilter(result, resultType, filter)) {
+                    FilterInput filterInput = FilterInput.getInstance(result, resultType);
+                    if (filterValidator.passesFilter(filterInput, sastFilters)) {
                         boolean falsePositive = false;
                         if(!resultType.getFalsePositive().equalsIgnoreCase("FALSE")){
                             falsePositive = true;
@@ -1085,7 +1096,7 @@ public class CxService implements CxClient{
             ResponseEntity<CxProject> project = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT), HttpMethod.GET, httpEntity, CxProject.class, projectId);
             return project.getBody();
         } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving project with id {}, http error {}", projectId, e.getStatusCode());
+            log.error(ERROR_GETTING_PROJECT, projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
         } catch (JSONException e) {
             log.error("Error processing JSON Response");
@@ -1121,7 +1132,7 @@ public class CxService implements CxClient{
             return false;
 
         } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving project with id {}, http error {}", projectId, e.getStatusCode());
+            log.error(ERROR_GETTING_PROJECT, projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
         } catch (JSONException e) {
             log.error("Error processing JSON Response");
@@ -1157,7 +1168,7 @@ public class CxService implements CxClient{
             return UNKNOWN_INT;
 
         } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving project with id {}, http error {}", projectId, e.getStatusCode());
+            log.error(ERROR_GETTING_PROJECT, projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
         } catch (JSONException e) {
             log.error("Error processing JSON Response");
@@ -1315,12 +1326,12 @@ public class CxService implements CxClient{
             }
             for (CxTeam team : teams) {
                 if (team.getFullName().equals(teamPath)) {
-                    log.info("Found team {} with ID {}", teamPath, team.getId());
+                    log.info(FOUND_TEAM, teamPath, team.getId());
                     return team.getId();
                 }
             }
         } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving Teams");
+            log.error(ERROR_GETTING_TEAMS);
             log.error(ExceptionUtils.getStackTrace(e));
         }
         log.info("No team was found for {}", teamPath);
@@ -1343,12 +1354,12 @@ public class CxService implements CxClient{
             }
             for (CxTeam team : teams) {
                 if (team.getId().equals(teamId)) {
-                    log.info("Found team {} with ID {}", team.getFullName(), teamId);
+                    log.info(FOUND_TEAM, team.getFullName(), teamId);
                     return team.getFullName();
                 }
             }
         } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving Teams");
+            log.error(ERROR_GETTING_TEAMS);
             log.error(ExceptionUtils.getStackTrace(e));
         }
         log.info("No team was found for {}", teamId);
@@ -1381,13 +1392,13 @@ public class CxService implements CxClient{
                 }
                 for (CxTeam team : teams) {
                     if (team.getName().equals(teamName) && team.getParentId().equals(parentTeamId)) {
-                        log.info("Found team {} with ID {}", teamName, team.getId());
+                        log.info(FOUND_TEAM, teamName, team.getId());
                         return team.getId();
                     }
                 }
             }
         } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving Teams");
+            log.error(ERROR_GETTING_TEAMS);
             log.error(ExceptionUtils.getStackTrace(e));
         }
         log.info("No team was found for {} with parentId {}", teamName, parentTeamId);
@@ -1515,7 +1526,7 @@ public class CxService implements CxClient{
         for (CxTeam team : teams) {
             if (team.getId().equals(teamId)) {
                 teamName = team.getFullName();
-                log.debug("Found team {} with ID {}", teamName, teamId);
+                log.debug(FOUND_TEAM, teamName, teamId);
                 break;
             }
         }
@@ -1869,7 +1880,7 @@ public class CxService implements CxClient{
             }
             return Arrays.asList(teams);
         } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while retrieving Teams");
+            log.error(ERROR_GETTING_TEAMS);
             log.error(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException("Error occurred while retrieving teams");
         }
@@ -1925,7 +1936,7 @@ public class CxService implements CxClient{
     @Override
     public List<CxTeamLdap> getTeamLdap(Integer ldapServerId) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
+            throw new CheckmarxException(ONLY_SUPPORTED_IN_90_PLUS);
         }
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
@@ -1985,7 +1996,7 @@ public class CxService implements CxClient{
     @Override
     public Integer getLdapTeamMapId(Integer ldapServerId, String teamId, String ldapGroupDn) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
+            throw new CheckmarxException(ONLY_SUPPORTED_IN_90_PLUS);
         }
         try{
             HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
@@ -2025,7 +2036,7 @@ public class CxService implements CxClient{
     @Override
     public List<CxRole> getRoles() throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
+            throw new CheckmarxException(ONLY_SUPPORTED_IN_90_PLUS);
         }
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
@@ -2052,7 +2063,7 @@ public class CxService implements CxClient{
     @Override
     public List<CxRoleLdap> getRoleLdap(Integer ldapServerId) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
+            throw new CheckmarxException(ONLY_SUPPORTED_IN_90_PLUS);
         }
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
@@ -2073,7 +2084,7 @@ public class CxService implements CxClient{
     @Override
     public Integer getRoleId(String roleName) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
+            throw new CheckmarxException(ONLY_SUPPORTED_IN_90_PLUS);
         }
         List<CxRole> roles = getRoles();
         for(CxRole role: roles){
@@ -2088,7 +2099,7 @@ public class CxService implements CxClient{
     @Override
     public void mapRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
+            throw new CheckmarxException(ONLY_SUPPORTED_IN_90_PLUS);
         }
         try {
 
@@ -2116,7 +2127,7 @@ public class CxService implements CxClient{
     @Override
     public void removeRoleLdap(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0){
-            throw new CheckmarxException("Operation only support in 9.0+");
+            throw new CheckmarxException(ONLY_SUPPORTED_IN_90_PLUS);
         }
         else{
             Integer mapId = getLdapRoleMapId(ldapServerId, roleId, ldapGroupDn);
@@ -2131,7 +2142,7 @@ public class CxService implements CxClient{
     @Override
     public void removeRoleLdap(Integer roleMapId) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
+            throw new CheckmarxException(ONLY_SUPPORTED_IN_90_PLUS);
         }
         HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
@@ -2147,7 +2158,7 @@ public class CxService implements CxClient{
     @Override
     public Integer getLdapRoleMapId(Integer ldapServerId, Integer roleId, String ldapGroupDn) throws CheckmarxException {
         if(cxProperties.getVersion() < 9.0) {
-            throw new CheckmarxException("Operation only support in 9.0+");
+            throw new CheckmarxException(ONLY_SUPPORTED_IN_90_PLUS);
         }
         try{
             HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
