@@ -45,8 +45,10 @@ public class CxGoServiceIT {
     @Test
     public void login() {
         try {
-            HttpHeaders token = authService.createAuthHeaders();
-            assertNotNull(token);
+            if(StringUtils.isNotEmpty(properties.getClientSecret())) {
+                HttpHeaders token = authService.createAuthHeaders();
+                assertNotNull(token);
+            }
         }catch (InvalidCredentialsException e){
             fail("Unexpected InvalidCredentialsException");
         }
@@ -55,8 +57,10 @@ public class CxGoServiceIT {
     @Test
     public void getTeams() {
         try {
-            String teamId = service.getTeamId(properties.getTeam());
-            assertNotNull(teamId);
+            if(StringUtils.isNotEmpty(properties.getClientSecret())) {
+                String teamId = service.getTeamId(properties.getTeam());
+                assertNotNull(teamId);
+            }
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
         }
@@ -65,13 +69,15 @@ public class CxGoServiceIT {
     @Test
     public void getProject() {
         try {
-            String teamId = service.getTeamId(properties.getTeam());
-            Integer projId = service.getProjectId(teamId, "CircleCI");
-            if(projId == -1){
-                String projIdStr = service.createCxGoProject(teamId, "CircleCI", "1,2,3,4,5,9");
-                projId = Integer.parseInt(projIdStr);
+            if(StringUtils.isNotEmpty(properties.getClientSecret())) {
+                String teamId = service.getTeamId(properties.getTeam());
+                Integer projId = service.getProjectId(teamId, "CircleCI");
+                if (projId == -1) {
+                    String projIdStr = service.createCxGoProject(teamId, "CircleCI", "1,2,3,4,5,9");
+                    projId = Integer.parseInt(projIdStr);
+                }
+                assertNotNull(projId);
             }
-            assertNotNull(projId);
         }catch (CheckmarxException e){
             fail("Unexpected CheckmarxException");
         }
@@ -106,23 +112,25 @@ public class CxGoServiceIT {
     
     @Test
     public void completeScanFlow() throws CheckmarxException {
-        String teamId = service.getTeamId(properties.getTeam());
-        Integer projectId = service.getProjectId(teamId, "CircleCI");
-        CxScanParams params = new CxScanParams();
-        params.setProjectName("CircleCI");
-        params.setTeamId(teamId);
-        params.setProjectId(projectId);
-        params.setGitUrl("https://github.com/Custodela/Riches.git");
-        params.setBranch("refs/heads/master");
-        params.setSourceType(CxScanParams.Type.GIT);
-        //run the scan and wait for it to finish
-        Integer x = service.createScan(params, "CxFlow Scan");
-        service.waitForScanCompletion(x);
-        FilterConfiguration filterConfiguration = FilterConfiguration.fromSimpleFilters(
-                Collections.singletonList(new Filter(Filter.Type.SEVERITY, "High")));
-        //generate the results
-        ScanResults results = service.getReportContentByScanId(x, filterConfiguration);
-        assertNotNull(results);
+        if(StringUtils.isNotEmpty(properties.getClientSecret())) {
+            String teamId = service.getTeamId(properties.getTeam());
+            Integer projectId = service.getProjectId(teamId, "CircleCI");
+            CxScanParams params = new CxScanParams();
+            params.setProjectName("CircleCI");
+            params.setTeamId(teamId);
+            params.setProjectId(projectId);
+            params.setGitUrl("https://github.com/Custodela/Riches.git");
+            params.setBranch("refs/heads/master");
+            params.setSourceType(CxScanParams.Type.GIT);
+            //run the scan and wait for it to finish
+            Integer x = service.createScan(params, "CxFlow Scan");
+            service.waitForScanCompletion(x);
+            FilterConfiguration filterConfiguration = FilterConfiguration.fromSimpleFilters(
+                    Collections.singletonList(new Filter(Filter.Type.SEVERITY, "High")));
+            //generate the results
+            ScanResults results = service.getReportContentByScanId(x, filterConfiguration);
+            assertNotNull(results);
+        }
     }
 
 }
