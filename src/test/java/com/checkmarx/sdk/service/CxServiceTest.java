@@ -36,7 +36,7 @@ public class CxServiceTest {
     @MockBean
     private CxLegacyService cxLegacyService;
     @MockBean
-    private CxAuthClient authClient;
+    private CxAuthService authClient;
     @Qualifier("cxRestTemplate")
     @MockBean
     private RestTemplate restTemplate;
