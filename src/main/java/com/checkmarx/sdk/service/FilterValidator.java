@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class FilterValidator {
     public static final Locale NUMERIC_CONVERSION_LOCALE = Locale.ROOT;
+    private static final String EMPTY_STRING = "";
 
     /**
      * An object variable with this name will be passed to the filtering script.
@@ -128,10 +129,15 @@ public class FilterValidator {
         if (!CollectionUtils.isEmpty(filterValues)) {
             if (filterValues.size() == 1) {
                 String scoreString = filterValues.get(0);
-                try {
-                    result = numberFormat.parse(scoreString).doubleValue();
-                } catch (ParseException e) {
-                    log.warn("Invalid {} filter value: '{}', ignoring.", Filter.Type.SCORE, scoreString);
+                if(scoreString.equals(EMPTY_STRING)){
+                    try {
+                        result = numberFormat.parse(scoreString).doubleValue();
+                    } catch (ParseException e) {
+                        log.warn("Invalid {} filter value: '{}', ignoring.", Filter.Type.SCORE, scoreString);
+                    }
+                }
+                else{
+                    log.debug("{} is empty. ignoring", Filter.Type.SCORE);
                 }
             } else {
                 log.warn("More than 1 {} filter is specified, ignoring.", Filter.Type.SCORE);
