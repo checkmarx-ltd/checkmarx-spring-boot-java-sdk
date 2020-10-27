@@ -9,6 +9,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +25,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.sun.org.apache.xml.internal.utils.LocaleUtility.EMPTY_STRING;
+
 /**
  * Checks if a specific scan result item (finding) passes provided filters.
  */
@@ -31,7 +34,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class FilterValidator {
     public static final Locale NUMERIC_CONVERSION_LOCALE = Locale.ROOT;
-    private static final String EMPTY_STRING = "";
 
     /**
      * An object variable with this name will be passed to the filtering script.
@@ -129,7 +131,7 @@ public class FilterValidator {
         if (!CollectionUtils.isEmpty(filterValues)) {
             if (filterValues.size() == 1) {
                 String scoreString = filterValues.get(0);
-                if(scoreString.equals(EMPTY_STRING)){
+                if(!StringUtils.isEmpty(scoreString)){
                     try {
                         result = numberFormat.parse(scoreString).doubleValue();
                     } catch (ParseException e) {
