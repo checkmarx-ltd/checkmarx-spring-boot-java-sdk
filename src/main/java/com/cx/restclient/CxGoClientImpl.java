@@ -7,14 +7,14 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.Summary;
-import com.checkmarx.sdk.dto.cx.*;
-
-import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
+import com.checkmarx.sdk.dto.cx.CxProject;
+import com.checkmarx.sdk.dto.cx.CxScanParams;
+import com.checkmarx.sdk.dto.cx.CxScanSettings;
+import com.checkmarx.sdk.dto.cx.CxScanSummary;
 import com.checkmarx.sdk.dto.cxgo.*;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInputGo;
 import com.checkmarx.sdk.exception.CheckmarxException;
-
-
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
 import com.checkmarx.sdk.service.CxGoAuthService;
 import com.checkmarx.sdk.service.CxRepoFileService;
@@ -29,7 +29,11 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.util.LinkedMultiValueMap;
@@ -39,16 +43,17 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-import java.io.*;
-import java.util.*;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import java.time.LocalDateTime;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Class used to orchestrate submitting scans and retrieving results
@@ -288,7 +293,6 @@ public class CxGoClientImpl implements ScannerClient {
     /**
      * Searches the navigation tree for the Business Unit.
      *
-     * @param teamPath
      * @return the Business Unit ID or -1
      * @throws CheckmarxException
      */
@@ -402,6 +406,8 @@ public class CxGoClientImpl implements ScannerClient {
         List<SCAScanResult> rawScanResults = Optional.ofNullable(resultFromAllEngines)
                 .map(com.checkmarx.sdk.dto.cxgo.ScanResults::getSca).orElse(null);
         if (rawScanResults != null) {
+            logRawScaScanResults(rawScanResults);
+
             List<Finding> findings = new ArrayList<>();
             List<Package> packages = new ArrayList<>();
 
@@ -410,6 +416,9 @@ public class CxGoClientImpl implements ScannerClient {
                     .filter(rawScanResult -> !rawScanResult.isIgnored())
                     .filter(onlyScaResultsThatMatchFilter(filter))
                     .forEach(rawScanResult -> handleScaIssue(xIssues, findings, packages, rawScanResult));
+
+            logFindings(findings);
+            logPackages(packages);
 
             SCAResults scaResults = new SCAResults();
             scaResults.setFindings(findings);
@@ -432,6 +441,31 @@ public class CxGoClientImpl implements ScannerClient {
         results.link(deepLink);
 
         return results.build();
+    }
+
+    private static void logRawScaScanResults(List<SCAScanResult> rawScanResults) {
+        if (log.isDebugEnabled()) {
+            log.debug("Raw CxGo-SCA findings, before filtering:");
+            rawScanResults.forEach(scaScanResult -> log.debug("Id: {}, package id: {}",
+                    scaScanResult.getId(),
+                    scaScanResult.getPackageId()));
+        }
+    }
+
+    private static void logPackages(List<Package> packages) {
+        if (log.isDebugEnabled()) {
+            log.debug("CxGo-SCA packages:");
+            packages.forEach(aPackage -> log.debug("Id: {}, version: {}",
+                    aPackage.getId(),
+                    aPackage.getVersion()));
+        }
+    }
+
+    private static void logFindings(List<Finding> findings) {
+        if (log.isDebugEnabled()) {
+            log.debug("CxGo-SCA findings after filtering:");
+            findings.forEach(finding -> log.debug("Id: {}, package id: {}", finding.getId(), finding.getPackageId()));
+        }
     }
 
     private static Summary getScaScanSummary(Scan scanDetails) {
@@ -551,12 +585,34 @@ public class CxGoClientImpl implements ScannerClient {
         }
     }
 
+    /**
+     * Creates and adds a new item to each of the input lists based on scaResult properties.
+     */
     private void handleScaIssue(List<ScanResults.XIssue> xIssues, List<Finding> findings, List<Package> packages, SCAScanResult scaResult) {
+        Finding finding = toFinding(scaResult);
+        findings.add(finding);
+
+        Package pkg = toPackage(scaResult);
+        packages.add(pkg);
+
+        ScanResults.ScaDetails scaDetail = ScanResults.ScaDetails.builder()
+                .finding(finding)
+                .vulnerabilityLink("N/A")
+                .vulnerabilityPackage(pkg)
+                .build();
+
+        List<ScanResults.ScaDetails> scaDetails = Collections.singletonList(scaDetail);
+
+        xIssues.add(ScanResults.XIssue.builder()
+                .similarityId(finding.getSimilarityId())
+                .severity(finding.getSeverity().toString())
+                .description(finding.getDescription())
+                .scaDetails(scaDetails)
+                .build());
+    }
+
+    private static Finding toFinding(SCAScanResult scaResult) {
         Finding finding = new Finding();
-        Package pkg = new Package();
-        pkg.setId(scaResult.getPackageId());
-        pkg.setVersion(scaResult.getFixResolutionText());
-        pkg.setName(scaResult.getPackageId());
         finding.setCveName(scaResult.getCveName());
         finding.setDescription(scaResult.getDescription());
         finding.setId(scaResult.getId());
@@ -568,24 +624,15 @@ public class CxGoClientImpl implements ScannerClient {
         finding.setSimilarityId(scaResult.getSimilarityId());
         finding.setSeverity(Severity.valueOf(scaResult.getSeverity().getSeverity().toUpperCase()));
         finding.setSeverity(Severity.valueOf(scaResult.getSeverity().getSeverity().toUpperCase()));
+        return finding;
+    }
 
-        if(findings.stream().noneMatch(f-> f.getPackageId().equalsIgnoreCase(finding.getPackageId()))){
-            findings.add(finding);
-            packages.add(pkg);
-            List<ScanResults.ScaDetails> scaDetails = new ArrayList<>();
-            ScanResults.ScaDetails scaDetail = ScanResults.ScaDetails.builder()
-                    .finding(finding)
-                    .vulnerabilityLink("N/A")
-                    .vulnerabilityPackage(pkg)
-                    .build();
-            scaDetails.add(scaDetail);
-            xIssues.add(ScanResults.XIssue.builder()
-                    .similarityId(finding.getSimilarityId())
-                    .severity(finding.getSeverity().toString())
-                    .description(finding.getDescription())
-                    .scaDetails(scaDetails)
-                    .build());
-        }
+    private static Package toPackage(SCAScanResult scaResult) {
+        Package pkg = new Package();
+        pkg.setId(scaResult.getPackageId());
+        pkg.setVersion(scaResult.getFixResolutionText());
+        pkg.setName(scaResult.getPackageId());
+        return pkg;
     }
 
 
@@ -807,9 +854,6 @@ public class CxGoClientImpl implements ScannerClient {
      * If this is used for CxFlow /scanresults API calls. The ScanID will only contain the
      * scan record if CxOD hasn't been restarted since the scan was run. This ensures the
      * scan record is available in memory so that CxService can correctly look up the values.
-     *
-     * @param scanID
-     * @param projectID
      */
     private void setupScanIdMap(Integer scanID, Integer projectID) {
         CxScanParams csp = getScanProbeByProject(projectID.toString());
@@ -852,10 +896,9 @@ public class CxGoClientImpl implements ScannerClient {
     }
 
     /**
-     * Examins the current scan scanProbeMap and returns the record matching the teamID
+     * Examines the current scan scanProbeMap and returns the record matching the teamID
      * 'if' it exsits.
      *
-     * @param projectID
      * @return the CxScanParams record
      */
     private CxScanParams getScanProbeByProject(String projectID) {
@@ -941,14 +984,11 @@ public class CxGoClientImpl implements ScannerClient {
         try {
             log.info("Retrieving Scan Results for Scan Id {} ", scanId);
             ResponseEntity<com.checkmarx.sdk.dto.cxgo.ScanResults> response = restTemplate.exchange(
-                    //ResponseEntity<String> response = restTemplate.exchange(
                     cxGoProperties.getUrl().concat(SCAN_RESULTS),
                     HttpMethod.GET,
                     httpEntity,
                     com.checkmarx.sdk.dto.cxgo.ScanResults.class,
-                    //String.class,
                     scanId);
-            //return null;
             return response.getBody();
         } catch(HttpStatusCodeException e) {
             log.error("Error occurred while retrieving the scan results for id {}.", scanId);
