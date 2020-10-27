@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.sun.org.apache.xml.internal.utils.LocaleUtility.EMPTY_STRING;
-
 /**
  * Checks if a specific scan result item (finding) passes provided filters.
  */
