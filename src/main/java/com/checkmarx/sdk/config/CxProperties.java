@@ -205,6 +205,14 @@ public class CxProperties extends CxPropertiesBase{
         this.soapScope = soapScope;
     }
 
+    public void setEnablePostActionMonitor(Boolean enablePostActionMonitor) {
+        this.enablePostActionMonitor = enablePostActionMonitor;
+    }
+
+    public void setPostActionPostbackId(Integer postActionPostbackId) {
+        this.postActionPostbackId = postActionPostbackId;
+    }
+
     public boolean getEnablePostActionMonitor() {
         return this.enablePostActionMonitor;
     }
