@@ -18,6 +18,7 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
 import com.checkmarx.sdk.service.CxGoAuthService;
 import com.checkmarx.sdk.service.CxRepoFileService;
+import com.checkmarx.sdk.service.FilterInputFactory;
 import com.checkmarx.sdk.service.FilterValidator;
 import com.cx.restclient.ast.dto.sca.report.Finding;
 import com.cx.restclient.ast.dto.sca.report.Package;
@@ -100,21 +101,23 @@ public class CxGoClientImpl implements ScannerClient {
     /// captures information at key points as CxService API calls are made so
     /// that it will be required later when needed using the team name as the key.
     //
-    private static List<CxScanParams> scanProbeMap = new LinkedList<>();
+    private static final List<CxScanParams> scanProbeMap = new LinkedList<>();
 
     private final CxGoProperties cxGoProperties;
     private final CxGoAuthService authClient;
     private final RestTemplate restTemplate;
-    private Map<String, Object> codeCache = new HashMap<>();
+    private final Map<String, Object> codeCache = new HashMap<>();
     private CxRepoFileService cxRepoFileService;
+    private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
 
     public CxGoClientImpl(CxGoProperties cxProperties, CxGoAuthService authClient,
                           @Qualifier("cxRestTemplate") RestTemplate restTemplate,
-                          FilterValidator filterValidator) {
+                          FilterInputFactory filterInputFactory, FilterValidator filterValidator) {
         this.cxGoProperties = cxProperties;
         this.authClient = authClient;
         this.restTemplate = restTemplate;
+        this.filterInputFactory = filterInputFactory;
         this.filterValidator = filterValidator;
     }
 
@@ -506,7 +509,7 @@ public class CxGoClientImpl implements ScannerClient {
         return mainResultInfo -> {
             String resultId = mainResultInfo.getId().toString();
             OdScanResultItem additionalResultInfo = additionalResultInfos.get(resultId);
-            FilterInput filterInput = FilterInput.getInstance(mainResultInfo, additionalResultInfo);
+            FilterInput filterInput = filterInputFactory.fromCxGoSastFinding(mainResultInfo, additionalResultInfo);
             return filterValidator.passesFilter(filterInput, filter.getSastFilters());
         };
     }
@@ -514,7 +517,7 @@ public class CxGoClientImpl implements ScannerClient {
 
     private Predicate<? super SCAScanResult> onlyScaResultsThatMatchFilter(FilterConfiguration filter) {
         return rawScanResult -> {
-            FilterInput filterInput = FilterInput.getInstance(rawScanResult);
+            FilterInput filterInput = filterInputFactory.fromCxGoScaFinding(rawScanResult);
             return filterValidator.passesFilter(filterInput, filter.getScaFilters());
         };
     }

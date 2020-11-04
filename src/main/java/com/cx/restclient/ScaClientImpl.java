@@ -9,6 +9,7 @@ import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.service.FilterInputFactory;
 import com.checkmarx.sdk.service.FilterValidator;
 import com.checkmarx.sdk.service.ScaFilterFactory;
 import com.cx.restclient.ast.dto.sca.AstScaConfig;
@@ -33,9 +34,9 @@ import java.util.Optional;
 @Service
 public class ScaClientImpl extends AbstractAstClient {
     private final ScaProperties scaProperties;
+    private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
     private final ScaFilterFactory filterFactory;
-
 
     @Override
     protected void applyScaResultsFilters(ASTResultsWrapper combinedResults, ScanParams scanParams) {
@@ -48,7 +49,7 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     private boolean passesFilter(Finding finding, EngineFilterConfiguration filterConfig) {
-        FilterInput filterInput = FilterInput.getInstance(finding);
+        FilterInput filterInput = filterInputFactory.fromScaFinding(finding);
         return filterValidator.passesFilter(filterInput, filterConfig);
     }
 
