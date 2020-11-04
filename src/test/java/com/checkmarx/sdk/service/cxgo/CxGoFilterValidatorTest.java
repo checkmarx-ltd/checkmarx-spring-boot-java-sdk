@@ -3,7 +3,7 @@ package com.checkmarx.sdk.service.cxgo;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.filtering.*;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
-import com.checkmarx.sdk.service.FilterValidatorGo;
+import com.checkmarx.sdk.service.FilterValidator;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
-public class FilterValidatorTestGo {
+public class CxGoFilterValidatorTest {
     private static final String STATUS_RECURRENT = "RECURRENT";
     private static final String STATUS_NEW = "NEW";
     private static final String STATE_URGENT_NAME = "URGENT";
@@ -33,7 +33,7 @@ public class FilterValidatorTestGo {
     private static final String CWE1 = "203";
     private static final String CWE2 = "611";
     private static final String PERFORMANCE_TEST_SCRIPT = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
-    private static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(10);
+    private static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(20);
 
     @Test
     public void passesFilter_scriptTypicalExample() {
@@ -148,12 +148,12 @@ public class FilterValidatorTestGo {
                 .simpleFilters(Collections.singletonList(score))
                 .build();
 
-        FilterInputGo input = FilterInputGo.builder().id("424").score(valueToCheck).build();
+        FilterInput input = FilterInput.builder().id("424").score(valueToCheck).build();
 
         String message = String.format("Unexpected score filter result (valueToCheck: %f, valueFromFilter: %s)",
                 valueToCheck, valueFromFilter);
 
-        boolean actuallyPassed = new FilterValidatorGo().passesFilter(input, scaFilterConfig);
+        boolean actuallyPassed = new FilterValidator().passesFilter(input, scaFilterConfig);
 
         Assert.assertEquals(message, shouldPass, actuallyPassed);
     }
@@ -161,10 +161,10 @@ public class FilterValidatorTestGo {
     private void validateExpectedError(String scriptWithRuntimeError) {
         Script script = parse(scriptWithRuntimeError);
 
-        FilterInputGo finding = createFilterInput(SEVERITY_LOW, CATEGORY1, STATUS_NEW, STATE_URGENT_NAME, CWE1);
+        FilterInput finding = createFilterInput(SEVERITY_LOW, CATEGORY1, STATUS_NEW, STATE_URGENT_NAME, CWE1);
 
         EngineFilterConfiguration filterConfiguration = createFilterConfiguration(script);
-        FilterValidatorGo validator = new FilterValidatorGo();
+        FilterValidator validator = new FilterValidator();
 
         try {
             validator.passesFilter(finding, filterConfiguration);
@@ -174,8 +174,8 @@ public class FilterValidatorTestGo {
         }
     }
 
-    private static FilterInputGo createFilterInput(String severity, String category, String status, String stateName, String cweId) {
-        return FilterInputGo.builder()
+    private static FilterInput createFilterInput(String severity, String category, String status, String stateName, String cweId) {
+        return FilterInput.builder()
                 .id("9389081")
                 .category(category)
                 .cwe(cweId)
@@ -197,10 +197,10 @@ public class FilterValidatorTestGo {
                                            String category,
                                            String cweId,
                                            boolean expectedResult) {
-        FilterInputGo finding = createFilterInput(severity, category, status, state, cweId);
+        FilterInput finding = createFilterInput(severity, category, status, state, cweId);
         EngineFilterConfiguration filterConfiguration = createFilterConfiguration(script);
 
-        FilterValidatorGo validator = new FilterValidatorGo();
+        FilterValidator validator = new FilterValidator();
         boolean actualResult = validator.passesFilter(finding, filterConfiguration);
         assertEquals(expectedResult, actualResult, "Unexpected script filtering result.");
     }
@@ -212,8 +212,8 @@ public class FilterValidatorTestGo {
                                                  String category,
                                                  String cweId,
                                                  boolean expectedResult) {
-        FilterInputGo finding = createFilterInput(severity, category, status, state, cweId);
-        FilterValidatorGo filterValidator = new FilterValidatorGo();
+        FilterInput finding = createFilterInput(severity, category, status, state, cweId);
+        FilterValidator filterValidator = new FilterValidator();
         FilterConfiguration filterConfiguration = FilterConfiguration.fromSimpleFilters(filters);
         boolean passes = filterValidator.passesFilter(finding, filterConfiguration.getSastFilters());
         assertEquals(expectedResult, passes, "Unexpected simple filtering result.");

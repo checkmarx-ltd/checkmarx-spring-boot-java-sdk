@@ -34,8 +34,8 @@ public class FilterValidatorTest {
     private static final String NAME2 = "Client_Potential_XSS";
     private static final String CWE1 = "203";
     private static final String CWE2 = "611";
-    public static final String PERFORMANCE_TEST_SCRIPT = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
-    public static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(20);
+    private static final String PERFORMANCE_TEST_SCRIPT = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
+    private static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(20);
 
     @Test
     public void passesFilter_scriptTypicalExample() {
