@@ -185,7 +185,7 @@ public class ScanResults{
         return Optional.ofNullable(getAstResults()).isPresent() &&  Optional.ofNullable(getAstResults().getResults()).isPresent();
     }
 
-    public boolean isSastRestuls(){
+    public boolean isSastResults(){
         return Optional.ofNullable(getScanSummary()).isPresent();
     }
     @Override
