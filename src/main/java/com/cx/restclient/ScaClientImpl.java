@@ -39,7 +39,7 @@ public class ScaClientImpl extends AbstractAstClient {
     private final ScaFilterFactory filterFactory;
 
     @Override
-    protected void applyScaResultsFilters(ASTResultsWrapper combinedResults, ScanParams scanParams) {
+    protected void applyFilterToResults(ASTResultsWrapper combinedResults, ScanParams scanParams) {
         ScaConfig scaConfig = Optional.ofNullable(scanParams).map(ScanParams::getScaConfig).orElse(null);
 
         EngineFilterConfiguration filters = filterFactory.getFilterConfiguration(scaConfig);
@@ -82,7 +82,7 @@ public class ScaClientImpl extends AbstractAstClient {
             ASTResultsWrapper result;
             if (commonClientResults.getScaResults() != null) {
                 result = toResults(commonClientResults);
-                applyScaResultsFilters(result, scanParams);
+                applyFilterToResults(result, scanParams);
             } else {
                 result = new ASTResultsWrapper();
             }

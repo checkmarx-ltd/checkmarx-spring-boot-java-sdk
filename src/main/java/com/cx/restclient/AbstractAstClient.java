@@ -32,12 +32,12 @@ public abstract class AbstractAstClient implements AstClient {
         ScanResults scanResults = executeScan(scanConfig);
         
         ASTResultsWrapper scaResults = toResults(scanResults);
-        applyScaResultsFilters(scaResults, scanParams);
+        applyFilterToResults(scaResults, scanParams);
 
         return scaResults;
     }
 
-    protected abstract void applyScaResultsFilters(ASTResultsWrapper scaResults, ScanParams scanParams);
+    protected abstract void applyFilterToResults(ASTResultsWrapper scaResults, ScanParams scanParams);
 
     protected abstract ASTResultsWrapper toResults(ScanResults scanResults);
 

@@ -117,6 +117,7 @@ public class CxService implements CxClient{
     public static final String ONLY_SUPPORTED_IN_90_PLUS = "Operation only supported in 9.0+";
     public static final String ERROR_GETTING_TEAMS = "Error occurred while retrieving Teams";
     public static final String SCAN_CREATION_ERROR = "Error occurred while creating Scan for project {}, http error {}";
+    public static final String INTERRUPTED_EXCEPTION_MESSAGE = "Interrupted Exception Occurred";
     private final CxProperties cxProperties;
     private final CxLegacyService cxLegacyService;
     private final CxAuthService authClient;
@@ -315,7 +316,7 @@ public class CxService implements CxClient{
      */
     @Override
     public Integer getReportStatus(Integer reportId) throws CheckmarxException{
-        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        HttpEntity<HttpHeaders> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         log.info("Retrieving report status of report Id {}", reportId);
         try {
             ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(REPORT_STATUS), HttpMethod.GET, httpEntity, String.class, reportId);
@@ -349,8 +350,6 @@ public class CxService implements CxClient{
 
     /**
      * Retrieve the report by reportId, mapped to ScanResults DTO, applying filtering as requested
-     *
-     * @throws CheckmarxException
      */
     public ScanResults getReportContentByScanId(Integer scanId, FilterConfiguration filter) throws CheckmarxException{
         Integer reportId = createScanReport(scanId);
@@ -360,14 +359,13 @@ public class CxService implements CxClient{
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
-            throw new CheckmarxException("Interrupted Exception Occurred");
+            throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }
         return getReportContent(reportId, filter);
     }
+
     /**
      * Retrieve the report by reportId, mapped to ScanResults DTO, applying filtering as requested
-     *
-     * @throws CheckmarxException
      */
     @Override
     public ScanResults getReportContent(Integer reportId, FilterConfiguration filter) throws CheckmarxException {
@@ -1116,9 +1114,6 @@ public class CxService implements CxClient{
 
     /**
      * Get ScanId of existing scan if a scan exists for a projectId
-     *
-     * @param projectId
-     * @return
      */
     public Integer getScanIdOfExistingScanIfExists(Integer projectId) {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
@@ -1303,10 +1298,8 @@ public class CxService implements CxClient{
      *
      * @param teamId TeamID to lookup
      * @return Fully qualified team name/path
-     * @throws CheckmarxException
      */
     public String getTeamName(String teamId) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             List<CxTeam> teams = getTeams();
             if (teams == null) {
@@ -1462,8 +1455,6 @@ public class CxService implements CxClient{
      *
      * @param newParentTeamId Id of the new parent team
      * @param teamId Id of the team to be moved
-     * @return void
-     * @throws CheckmarxException
      */
     public void moveTeamWS(String teamId, String newParentTeamId) throws CheckmarxException {
         String session = authClient.getLegacySession();
@@ -1517,8 +1508,6 @@ public class CxService implements CxClient{
      *
      * @param teamId - Id of the team to be renamed
      * @param newTeamName - new team name
-     * @return void
-     * @throws CheckmarxException
      */
     public void renameTeamWS(String teamId, String newTeamName) throws CheckmarxException {
         String session = authClient.getLegacySession();
@@ -1590,11 +1579,6 @@ public class CxService implements CxClient{
 
     /**
      * Get the scan summary for the latest scan of a given team and project name
-     *
-     * @param teamName
-     * @param projectName
-     * @return
-     * @throws CheckmarxException
      */
     @Override
     public CxScanSummary getScanSummary(String teamName, String projectName) throws CheckmarxException {
@@ -1711,7 +1695,7 @@ public class CxService implements CxClient{
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
-            throw new CheckmarxException("Interrupted Exception Occurred");
+            throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }
     }
 
@@ -1736,7 +1720,7 @@ public class CxService implements CxClient{
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
-            throw new CheckmarxException("Interrupted Exception Occurred");
+            throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }
     }
 
@@ -1798,7 +1782,7 @@ public class CxService implements CxClient{
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
-            throw new CheckmarxException("Interrupted Exception Occurred");
+            throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }
     }
 
@@ -1824,7 +1808,7 @@ public class CxService implements CxClient{
         } catch (InterruptedException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
-            throw new CheckmarxException("Interrupted Exception Occurred");
+            throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }
     }
 

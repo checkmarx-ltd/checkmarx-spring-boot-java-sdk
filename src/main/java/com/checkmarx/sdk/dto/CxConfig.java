@@ -1,14 +1,16 @@
 package com.checkmarx.sdk.dto;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Represents the contents of a config-as-code file.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CxConfig implements Serializable {
 
@@ -33,11 +35,11 @@ public class CxConfig implements Serializable {
     @JsonProperty("osa")
     private Osa osa;
     @JsonProperty("additionalProperties")
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
     @JsonProperty("sca")
     private Sca sca;
 
-    private final static long serialVersionUID = 2851455437649831239L;
+    private static final long serialVersionUID = 2851455437649831239L;
 
     public Sca getSca() {
         return sca;
