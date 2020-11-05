@@ -9,7 +9,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotNull;
@@ -128,10 +128,15 @@ public class FilterValidator {
         if (!CollectionUtils.isEmpty(filterValues)) {
             if (filterValues.size() == 1) {
                 String scoreString = filterValues.get(0);
-                try {
-                    result = numberFormat.parse(scoreString).doubleValue();
-                } catch (ParseException e) {
-                    log.warn("Invalid {} filter value: '{}', ignoring.", Filter.Type.SCORE, scoreString);
+                if(!StringUtils.isEmpty(scoreString)){
+                    try {
+                        result = numberFormat.parse(scoreString).doubleValue();
+                    } catch (ParseException e) {
+                        log.warn("Invalid {} filter value: '{}', ignoring.", Filter.Type.SCORE, scoreString);
+                    }
+                }
+                else{
+                    log.debug("{} is empty. ignoring", Filter.Type.SCORE);
                 }
             } else {
                 log.warn("More than 1 {} filter is specified, ignoring.", Filter.Type.SCORE);
