@@ -1319,8 +1319,6 @@ public class CxService implements CxClient{
         return UNKNOWN;
     }
 
-
-
     /**
      * Get a team Id based on the name and the Parent Team Id
      * @param parentTeamId Parent team's TeamID
@@ -1330,7 +1328,6 @@ public class CxService implements CxClient{
      */
     @Override
     public String getTeamId(String parentTeamId, String teamName) throws CheckmarxException {
-        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             // Versions prior to 9.0 do not return parent ID with the Team list
             // We'll do two lookups instead (not particularly efficient, but hopefully won't be around for too long
@@ -1427,11 +1424,6 @@ public class CxService implements CxClient{
 
     /**
      * Create team under given parentId
-     *
-     * @param parentTeamId
-     * @param teamName
-     * @return
-     * @throws CheckmarxException
      */
     public String createTeamWS(String parentTeamId, String teamName) throws CheckmarxException {
         String session = authClient.getLegacySession();
@@ -1442,8 +1434,6 @@ public class CxService implements CxClient{
 
     /**
      * Delete team based on Id
-      * @param teamId
-     * @throws CheckmarxException
      */
     public void deleteTeamWS(String teamId) throws CheckmarxException {
         String session = authClient.getLegacySession();
@@ -1524,7 +1514,6 @@ public class CxService implements CxClient{
      * Get scan configuration Id by name.
      *
      * @param configuration configuration name
-     * @throws CheckmarxException
      */
     public Integer getScanConfiguration(String configuration) throws CheckmarxException {
         return scanSettingsClient.getEngineConfigurationId(configuration);
@@ -1541,10 +1530,6 @@ public class CxService implements CxClient{
 
     /**
      * Get scan summary for given scanId
-     *
-     * @param scanId
-     * @return
-     * @throws CheckmarxException
      */
     public CxScanSummary getScanSummaryByScanId(Integer scanId) throws CheckmarxException {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
@@ -1568,8 +1553,6 @@ public class CxService implements CxClient{
      * Get the scan summary for the latest scan of a given project Id
      *
      * @param projectId project Id to retrieve the latest scan summary for
-     * @return
-     * @throws CheckmarxException
      */
     @Override
     public CxScanSummary getScanSummary(Integer projectId) throws CheckmarxException {
