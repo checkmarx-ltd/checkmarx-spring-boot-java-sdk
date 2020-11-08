@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,10 +27,6 @@ public class ScaConfig {
     private String username;
     private String password;
 
-    @Optional
-    private Double filterScore;
-    @Optional
-    private List<String> filterSeverity;
     @Optional
     private Map<Severity, Integer> thresholdsSeverity;
     @Optional

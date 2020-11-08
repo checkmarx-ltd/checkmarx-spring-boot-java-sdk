@@ -6,11 +6,11 @@ import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.FilterInputFactory;
 import com.checkmarx.sdk.service.FilterValidator;
-import com.checkmarx.sdk.service.ScaFilterFactory;
 import com.cx.restclient.ast.dto.sca.AstScaConfig;
 import com.cx.restclient.ast.dto.sca.AstScaResults;
 import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
@@ -34,16 +34,28 @@ import java.util.Optional;
 public class ScaClientImpl extends AbstractAstClient {
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
-    private final ScaFilterFactory filterFactory;
 
     @Override
     protected void applyFilterToResults(ASTResultsWrapper combinedResults, ScanParams scanParams) {
-        ScaConfig scaConfig = Optional.ofNullable(scanParams).map(ScanParams::getScaConfig).orElse(null);
+        EngineFilterConfiguration filterConfig = extractFilterConfigFrom(scanParams);
 
-        EngineFilterConfiguration filters = filterFactory.getFilterConfiguration(scaConfig);
+        combinedResults.getScaResults()
+                .getFindings()
+                .removeIf(finding -> !passesFilter(finding, filterConfig));
+    }
 
-        combinedResults.getScaResults().getFindings()
-                .removeIf(finding -> !passesFilter(finding, filters));
+    private static EngineFilterConfiguration extractFilterConfigFrom(ScanParams scanParams) {
+        EngineFilterConfiguration result = Optional.ofNullable(scanParams)
+                .map(ScanParams::getFilterConfiguration)
+                .map(FilterConfiguration::getScaFilters)
+                .orElse(null);
+
+        String message = (result == null ? "No SCA filter configuration was found in {}"
+                : "Found SCA filter configuration in {}");
+
+        log.debug(message, ScanParams.class.getSimpleName());
+
+        return result;
     }
 
     private boolean passesFilter(Finding finding, EngineFilterConfiguration filterConfig) {

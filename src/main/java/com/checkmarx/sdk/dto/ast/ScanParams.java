@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.dto.ast;
 
 import com.checkmarx.sdk.config.ScaConfig;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import lombok.Builder;
 import lombok.Data;
 
@@ -18,6 +19,7 @@ public class ScanParams {
     private String sourceDir;
     private URL remoteRepoUrl;
     private String zipPath;
+    private FilterConfiguration filterConfiguration;
 
     // SCA-specific parameters.
     private ScaConfig scaConfig;
