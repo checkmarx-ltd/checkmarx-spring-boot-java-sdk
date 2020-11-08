@@ -128,10 +128,15 @@ public class FilterValidator {
         if (!CollectionUtils.isEmpty(filterValues)) {
             if (filterValues.size() == 1) {
                 String scoreString = filterValues.get(0);
-                try {
-                    result = numberFormat.parse(scoreString).doubleValue();
-                } catch (ParseException e) {
-                    log.warn("Invalid {} filter value: '{}', ignoring.", Filter.Type.SCORE, scoreString);
+                if(!StringUtils.isEmpty(scoreString)){
+                    try {
+                        result = numberFormat.parse(scoreString).doubleValue();
+                    } catch (ParseException e) {
+                        log.warn("Invalid {} filter value: '{}', ignoring.", Filter.Type.SCORE, scoreString);
+                    }
+                }
+                else{
+                    log.debug("{} is empty. ignoring", Filter.Type.SCORE);
                 }
             } else {
                 log.warn("More than 1 {} filter is specified, ignoring.", Filter.Type.SCORE);
