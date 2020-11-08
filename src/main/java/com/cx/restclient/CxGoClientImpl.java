@@ -515,10 +515,10 @@ public class CxGoClientImpl implements ScannerClient {
     }
 
 
-    private Predicate<? super SCAScanResult> onlyScaResultsThatMatchFilter(FilterConfiguration filter) {
+    private Predicate<? super SCAScanResult> onlyScaResultsThatMatchFilter(FilterConfiguration filterConfig) {
         return rawScanResult -> {
             FilterInput filterInput = filterInputFactory.fromCxGoScaFinding(rawScanResult);
-            return filterValidator.passesFilter(filterInput, filter.getScaFilters());
+            return filterValidator.passesFilter(filterInput, filterConfig.getScaFilters());
         };
     }
 

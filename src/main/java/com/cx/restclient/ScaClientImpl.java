@@ -1,7 +1,6 @@
 package com.cx.restclient;
 
 import com.checkmarx.sdk.config.ScaConfig;
-import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
 import com.checkmarx.sdk.dto.ast.SCAResults;
@@ -33,7 +32,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Service
 public class ScaClientImpl extends AbstractAstClient {
-    private final ScaProperties scaProperties;
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
     private final ScaFilterFactory filterFactory;
@@ -111,49 +109,33 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     private AstScaConfig getScaSpecificConfig(ScanParams scanParams) {
-        AstScaConfig scaConfig = new AstScaConfig();
-
-        String appUrlFromRequest = null;
-        String apiUrlFromRequest = null;
-        String accessControlUrlFromRequest = null;
-        String tenantFromRequest = null;
-
-        if (Optional.ofNullable(scanParams.getScaConfig()).isPresent()) {
-            appUrlFromRequest = scanParams.getScaConfig().getAppUrl();
-            apiUrlFromRequest = scanParams.getScaConfig().getApiUrl();
-            accessControlUrlFromRequest = scanParams.getScaConfig().getAccessControlUrl();
-            tenantFromRequest = scanParams.getScaConfig().getTenant();
+        AstScaConfig commonClientScaConfig = new AstScaConfig();
+        ScaConfig sdkScaConfig = scanParams.getScaConfig();
+        if (sdkScaConfig != null) {
+            commonClientScaConfig.setWebAppUrl(sdkScaConfig.getAppUrl());
+            commonClientScaConfig.setApiUrl(sdkScaConfig.getApiUrl());
+            commonClientScaConfig.setAccessControlUrl(sdkScaConfig.getAccessControlUrl());
+            commonClientScaConfig.setTenant(sdkScaConfig.getTenant());
+            commonClientScaConfig.setUsername(sdkScaConfig.getUsername());
+            commonClientScaConfig.setPassword(sdkScaConfig.getPassword());
+        } else {
+            log.warn("Unable to map SCA configuration to an internal object.");
         }
-
-        scaConfig.setWebAppUrl(Optional.ofNullable(appUrlFromRequest).orElse(scaProperties.getAppUrl()));
-        scaConfig.setApiUrl(Optional.ofNullable(apiUrlFromRequest).orElse(scaProperties.getApiUrl()));
-        scaConfig.setAccessControlUrl(Optional.ofNullable(accessControlUrlFromRequest).orElse(scaProperties.getAccessControlUrl()));
-        scaConfig.setTenant(Optional.ofNullable(tenantFromRequest).orElse(scaProperties.getTenant()));
-
-        scaConfig.setUsername(scaProperties.getUsername());
-        scaConfig.setPassword(scaProperties.getPassword());
-
-        return scaConfig;
+        return commonClientScaConfig;
     }
 
     @Override
-    protected void validate(ScanParams scaParams) {
-        validateNotNull(scaParams);
+    protected void validate(ScanParams scanParams) {
+        validateNotNull(scanParams);
 
-        ScaConfig scaConfig = scaParams.getScaConfig();
+        ScaConfig scaConfig = scanParams.getScaConfig();
         if (Optional.ofNullable(scaConfig).isPresent()) {
             validateNotEmpty(scaConfig.getAppUrl(), "SCA application URL");
             validateNotEmpty(scaConfig.getApiUrl(), "SCA API URL");
             validateNotEmpty(scaConfig.getAccessControlUrl(), "SCA Access Control URL");
             validateNotEmpty(scaConfig.getTenant(), "SCA tenant");
-        } else {
-            validateNotEmpty(scaProperties.getAppUrl(), "SCA application URL");
-            validateNotEmpty(scaProperties.getApiUrl(), "SCA API URL");
-            validateNotEmpty(scaProperties.getAccessControlUrl(), "SCA Access Control URL");
-            validateNotEmpty(scaParams.getProjectName(), "Project name");
-            validateNotEmpty(scaProperties.getTenant(), "SCA tenant");
-            validateNotEmpty(scaProperties.getUsername(), "Username");
-            validateNotEmpty(scaProperties.getPassword(), "Password");
+            validateNotEmpty(scaConfig.getUsername(), "Username");
+            validateNotEmpty(scaConfig.getPassword(), "Password");
         }
     }
 
