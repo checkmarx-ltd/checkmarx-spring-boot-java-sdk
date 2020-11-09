@@ -81,6 +81,9 @@ public class CxGoClientImpl implements ScannerClient {
     private static final String DEEP_LINK = "/scan/business-unit/%s/application/%s/project/%s/scans/%s";
     private static final String SCA_DEEP_LINK = "/scan/business-unit/%s/application/%s/project/%s";
     private static final String ADDITIONAL_DETAILS_KEY = "results";
+    private static final String CXGO_SCAN_STATUS_DONE = "Done";
+    private static final String CXGO_SCAN_STATUS_PARTIAL = "Partial";
+    private static final String CXGO_SCAN_STATUS_COMPLETED = "Completed";
 
     /// CxOD required extra information for API calls not used by the SAST SDK. This
     /// data structure is used to capture that information as CxService calls are made
@@ -866,8 +869,9 @@ public class CxGoClientImpl implements ScannerClient {
     public Integer getLastScanId(Integer projectId) {
         OdScanList appList = getScanStatusPage(projectId);
         for(OdScanListDataItem item : appList.getData().getItems()) {
-            if(item.getStatus().equals("Done")) {
+            if(item.getStatus().equals(CXGO_SCAN_STATUS_DONE) || item.getStatus().equals(CXGO_SCAN_STATUS_PARTIAL) || item.getStatus().equals(CXGO_SCAN_STATUS_COMPLETED)) {
                 this.setupScanIdMap(item.getId(), projectId);
+                log.debug("getLastScanId - Found scanId '{}', with status: '{}'", item.getId(), item.getStatus());
                 return item.getId();
             }
         }
