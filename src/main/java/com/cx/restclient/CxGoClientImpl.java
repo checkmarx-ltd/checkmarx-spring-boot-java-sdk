@@ -866,8 +866,9 @@ public class CxGoClientImpl implements ScannerClient {
     public Integer getLastScanId(Integer projectId) {
         OdScanList appList = getScanStatusPage(projectId);
         for(OdScanListDataItem item : appList.getData().getItems()) {
-            if(item.getStatus().equals("Done")) {
+            if(item.getStatus().equals("Done") || item.getStatus().equals("Partial") || item.getStatus().equals("Completed")) {
                 this.setupScanIdMap(item.getId(), projectId);
+                log.debug("getLastScanId - Found scanId '{}', with status: '{}'", item.getId(), item.getStatus());
                 return item.getId();
             }
         }
