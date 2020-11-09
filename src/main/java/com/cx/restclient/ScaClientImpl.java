@@ -1,6 +1,7 @@
 package com.cx.restclient;
 
 import com.checkmarx.sdk.config.ScaConfig;
+import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
 import com.checkmarx.sdk.dto.ast.SCAResults;
@@ -32,6 +33,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Service
 public class ScaClientImpl extends AbstractAstClient {
+    private final ScaProperties scaProperties;
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
 
@@ -128,8 +130,8 @@ public class ScaClientImpl extends AbstractAstClient {
             commonClientScaConfig.setApiUrl(sdkScaConfig.getApiUrl());
             commonClientScaConfig.setAccessControlUrl(sdkScaConfig.getAccessControlUrl());
             commonClientScaConfig.setTenant(sdkScaConfig.getTenant());
-            commonClientScaConfig.setUsername(sdkScaConfig.getUsername());
-            commonClientScaConfig.setPassword(sdkScaConfig.getPassword());
+            commonClientScaConfig.setUsername(scaProperties.getUsername());
+            commonClientScaConfig.setPassword(scaProperties.getPassword());
         } else {
             log.warn("Unable to map SCA configuration to an internal object.");
         }
@@ -146,8 +148,8 @@ public class ScaClientImpl extends AbstractAstClient {
             validateNotEmpty(scaConfig.getApiUrl(), "SCA API URL");
             validateNotEmpty(scaConfig.getAccessControlUrl(), "SCA Access Control URL");
             validateNotEmpty(scaConfig.getTenant(), "SCA tenant");
-            validateNotEmpty(scaConfig.getUsername(), "Username");
-            validateNotEmpty(scaConfig.getPassword(), "Password");
+            validateNotEmpty(scaProperties.getUsername(), "Username");
+            validateNotEmpty(scaProperties.getPassword(), "Password");
         }
     }
 

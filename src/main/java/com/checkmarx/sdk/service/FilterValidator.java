@@ -117,7 +117,6 @@ public class FilterValidator {
         boolean passes = true;
         Double minAllowedScore;
         if (scoreToCheck != null && (minAllowedScore = getNumericScore(filterValues)) != null) {
-            log.info("Validating finding against filter of type {}: [{}]", Filter.Type.SCORE, minAllowedScore);
             passes = (scoreToCheck >= minAllowedScore);
         }
         return passes;

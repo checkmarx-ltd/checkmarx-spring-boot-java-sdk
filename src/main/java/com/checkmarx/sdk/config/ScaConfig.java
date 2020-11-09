@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.Map;
 
 /**
@@ -24,11 +26,25 @@ public class ScaConfig {
     private String apiUrl;
     private String accessControlUrl;
     private String tenant;
-    private String username;
-    private String password;
 
     @Optional
     private Map<Severity, Integer> thresholdsSeverity;
     @Optional
     private Double thresholdsScore;
+
+    /**
+     * This setter allows to avoid ConfigProvider error: Map&lt;Severity,Integer&gt; is not supported.
+     */
+    public void setThresholdsSeverity(Map<String, Object> thresholdsSeverity) {
+        EnumMap<Severity, Integer> map = new EnumMap<>(Severity.class);
+        java.util.Optional.ofNullable(thresholdsSeverity)
+                .orElseGet(Collections::emptyMap)
+                .forEach((key, value) -> map.put(Severity.valueOf(key), (Integer) value));
+
+        this.thresholdsSeverity = map;
+    }
+
+    public void setThresholdsSeverityDirectly(Map<Severity, Integer> thresholdsSeverity) {
+        this.thresholdsSeverity = thresholdsSeverity;
+    }
 }
