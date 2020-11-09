@@ -30,6 +30,7 @@ public abstract class CxPropertiesBase {
     private Boolean offline = false;
     private String teamScript;
     private String projectScript;
+    private Boolean enablePostActionMonitor = false;
     
     public abstract Boolean getEnableOsa();
     
@@ -249,5 +250,12 @@ public abstract class CxPropertiesBase {
         this.projectScript = projectScript;
     }
 
+    public boolean getEnablePostActionMonitor() {
+        return this.enablePostActionMonitor;
+    }
+
+    public void setEnablePostActionMonitor(Boolean enablePostActionMonitor) {
+        this.enablePostActionMonitor = enablePostActionMonitor;
+    }
 }
 
