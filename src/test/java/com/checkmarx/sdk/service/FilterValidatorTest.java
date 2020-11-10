@@ -140,7 +140,7 @@ public class FilterValidatorTest {
 
         try {
             FilterInputFactory filterInputFactory = new FilterInputFactory();
-            FilterInput filterInput = filterInputFactory.fromCxSastFinding(findingGroup, finding);
+            FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
             validator.passesFilter(filterInput, filterConfiguration);
         } catch (Exception e) {
             assertTrue(e instanceof CheckmarxRuntimeException, String.format("Expected %s to be thrown.", CheckmarxRuntimeException.class));
@@ -166,7 +166,7 @@ public class FilterValidatorTest {
 
         FilterValidator validator = new FilterValidator();
         FilterInputFactory filterInputFactory = new FilterInputFactory();
-        FilterInput filterInput = filterInputFactory.fromCxSastFinding(findingGroup, finding);
+        FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
         boolean actualResult = validator.passesFilter(filterInput, filterConfiguration);
         assertEquals(expectedResult, actualResult, "Unexpected script filtering result.");
     }
@@ -186,7 +186,7 @@ public class FilterValidatorTest {
                 .build();
 
         FilterInputFactory filterInputFactory = new FilterInputFactory();
-        FilterInput filterInput = filterInputFactory.fromCxSastFinding(findingGroup, finding);
+        FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
         boolean passes = filterValidator.passesFilter(filterInput, filterConfiguration);
         assertEquals(expectedResult, passes, "Unexpected simple filtering result.");
     }

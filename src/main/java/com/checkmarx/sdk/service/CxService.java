@@ -472,7 +472,7 @@ public class CxService implements CxClient{
             ResponseEntity<String> resultsXML = restTemplate.exchange(cxProperties.getUrl().concat(REPORT_DOWNLOAD), HttpMethod.GET, httpEntity, String.class, reportId);
             String xml = resultsXML.getBody();
             log.debug(REPORT_LENGTH_MESSAGE, xml.length());
-            log.debug("Headers: {}", resultsXML.getHeaders().toSingleValueMap().toString());
+            log.debug("Headers: {}", resultsXML.getHeaders().toSingleValueMap());
             log.info("Report downloaded for report Id {}", reportId);
             log.debug("XML String Output: {}", xml);
             log.debug("Base64: {}", Base64.getEncoder().encodeToString(resultsXML.toString().getBytes()));
@@ -577,8 +577,6 @@ public class CxService implements CxClient{
 
     /**
      * Parse CX report file, mapped to ScanResults DTO, applying filtering as requested
-     *
-     * @throws CheckmarxException
      */
     public ScanResults getReportContent(File file, FilterConfiguration filter) throws CheckmarxException {
 
@@ -750,7 +748,7 @@ public class CxService implements CxClient{
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
                 for (ResultType resultType : result.getResult()) {
-                    FilterInput filterInput = filterInputFactory.fromCxSastFinding(result, resultType);
+                    FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(result, resultType);
                     if (filterValidator.passesFilter(filterInput, sastFilters)) {
                         boolean falsePositive = false;
                         if(!resultType.getFalsePositive().equalsIgnoreCase("FALSE")){
@@ -1079,9 +1077,6 @@ public class CxService implements CxClient{
 
     /**
      * Check if a scan exists for a projectId
-     *
-     * @param projectId
-     * @return
      */
     public boolean scanExists(Integer projectId) {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
@@ -1661,9 +1656,6 @@ public class CxService implements CxClient{
     /**
      *
      * @param params attributes used to define the project
-     * @param comment
-     * @return
-     * @throws CheckmarxException
      */
     @Override
     public CxXMLResultsType createScanAndReport(CxScanParams params, String comment) throws CheckmarxException{
@@ -1687,7 +1679,6 @@ public class CxService implements CxClient{
      * @param params attributes used to define the project
      * @param comment
      * @param filters filters to apply to the scan result set (severity, category, cwe)
-     * @return
      * @throws CheckmarxException
      */
     @Override
@@ -1710,7 +1701,6 @@ public class CxService implements CxClient{
     /**
      *
      * @param scanId
-     * @return
      * @throws CheckmarxException
      */
     @Override

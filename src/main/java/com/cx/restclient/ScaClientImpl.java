@@ -61,7 +61,7 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     private boolean passesFilter(Finding finding, EngineFilterConfiguration filterConfig) {
-        FilterInput filterInput = filterInputFactory.fromScaFinding(finding);
+        FilterInput filterInput = filterInputFactory.createFilterInputForSca(finding);
         return filterValidator.passesFilter(filterInput, filterConfig);
     }
 

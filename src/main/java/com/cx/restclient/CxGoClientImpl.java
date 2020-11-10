@@ -396,7 +396,7 @@ public class CxGoClientImpl implements ScannerClient {
             log.debug("SAST finding count before filtering: {}", mainResultInfos.size());
             log.info("Processing SAST results");
             mainResultInfos.stream()
-                    .filter(onlySastResultsThatMatchFilter(additionalResultInfos, filter))
+                    .filter(applySastFilter(additionalResultInfos, filter))
                     .forEach(mainResultInfo -> handleSastIssue(xIssues, mainResultInfo, additionalResultInfos, projectId, scanId, issuesBySeverity));
             CxScanSummary scanSummary = getCxScanSummary(scan);
             Map<String, Object> flowSummary = new HashMap<>();
@@ -418,7 +418,7 @@ public class CxGoClientImpl implements ScannerClient {
             log.info("Processing SCA results");
             rawScanResults.stream()
                     .filter(rawScanResult -> !rawScanResult.isIgnored())
-                    .filter(onlyScaResultsThatMatchFilter(filter))
+                    .filter(applyScaFilter(filter))
                     .forEach(rawScanResult -> handleScaIssue(xIssues, findings, packages, rawScanResult));
 
             logFindings(findings);
@@ -504,20 +504,20 @@ public class CxGoClientImpl implements ScannerClient {
         return scanSummary;
     }
 
-    private Predicate<SASTScanResult> onlySastResultsThatMatchFilter(Map<String, OdScanResultItem> additionalResultInfos,
-                                                                     FilterConfiguration filter) {
+    private Predicate<SASTScanResult> applySastFilter(Map<String, OdScanResultItem> additionalResultInfos,
+                                                      FilterConfiguration filter) {
         return mainResultInfo -> {
             String resultId = mainResultInfo.getId().toString();
             OdScanResultItem additionalResultInfo = additionalResultInfos.get(resultId);
-            FilterInput filterInput = filterInputFactory.fromCxGoSastFinding(mainResultInfo, additionalResultInfo);
+            FilterInput filterInput = filterInputFactory.createFilterInputForCxGoSast(mainResultInfo, additionalResultInfo);
             return filterValidator.passesFilter(filterInput, filter.getSastFilters());
         };
     }
 
 
-    private Predicate<? super SCAScanResult> onlyScaResultsThatMatchFilter(FilterConfiguration filterConfig) {
+    private Predicate<? super SCAScanResult> applyScaFilter(FilterConfiguration filterConfig) {
         return rawScanResult -> {
-            FilterInput filterInput = filterInputFactory.fromCxGoScaFinding(rawScanResult);
+            FilterInput filterInput = filterInputFactory.createFilterInputForCxGoSca(rawScanResult);
             return filterValidator.passesFilter(filterInput, filterConfig.getScaFilters());
         };
     }

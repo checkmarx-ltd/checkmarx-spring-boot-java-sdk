@@ -37,7 +37,7 @@ public class FilterInputFactory {
             Arrays.stream(SASTScanResult.State.values())
             .collect(Collectors.toMap(SASTScanResult.State::getValue, Function.identity()));
 
-    public FilterInput fromCxSastFinding(QueryType findingGroup, ResultType finding) {
+    public FilterInput createFilterInputForCxSast(QueryType findingGroup, ResultType finding) {
         String stateName = CXSAST_STATE_ID_TO_NAME.get(finding.getState());
 
         return FilterInput.builder()
@@ -50,7 +50,7 @@ public class FilterInputFactory {
                 .build();
     }
 
-    public FilterInput fromScaFinding(Finding scaFinding) {
+    public FilterInput createFilterInputForSca(Finding scaFinding) {
         return FilterInput.builder()
                 .id(scaFinding.getId())
                 .category(scaFinding.getCveName())
@@ -60,7 +60,7 @@ public class FilterInputFactory {
                 .build();
     }
 
-    public FilterInput fromCxGoSastFinding(SASTScanResult mainResultInfo, OdScanResultItem additionalResultInfo) {
+    public FilterInput createFilterInputForCxGoSast(SASTScanResult mainResultInfo, OdScanResultItem additionalResultInfo) {
         return FilterInput.builder()
                 .id(mainResultInfo.getId().toString())
                 .category(additionalResultInfo.getTitle().toUpperCase(Locale.ROOT))
@@ -71,7 +71,7 @@ public class FilterInputFactory {
                 .build();
     }
 
-    public FilterInput fromCxGoScaFinding(SCAScanResult scaScanResult) {
+    public FilterInput createFilterInputForCxGoSca(SCAScanResult scaScanResult) {
         return FilterInput.builder()
                 .id(scaScanResult.getId())
                 .cwe(scaScanResult.getCwe())
