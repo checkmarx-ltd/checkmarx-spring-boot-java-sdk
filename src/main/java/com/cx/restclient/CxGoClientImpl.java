@@ -13,12 +13,13 @@ import com.checkmarx.sdk.dto.cx.CxScanSettings;
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
 import com.checkmarx.sdk.dto.cxgo.*;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
-import com.checkmarx.sdk.dto.filtering.FilterInputGo;
+import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
 import com.checkmarx.sdk.service.CxGoAuthService;
 import com.checkmarx.sdk.service.CxRepoFileService;
-import com.checkmarx.sdk.service.FilterValidatorGo;
+import com.checkmarx.sdk.service.FilterInputFactory;
+import com.checkmarx.sdk.service.FilterValidator;
 import com.cx.restclient.ast.dto.sca.report.Finding;
 import com.cx.restclient.ast.dto.sca.report.Package;
 import com.cx.restclient.dto.scansummary.Severity;
@@ -100,22 +101,24 @@ public class CxGoClientImpl implements ScannerClient {
     /// captures information at key points as CxService API calls are made so
     /// that it will be required later when needed using the team name as the key.
     //
-    private static List<CxScanParams> scanProbeMap = new LinkedList<>();
+    private static final List<CxScanParams> scanProbeMap = new LinkedList<>();
 
     private final CxGoProperties cxGoProperties;
     private final CxGoAuthService authClient;
     private final RestTemplate restTemplate;
-    private Map<String, Object> codeCache = new HashMap<>();
+    private final Map<String, Object> codeCache = new HashMap<>();
     private CxRepoFileService cxRepoFileService;
-    private final FilterValidatorGo filterValidator;
+    private final FilterInputFactory filterInputFactory;
+    private final FilterValidator filterValidator;
 
     public CxGoClientImpl(CxGoProperties cxProperties, CxGoAuthService authClient,
-                     @Qualifier("cxRestTemplate") RestTemplate restTemplate,
-					  FilterValidatorGo filterValidator) {
+                          @Qualifier("cxRestTemplate") RestTemplate restTemplate,
+                          FilterInputFactory filterInputFactory, FilterValidator filterValidator) {
         this.cxGoProperties = cxProperties;
         this.authClient = authClient;
         this.restTemplate = restTemplate;
-		this.filterValidator = filterValidator;
+        this.filterInputFactory = filterInputFactory;
+        this.filterValidator = filterValidator;
     }
 
     @Override
@@ -262,7 +265,6 @@ public class CxGoClientImpl implements ScannerClient {
      *
      * @param scanStorage Response Object from CxGo for S3 details
      * @param file File to upload
-     * @throws CheckmarxException
      */
     private void uploadScanFile(Storage scanStorage, File file) throws CheckmarxException{
         try {
@@ -297,7 +299,6 @@ public class CxGoClientImpl implements ScannerClient {
      * Searches the navigation tree for the Business Unit.
      *
      * @return the Business Unit ID or -1
-     * @throws CheckmarxException
      */
     public String getTeamId(String teamPath) throws CheckmarxException {
         String []buTokens = teamPath.split(Pattern.quote("\\"));
@@ -395,7 +396,7 @@ public class CxGoClientImpl implements ScannerClient {
             log.debug("SAST finding count before filtering: {}", mainResultInfos.size());
             log.info("Processing SAST results");
             mainResultInfos.stream()
-                    .filter(onlySastResultsThatMatchFilter(additionalResultInfos, filter))
+                    .filter(applySastFilter(additionalResultInfos, filter))
                     .forEach(mainResultInfo -> handleSastIssue(xIssues, mainResultInfo, additionalResultInfos, projectId, scanId, issuesBySeverity));
             CxScanSummary scanSummary = getCxScanSummary(scan);
             Map<String, Object> flowSummary = new HashMap<>();
@@ -417,7 +418,7 @@ public class CxGoClientImpl implements ScannerClient {
             log.info("Processing SCA results");
             rawScanResults.stream()
                     .filter(rawScanResult -> !rawScanResult.isIgnored())
-                    .filter(onlyScaResultsThatMatchFilter(filter))
+                    .filter(applyScaFilter(filter))
                     .forEach(rawScanResult -> handleScaIssue(xIssues, findings, packages, rawScanResult));
 
             logFindings(findings);
@@ -503,21 +504,21 @@ public class CxGoClientImpl implements ScannerClient {
         return scanSummary;
     }
 
-    private Predicate<SASTScanResult> onlySastResultsThatMatchFilter(Map<String, OdScanResultItem> additionalResultInfos,
-                                                                     FilterConfiguration filter) {
+    private Predicate<SASTScanResult> applySastFilter(Map<String, OdScanResultItem> additionalResultInfos,
+                                                      FilterConfiguration filter) {
         return mainResultInfo -> {
             String resultId = mainResultInfo.getId().toString();
             OdScanResultItem additionalResultInfo = additionalResultInfos.get(resultId);
-            FilterInputGo filterInput = FilterInputGo.getInstance(mainResultInfo, additionalResultInfo);
+            FilterInput filterInput = filterInputFactory.createFilterInputForCxGoSast(mainResultInfo, additionalResultInfo);
             return filterValidator.passesFilter(filterInput, filter.getSastFilters());
         };
     }
 
 
-    private Predicate<? super SCAScanResult> onlyScaResultsThatMatchFilter(FilterConfiguration filter) {
+    private Predicate<? super SCAScanResult> applyScaFilter(FilterConfiguration filterConfig) {
         return rawScanResult -> {
-            FilterInputGo filterInput = FilterInputGo.getInstance(rawScanResult);
-            return filterValidator.passesFilter(filterInput, filter.getScaFilters());
+            FilterInput filterInput = filterInputFactory.createFilterInputForCxGoSca(rawScanResult);
+            return filterValidator.passesFilter(filterInput, filterConfig.getScaFilters());
         };
     }
 
@@ -879,10 +880,9 @@ public class CxGoClientImpl implements ScannerClient {
     }
 
     /**
-     * Examins the current scan scanProbeMap and returns the record matching the teamID
+     * Examines the current scan scanProbeMap and returns the record matching the teamID
      * 'if' it exsits.
      *
-     * @param teamID
      * @return the CxScanParams record
      */
     private CxScanParams getScanProbeByTeam(String teamID) {
