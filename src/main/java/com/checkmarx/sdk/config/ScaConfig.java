@@ -8,10 +8,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Collections;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 
+/**
+ * SCA-specific configuration in {@link com.checkmarx.sdk.dto.ast.ScanParams }.
+ */
 @Getter
 @Setter
 @Builder
@@ -25,22 +28,23 @@ public class ScaConfig {
     private String tenant;
 
     @Optional
-    private Double filterScore;
-    @Optional
-    private List<String> filterSeverity;
-    @Optional
     private Map<Severity, Integer> thresholdsSeverity;
     @Optional
     private Double thresholdsScore;
 
+    /**
+     * This setter allows to avoid ConfigProvider error: Map&lt;Severity,Integer&gt; is not supported.
+     */
     public void setThresholdsSeverity(Map<String, Object> thresholdsSeverity) {
         EnumMap<Severity, Integer> map = new EnumMap<>(Severity.class);
-        thresholdsSeverity.forEach( (key, value) -> map.put(Severity.valueOf(key), (Integer) value));
+        java.util.Optional.ofNullable(thresholdsSeverity)
+                .orElseGet(Collections::emptyMap)
+                .forEach((key, value) -> map.put(Severity.valueOf(key), (Integer) value));
+
         this.thresholdsSeverity = map;
     }
 
-    public void initThresholdsSeverity(Map<Severity, Integer> thresholdsSeverity) {
+    public void setThresholdsSeverityDirectly(Map<Severity, Integer> thresholdsSeverity) {
         this.thresholdsSeverity = thresholdsSeverity;
     }
-
 }

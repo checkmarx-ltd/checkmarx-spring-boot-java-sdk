@@ -34,8 +34,8 @@ public class FilterValidatorTest {
     private static final String NAME2 = "Client_Potential_XSS";
     private static final String CWE1 = "203";
     private static final String CWE2 = "611";
-    public static final String PERFORMANCE_TEST_SCRIPT = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
-    public static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(20);
+    private static final String PERFORMANCE_TEST_SCRIPT = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
+    private static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(20);
 
     @Test
     public void passesFilter_scriptTypicalExample() {
@@ -139,7 +139,8 @@ public class FilterValidatorTest {
         FilterValidator validator = new FilterValidator();
 
         try {
-            FilterInput filterInput = FilterInput.getInstance(findingGroup, finding);
+            FilterInputFactory filterInputFactory = new FilterInputFactory();
+            FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
             validator.passesFilter(filterInput, filterConfiguration);
         } catch (Exception e) {
             assertTrue(e instanceof CheckmarxRuntimeException, String.format("Expected %s to be thrown.", CheckmarxRuntimeException.class));
@@ -164,7 +165,8 @@ public class FilterValidatorTest {
         EngineFilterConfiguration filterConfiguration = createFilterConfiguration(script);
 
         FilterValidator validator = new FilterValidator();
-        FilterInput filterInput = FilterInput.getInstance(findingGroup, finding);
+        FilterInputFactory filterInputFactory = new FilterInputFactory();
+        FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
         boolean actualResult = validator.passesFilter(filterInput, filterConfiguration);
         assertEquals(expectedResult, actualResult, "Unexpected script filtering result.");
     }
@@ -182,7 +184,9 @@ public class FilterValidatorTest {
         EngineFilterConfiguration filterConfiguration = EngineFilterConfiguration.builder()
                 .simpleFilters(filters)
                 .build();
-        FilterInput filterInput = FilterInput.getInstance(findingGroup, finding);
+
+        FilterInputFactory filterInputFactory = new FilterInputFactory();
+        FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
         boolean passes = filterValidator.passesFilter(filterInput, filterConfiguration);
         assertEquals(expectedResult, passes, "Unexpected simple filtering result.");
     }

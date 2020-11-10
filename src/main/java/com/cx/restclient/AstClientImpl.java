@@ -24,7 +24,7 @@ public class AstClientImpl extends AbstractAstClient {
     private final AstProperties astProperties;
 
     @Override
-    protected void applyScaResultsFilters(ASTResultsWrapper combinedResults, ScanParams scanParams) {
+    protected void applyFilterToResults(ASTResultsWrapper combinedResults, ScanParams scanParams) {
         //currently do nothing
     }
 
@@ -59,7 +59,7 @@ public class AstClientImpl extends AbstractAstClient {
     }
 
     /**
-     * Convert scaParams to an object that is used by underlying logic in Common Client.
+     * Convert scanParams to an object that is used by underlying logic in Common Client.
      */
     @Override
     protected CxScanConfig getScanConfig(ScanParams scanParams) {

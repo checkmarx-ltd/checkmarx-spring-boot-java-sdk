@@ -10,6 +10,9 @@ import lombok.ToString;
 
 import java.util.List;
 
+/**
+ * Filter configuration for a specific vulnerability scanner.
+ */
 @Getter
 @Setter
 @Builder
