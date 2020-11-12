@@ -1579,9 +1579,12 @@ public class CxService implements CxClient{
                 throw new CheckmarxException("Project was not created successfully: ".concat(params.getProjectName()));
             }
         }
-        Integer presetId = getPresetId(params.getScanPreset());
-        Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
-        createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
+        if (!projectExistedBeforeScan || cxProperties.getSettingsOverride()) {
+            Integer presetId = getPresetId(params.getScanPreset());
+            Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
+            createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
+            setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
+        }
         switch (params.getSourceType()) {
             case GIT:
                 setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
@@ -1606,7 +1609,6 @@ public class CxService implements CxClient{
             params.setIncremental(false);
         }
 
-        setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
         CxScan scan = CxScan.builder()
                 .projectId(projectId)
                 .isIncremental(params.isIncremental())

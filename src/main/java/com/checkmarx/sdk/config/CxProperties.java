@@ -37,6 +37,7 @@ public class CxProperties extends CxPropertiesBase{
     private Integer codeSnippetLength = 2500;
     private Integer postActionPostbackId = 0;
 
+    private Boolean settingsOverride = false;
 
     private String portalPackage = "checkmarx.wsdl.portal";
 
@@ -212,5 +213,12 @@ public class CxProperties extends CxPropertiesBase{
         return this.postActionPostbackId;
     }
 
+    public Boolean getSettingsOverride() {
+        return settingsOverride;
+    }
+
+    public void setSettingsOverride(Boolean settingsOverride) {
+        this.settingsOverride = settingsOverride;
+    }
 }
 
