@@ -225,7 +225,7 @@ public class CxGoClientImpl implements ScannerClient {
                     .build();
             log.info("Sending scan to CxGo for projectID {}.", params.getProjectId());
 
-            HttpHeaders headers = authClient.createAuthHeaders();
+            HttpHeaders headers = authClient.createAuthHeaders(params.getClientSecret());
             HttpEntity<CreateScan> httpEntity = new HttpEntity<>(scan, headers);
             ResponseEntity<CreateScanResponse> createResp = restTemplate.exchange(
                     cxGoProperties.getUrl().concat(CREATE_SCAN),
