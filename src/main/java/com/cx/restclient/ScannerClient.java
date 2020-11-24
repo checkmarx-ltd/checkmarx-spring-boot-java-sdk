@@ -16,7 +16,7 @@ public interface ScannerClient {
 
     Integer createScan(CxScanParams params, String comment) throws CheckmarxException;
 
-    String getTeamId(String teamPath) throws CheckmarxException;
+    String getTeamId(String teamPath, String clientSecret) throws CheckmarxException;
 
     /**
      * Create team under given parentId - Will use REST API to create team for version 9.0+

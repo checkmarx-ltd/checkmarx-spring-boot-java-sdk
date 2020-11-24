@@ -58,7 +58,7 @@ public class CxGoServiceIT {
     public void getTeams() {
         try {
             if(StringUtils.isNotEmpty(properties.getClientSecret())) {
-                String teamId = service.getTeamId(properties.getTeam());
+                String teamId = service.getTeamId(properties.getTeam(), null);
                 assertNotNull(teamId);
             }
         }catch (CheckmarxException e){
@@ -70,7 +70,7 @@ public class CxGoServiceIT {
     public void getProject() {
         try {
             if(StringUtils.isNotEmpty(properties.getClientSecret())) {
-                String teamId = service.getTeamId(properties.getTeam());
+                String teamId = service.getTeamId(properties.getTeam(), null);
                 Integer projId = service.getProjectId(teamId, "CircleCI");
                 if (projId == -1) {
                     String projIdStr = service.createCxGoProject(teamId, "CircleCI", "1,2,3,4,5,9");
@@ -113,7 +113,7 @@ public class CxGoServiceIT {
     @Test
     public void completeScanFlow() throws CheckmarxException {
         if(StringUtils.isNotEmpty(properties.getClientSecret())) {
-            String teamId = service.getTeamId(properties.getTeam());
+            String teamId = service.getTeamId(properties.getTeam(), null);
             Integer projectId = service.getProjectId(teamId, "CircleCI");
             CxScanParams params = new CxScanParams();
             params.setProjectName("CircleCI");
