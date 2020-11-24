@@ -297,12 +297,14 @@ public class CxGoClientImpl implements ScannerClient {
 
     /**
      * Searches the navigation tree for the Business Unit.
-     *
+     * Unlike other client methods, this method gets a not mandatory clientSecret as a parameter
+     * which needs to support with new Cx-Flow flow in which the secret is received from another service (repos-manager)
+     * and not from the regular configuration nor the CxScanParams object.
      * @return the Business Unit ID or -1
      */
-    public String getTeamId(String teamPath) throws CheckmarxException {
+    public String getTeamId(String teamPath, String clientSecret) throws CheckmarxException {
         String []buTokens = teamPath.split(Pattern.quote("\\"));
-        OdNavigationTree navTree = getNavigationTree();
+        OdNavigationTree navTree = getNavigationTree(clientSecret);
         LinkedHashMap<String, ArrayList<Object>> navTreeData = (LinkedHashMap) navTree.getAdditionalProperties().get("data");
         ArrayList<LinkedHashMap<String, LinkedHashMap<String, Object>>> tree = (ArrayList) navTreeData.get("tree");
         int i = 1;
@@ -352,8 +354,8 @@ public class CxGoClientImpl implements ScannerClient {
         return UNKNOWN;
     }
 
-    private OdNavigationTree getNavigationTree() throws CheckmarxException {
-        HttpEntity<?> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+    private OdNavigationTree getNavigationTree(String clientSecret) throws CheckmarxException {
+        HttpEntity<?> httpEntity = new HttpEntity<>(authClient.createAuthHeaders(clientSecret));
         try {
             log.debug("Retrieving OD Navigation Tree");
             ResponseEntity<OdNavigationTree> response = restTemplate.exchange(
@@ -912,15 +914,6 @@ public class CxGoClientImpl implements ScannerClient {
             }
         }
         return null;
-    }
-
-    //
-    /// I think things below here should be removed the public interface. They are specific
-    /// Cx SAST.
-    //
-
-    public String getTeamId(String parentTeamId, String teamName) throws CheckmarxException {
-        return UNKNOWN;
     }
 
     public Integer getScanStatus(Integer scanId) {
