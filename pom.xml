@@ -9,7 +9,6 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.github.checkmarx-ltd</groupId>
-	<artifactId>cx-spring-boot-sdk</artifactId>
 	<version>0.4.62</version>
 	<name>cx-spring-boot-sdk</name>
 	<description>Checkmarx Java Spring Boot SDK</description>
