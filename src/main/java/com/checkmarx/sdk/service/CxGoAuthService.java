@@ -2,7 +2,7 @@ package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.config.CxGoProperties;
 import com.checkmarx.sdk.dto.cx.CxGoAuthResponse;
-import com.checkmarx.sdk.exception.InvalidCredentialsException;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -15,12 +15,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 /**
- * Class used to orchestrate submitting scans and retrieving results
+ * Gets and stores CxGo authentication parameters.
  */
 @Service
-public class CxGoAuthService implements CxAuthClient {
+public class CxGoAuthService {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxGoAuthService.class);
     private final CxGoProperties cxGoProperties;
     private final RestTemplate restTemplate;
@@ -37,22 +38,31 @@ public class CxGoAuthService implements CxAuthClient {
         this.restTemplate = restTemplate;
     }
 
-    private void getAuthToken() {
+    private void getAuthToken(String clientSecretOverride) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setCacheControl(CacheControl.noCache());
-        HttpEntity req = new HttpEntity<>(getJSONTokenReq(), headers);
+        String request = getJSONTokenReq(clientSecretOverride);
+        HttpEntity<String> req = new HttpEntity<>(request, headers);
         token = restTemplate.postForObject(
                 cxGoProperties.getUrl().concat(GET_SESSION_TOKEN),
                 req,
                 CxGoAuthResponse.class);
-        tokenExpires = LocalDateTime.now().plusSeconds(token.getExpiresIn()-500); //expire 500 seconds early
+
+        final long SAFETY_INTERVAL_SECONDS = 500;
+        LocalDateTime now = LocalDateTime.now();
+        tokenExpires = Optional.ofNullable(token)
+                .map(t -> now.plusSeconds(t.getExpiresIn() - SAFETY_INTERVAL_SECONDS)) //expire 500 seconds early
+                .orElse(now);
     }
 
-    @Override
     public HttpHeaders createAuthHeaders() {
+        return createAuthHeaders(null);
+    }
+
+    public HttpHeaders createAuthHeaders(String clientSecretOverride) {
         if (token == null || isTokenExpired()) {
-            getAuthToken();
+            getAuthToken(clientSecretOverride);
         }
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -68,53 +78,30 @@ public class CxGoAuthService implements CxAuthClient {
         return LocalDateTime.now().isAfter(tokenExpires);
     }
 
-    @Override
-    public String getCurrentToken() {
-        return token.getAccessToken();
-    }
-
     /**
-     * Create JSON http request body for passing oAuth token to CxOD
+     * Create JSON http request body for passing oAuth token to CxGo
      *
-     * @return String representation of the token
+     * @return String representation of the request.
      */
-    private String getJSONTokenReq() {
+    private String getJSONTokenReq(String clientSecretOverride) {
         JSONObject requestBody = new JSONObject();
         try {
             requestBody.put("grant_type", GRANT_TYPE);
-            requestBody.put("token", cxGoProperties.getClientSecret());
+            requestBody.put("token", getEffectiveClientSecret(clientSecretOverride));
         } catch (JSONException e) {
             log.error("Error creating JSON Token Request object - JSON object will be empty");
         }
         return requestBody.toString();
     }
 
-    @Override
-    public String getAuthToken(String username, String password, String clientId, String clientSecret, String scope) throws InvalidCredentialsException {
-        return null;
-    }
-
-    // TODO: jeffa, I'm not sure if this is required anymore?
-    @Override
-    public String getSoapAuthToken(String username, String password) throws InvalidCredentialsException {
-        return null;
-    }
-
-    // TODO: jeffa, I'm not sure if this is required anymore?
-    @Override
-    public String legacyLogin(String username, String password) throws InvalidCredentialsException {
-        return null;
-    }
-
-    // TODO: jeffa, I'm not sure if this is required anymore?
-    @Override
-    public String getCurrentSoapToken() {
-        return null;
-    }
-
-    // TODO: jeffa, I'm not sure if this is required anymore?
-    @Override
-    public String getLegacySession() {
-        return null;
+    private String getEffectiveClientSecret(String clientSecretOverride) {
+        String result;
+        if (StringUtils.isNotEmpty(clientSecretOverride)) {
+            log.info("Using client secret override.");
+            result = clientSecretOverride;
+        } else {
+            result = cxGoProperties.getClientSecret();
+        }
+        return result;
     }
 }

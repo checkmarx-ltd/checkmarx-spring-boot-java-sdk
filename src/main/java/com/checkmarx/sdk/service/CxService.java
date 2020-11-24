@@ -763,6 +763,8 @@ public class CxService implements CxClient{
                         xIssueBuilder.severity(resultType.getSeverity());
                         xIssueBuilder.link(resultType.getDeepLink());
                         xIssueBuilder.vulnerabilityStatus(getStateFullName(resultType.getState()));
+                        xIssueBuilder.queryId(result.getId());
+
  
                         // Add additional details
                         Map<String, Object> additionalDetails = getAdditionalIssueDetails(result, resultType);
