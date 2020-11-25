@@ -1290,6 +1290,11 @@ public class CxService implements CxClient{
         return UNKNOWN;
     }
 
+    @Override
+    public String getTeamIdByClientSecret(String teamPath, String clientSecret) {
+        return null;
+    }
+
     /**
      * Get fully qualified team name for a given id
      *
