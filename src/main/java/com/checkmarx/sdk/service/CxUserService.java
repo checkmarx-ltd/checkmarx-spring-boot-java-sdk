@@ -11,11 +11,11 @@ import java.util.List;
 @Service
 public class CxUserService implements CxUserClient{
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxUserService.class);
-    private final CxAuthClient authClient;
+    private final CxAuthService authClient;
     private final CxLegacyService cxLegacyService;
     private final CxProperties cxProperties;
 
-    public CxUserService(CxAuthClient authClient, CxLegacyService cxLegacyService, CxProperties cxProperties) {
+    public CxUserService(CxAuthService authClient, CxLegacyService cxLegacyService, CxProperties cxProperties) {
         this.authClient = authClient;
         this.cxLegacyService = cxLegacyService;
         this.cxProperties = cxProperties;

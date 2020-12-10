@@ -185,7 +185,7 @@ public class ScanResults{
         return Optional.ofNullable(getAstResults()).isPresent() &&  Optional.ofNullable(getAstResults().getResults()).isPresent();
     }
 
-    public boolean isSastRestuls(){
+    public boolean isSastResults(){
         return Optional.ofNullable(getScanSummary()).isPresent();
     }
     @Override
@@ -220,10 +220,11 @@ public class ScanResults{
         private List<ScaDetails> scaDetails;
         private Map<Integer, IssueDetails>  details;
         private Map<String, Object> additionalDetails;
+        private String queryId;
 
-        XIssue(String vulnerability,String vulnerabilityStatus, String similarityId, String cwe, String cve, String description, String language,
+        XIssue(String vulnerability, String vulnerabilityStatus, String similarityId, String cwe, String cve, String description, String language,
                String severity, String link, String filename, String gitUrl, List<OsaDetails> osaDetails, List<ScaDetails> scaDetails, Map<Integer, IssueDetails> details,
-               Map<String, Object> additionalDetails) {
+               Map<String, Object> additionalDetails, String queryId) {
             this.vulnerability = vulnerability;
             this.vulnerabilityStatus = vulnerabilityStatus;
             this.similarityId = similarityId;
@@ -239,6 +240,7 @@ public class ScanResults{
             this.scaDetails = scaDetails;
             this.details = details;
             this.additionalDetails = additionalDetails;
+            this.queryId = queryId;
         }
 
         public static XIssueBuilder builder() {
@@ -276,6 +278,9 @@ public class ScanResults{
             return vulnerabilityStatus;
         }
 
+        public String gerQueryId() {
+            return queryId;
+        }
         public void setVulnerabilityStatus(String vulnerabilityStatus) {
             this.vulnerabilityStatus = vulnerabilityStatus;
         }
@@ -418,6 +423,7 @@ public class ScanResults{
             private String severity;
             private String link;
             private String file;
+            private String queryId;
             private List<OsaDetails> osaDetails;
             private List<ScaDetails> scaDetails;
 
@@ -476,6 +482,11 @@ public class ScanResults{
                 return this;
             }
 
+            public XIssue.XIssueBuilder queryId(String queryId) {
+                this.queryId = queryId;
+                return this;
+            }
+
             public XIssue.XIssueBuilder osaDetails(List<OsaDetails> osaDetails) {
                 this.osaDetails = osaDetails;
                 return this;
@@ -497,7 +508,7 @@ public class ScanResults{
             }
 
             public XIssue build() {
-                return new XIssue(vulnerability,  vulnerabilityStatus, similarityId, cwe, cve, description, language, severity, link, file, "", osaDetails, scaDetails, details, additionalDetails);
+                return new XIssue(vulnerability,  vulnerabilityStatus, similarityId, cwe, cve, description, language, severity, link, file, "", osaDetails, scaDetails, details, additionalDetails, queryId);
             }
 
             @Override

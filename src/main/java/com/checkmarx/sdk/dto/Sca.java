@@ -10,6 +10,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * SCA properties specified in a config-as-code file.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

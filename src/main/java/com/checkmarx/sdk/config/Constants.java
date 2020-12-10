@@ -1,6 +1,9 @@
 package com.checkmarx.sdk.config;
 
 public class Constants {
+    private Constants() {
+    }
+
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
     public static final String OAUTH2 = "oauth2:";
@@ -10,6 +13,7 @@ public class Constants {
     public static final String CX_DEFAULT_PRESET = "Checkmarx Default";
     public static final String CX_DEFAULT_CONFIGURATION = "Default Configuration";
     public static final String SUMMARY_KEY = "flow-summary";
+    public static final String SCAN_ID_KEY = "scanId";
     public static final String WINDOWS_PATH = "C:\\temp";
     public static final String UNIX_PATH = "/tmp";
     public static final String ADO_FIELD = "/fields/";

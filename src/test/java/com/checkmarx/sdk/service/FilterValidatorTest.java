@@ -3,7 +3,8 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
-import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
+import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
+import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.dto.filtering.ScriptedFilter;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
 import groovy.lang.GroovyRuntimeException;
@@ -16,10 +17,11 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
-public class FilterValidatorImplTest {
+public class FilterValidatorTest {
     private static final String STATUS_RECURRENT = "Recurrent";
     private static final String STATUS_NEW = "New";
     private static final String STATE_URGENT_ID = "3";
@@ -32,8 +34,8 @@ public class FilterValidatorImplTest {
     private static final String NAME2 = "Client_Potential_XSS";
     private static final String CWE1 = "203";
     private static final String CWE2 = "611";
-    public static final String PERFORMANCE_TEST_SCRIPT = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
-    public static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(10);
+    private static final String PERFORMANCE_TEST_SCRIPT = "finding.severity == 'HIGH' || finding.severity == 'MEDIUM'";
+    private static final Duration MAX_ALLOWED_DURATION = Duration.ofSeconds(20);
 
     @Test
     public void passesFilter_scriptTypicalExample() {
@@ -132,12 +134,14 @@ public class FilterValidatorImplTest {
         Script script = parse(scriptWithUnknownObject);
         QueryType findingGroup = createFindingGroup(SEVERITY_LOW, NAME1, CWE1);
         ResultType finding = createFinding(STATUS_NEW, STATE_URGENT_ID);
-        FilterConfiguration filterConfiguration = createFilterConfiguration(script);
+        EngineFilterConfiguration filterConfiguration = createFilterConfiguration(script);
 
-        FilterValidatorImpl validator = new FilterValidatorImpl();
+        FilterValidator validator = new FilterValidator();
 
         try {
-            validator.passesFilter(findingGroup, finding, filterConfiguration);
+            FilterInputFactory filterInputFactory = new FilterInputFactory();
+            FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
+            validator.passesFilter(filterInput, filterConfiguration);
         } catch (Exception e) {
             assertTrue(e instanceof CheckmarxRuntimeException, String.format("Expected %s to be thrown.", CheckmarxRuntimeException.class));
             assertTrue(e.getCause() instanceof GroovyRuntimeException, String.format("Expected exception cause to be %s", GroovyRuntimeException.class));
@@ -158,10 +162,12 @@ public class FilterValidatorImplTest {
                                            boolean expectedResult) {
         ResultType finding = createFinding(status, state);
         QueryType findingGroup = createFindingGroup(severity, name, cweId);
-        FilterConfiguration filterConfiguration = createFilterConfiguration(script);
+        EngineFilterConfiguration filterConfiguration = createFilterConfiguration(script);
 
-        FilterValidatorImpl validator = new FilterValidatorImpl();
-        boolean actualResult = validator.passesFilter(findingGroup, finding, filterConfiguration);
+        FilterValidator validator = new FilterValidator();
+        FilterInputFactory filterInputFactory = new FilterInputFactory();
+        FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
+        boolean actualResult = validator.passesFilter(filterInput, filterConfiguration);
         assertEquals(expectedResult, actualResult, "Unexpected script filtering result.");
     }
 
@@ -174,9 +180,14 @@ public class FilterValidatorImplTest {
                                                  boolean expectedResult) {
         ResultType finding = createFinding(status, state);
         QueryType findingGroup = createFindingGroup(severity, name, cweId);
-        FilterValidatorImpl filterValidator = new FilterValidatorImpl();
-        FilterConfiguration filterConfiguration = FilterConfiguration.builder().simpleFilters(filters).build();
-        boolean passes = filterValidator.passesFilter(findingGroup, finding, filterConfiguration);
+        FilterValidator filterValidator = new FilterValidator();
+        EngineFilterConfiguration filterConfiguration = EngineFilterConfiguration.builder()
+                .simpleFilters(filters)
+                .build();
+
+        FilterInputFactory filterInputFactory = new FilterInputFactory();
+        FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
+        boolean passes = filterValidator.passesFilter(filterInput, filterConfiguration);
         assertEquals(expectedResult, passes, "Unexpected simple filtering result.");
     }
 
@@ -190,17 +201,18 @@ public class FilterValidatorImplTest {
 
     private static ResultType createFinding(String status, String state) {
         ResultType finding = new ResultType();
+        finding.setNodeId("test");
         finding.setStatus(status);
         finding.setState(state);
         return finding;
     }
 
-    private static FilterConfiguration createFilterConfiguration(Script script) {
+    private static EngineFilterConfiguration createFilterConfiguration(Script script) {
         ScriptedFilter filter = ScriptedFilter.builder()
                 .script(script)
                 .build();
 
-        return FilterConfiguration.builder()
+        return EngineFilterConfiguration.builder()
                 .scriptedFilter(filter)
                 .build();
     }

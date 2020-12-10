@@ -6,26 +6,27 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
+import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
+import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.service.FilterInputFactory;
+import com.checkmarx.sdk.service.FilterValidator;
 import com.cx.restclient.ast.dto.sca.AstScaConfig;
 import com.cx.restclient.ast.dto.sca.AstScaResults;
 import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
+import com.cx.restclient.ast.dto.sca.report.Finding;
 import com.cx.restclient.configuration.CxScanConfig;
 import com.cx.restclient.dto.ScanResults;
 import com.cx.restclient.dto.ScannerType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.util.EnumSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -33,83 +34,35 @@ import java.util.Optional;
 @Service
 public class ScaClientImpl extends AbstractAstClient {
     private final ScaProperties scaProperties;
+    private final FilterInputFactory filterInputFactory;
+    private final FilterValidator filterValidator;
 
     @Override
-    protected void applyScaResultsFilters(ASTResultsWrapper combinedResults, ScanParams scanParams) {
+    protected void applyFilterToResults(ASTResultsWrapper combinedResults, ScanParams scanParams) {
+        EngineFilterConfiguration filterConfig = extractFilterConfigFrom(scanParams);
 
-        SCAResults scaResults = combinedResults.getScaResults();
-        List<String> filterSeverityFromRequest = null;
-        Double filterScoreFromRequest = null;
-
-        if (Optional.ofNullable(scanParams.getScaConfig()).isPresent()) {
-            filterSeverityFromRequest = scanParams.getScaConfig().getFilterSeverity();
-            filterScoreFromRequest = scanParams.getScaConfig().getFilterScore();
-        }
-
-        List<String> appliedFilterSeverity;
-        appliedFilterSeverity = getFilterSeverity(filterSeverityFromRequest);
-
-        if (appliedFilterSeverity != null && !Objects.requireNonNull(appliedFilterSeverity).isEmpty()) {
-            filterResultsBySeverity(scaResults, appliedFilterSeverity);
-        }
-
-        Double appliedFilterScore;
-        appliedFilterScore = getFilterScore(filterScoreFromRequest);
-
-        if (isNotEmptyDouble(appliedFilterScore)) {
-            filterResultsByScore(scaResults, appliedFilterScore);
-        } else  {
-            log.info("CxSCA filter score is not defined");
-        }
+        combinedResults.getScaResults()
+                .getFindings()
+                .removeIf(finding -> !passesFilter(finding, filterConfig));
     }
 
-    private Double getFilterScore(Double filterScoreFromRequest) {
-        Double appliedFilterScore;
+    private static EngineFilterConfiguration extractFilterConfigFrom(ScanParams scanParams) {
+        EngineFilterConfiguration result = Optional.ofNullable(scanParams)
+                .map(ScanParams::getFilterConfiguration)
+                .map(FilterConfiguration::getScaFilters)
+                .orElse(null);
 
-        if (isNotEmptyDouble(filterScoreFromRequest)) {
-            appliedFilterScore = filterScoreFromRequest;
-        } else {
-            appliedFilterScore = scaProperties.getFilterScore();
-        }
-        return appliedFilterScore;
+        String message = (result == null ? "No SCA filter configuration was found in {}"
+                : "Found SCA filter configuration in {}");
+
+        log.debug(message, ScanParams.class.getSimpleName());
+
+        return result;
     }
 
-    private List<String> getFilterSeverity(List<String> filterSeverityFromRequest) {
-        List<String> appliedFilterSeverity;
-
-        if (CollectionUtils.isNotEmpty(filterSeverityFromRequest)) {
-            appliedFilterSeverity = filterSeverityFromRequest;
-        } else {
-            appliedFilterSeverity = scaProperties.getFilterSeverity();
-        }
-        return appliedFilterSeverity;
-    }
-
-    private void filterResultsBySeverity(SCAResults scaResults, List<String> filerSeverity) {
-        List<String> validateFilterSeverity = validateFilterSeverity(filerSeverity);
-        log.info("Applying Cx-SCA results filter severities: [{}]", validateFilterSeverity.toString());
-        scaResults.getFindings().removeIf(finding -> (
-                !StringUtils.containsIgnoreCase(validateFilterSeverity.toString(), finding.getSeverity().name())
-                ));
-    }
-
-    private void filterResultsByScore(SCAResults scaResults, double score) {
-        log.info("Applying Cx-SCA results filter score: [{}]", score);
-        scaResults.getFindings().removeIf(finding -> (
-                finding.getScore() < score
-        ));
-    }
-
-    private List<String> validateFilterSeverity(List<String> filerSeverity) {
-        Iterator<String> iterator = filerSeverity.iterator();
-        while (iterator.hasNext()) {
-            String nextFilter = iterator.next();
-            if (!StringUtils.containsIgnoreCase(EnumSet.range(Filter.Severity.HIGH, Filter.Severity.LOW).toString(), nextFilter)) {
-                log.warn("Severity: [{}] is not a supported filter", nextFilter);
-                iterator.remove();
-            }
-        }
-        return filerSeverity;
+    private boolean passesFilter(Finding finding, EngineFilterConfiguration filterConfig) {
+        FilterInput filterInput = filterInputFactory.createFilterInputForSca(finding);
+        return filterValidator.passesFilter(filterInput, filterConfig);
     }
 
     /**
@@ -141,7 +94,7 @@ public class ScaClientImpl extends AbstractAstClient {
             ASTResultsWrapper result;
             if (commonClientResults.getScaResults() != null) {
                 result = toResults(commonClientResults);
-                applyScaResultsFilters(result, scanParams);
+                applyFilterToResults(result, scanParams);
             } else {
                 result = new ASTResultsWrapper();
             }
@@ -152,7 +105,7 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     /**
-     * Convert scaParams to an object that is used by underlying logic in Common Client.
+     * Convert scanParams to an object that is used by underlying logic in Common Client.
      */
     @Override
     protected CxScanConfig getScanConfig(ScanParams scanParams) {
@@ -170,47 +123,31 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     private AstScaConfig getScaSpecificConfig(ScanParams scanParams) {
-        AstScaConfig scaConfig = new AstScaConfig();
-
-        String appUrlFromRequest = null;
-        String apiUrlFromRequest = null;
-        String accessControlUrlFromRequest = null;
-        String tenantFromRequest = null;
-
-        if (Optional.ofNullable(scanParams.getScaConfig()).isPresent()) {
-            appUrlFromRequest = scanParams.getScaConfig().getAppUrl();
-            apiUrlFromRequest = scanParams.getScaConfig().getApiUrl();
-            accessControlUrlFromRequest = scanParams.getScaConfig().getAccessControlUrl();
-            tenantFromRequest = scanParams.getScaConfig().getTenant();
+        AstScaConfig commonClientScaConfig = new AstScaConfig();
+        ScaConfig sdkScaConfig = scanParams.getScaConfig();
+        if (sdkScaConfig != null) {
+            commonClientScaConfig.setWebAppUrl(sdkScaConfig.getAppUrl());
+            commonClientScaConfig.setApiUrl(sdkScaConfig.getApiUrl());
+            commonClientScaConfig.setAccessControlUrl(sdkScaConfig.getAccessControlUrl());
+            commonClientScaConfig.setTenant(sdkScaConfig.getTenant());
+            commonClientScaConfig.setUsername(scaProperties.getUsername());
+            commonClientScaConfig.setPassword(scaProperties.getPassword());
+        } else {
+            log.warn("Unable to map SCA configuration to an internal object.");
         }
-
-        scaConfig.setWebAppUrl(Optional.ofNullable(appUrlFromRequest).orElse(scaProperties.getAppUrl()));
-        scaConfig.setApiUrl(Optional.ofNullable(apiUrlFromRequest).orElse(scaProperties.getApiUrl()));
-        scaConfig.setAccessControlUrl(Optional.ofNullable(accessControlUrlFromRequest).orElse(scaProperties.getAccessControlUrl()));
-        scaConfig.setTenant(Optional.ofNullable(tenantFromRequest).orElse(scaProperties.getTenant()));
-
-        scaConfig.setUsername(scaProperties.getUsername());
-        scaConfig.setPassword(scaProperties.getPassword());
-
-        return scaConfig;
+        return commonClientScaConfig;
     }
 
     @Override
-    protected void validate(ScanParams scaParams) {
-        validateNotNull(scaParams);
+    protected void validate(ScanParams scanParams) {
+        validateNotNull(scanParams);
 
-        ScaConfig scaConfig = scaParams.getScaConfig();
+        ScaConfig scaConfig = scanParams.getScaConfig();
         if (Optional.ofNullable(scaConfig).isPresent()) {
             validateNotEmpty(scaConfig.getAppUrl(), "SCA application URL");
             validateNotEmpty(scaConfig.getApiUrl(), "SCA API URL");
             validateNotEmpty(scaConfig.getAccessControlUrl(), "SCA Access Control URL");
             validateNotEmpty(scaConfig.getTenant(), "SCA tenant");
-        } else {
-            validateNotEmpty(scaProperties.getAppUrl(), "SCA application URL");
-            validateNotEmpty(scaProperties.getApiUrl(), "SCA API URL");
-            validateNotEmpty(scaProperties.getAccessControlUrl(), "SCA Access Control URL");
-            validateNotEmpty(scaParams.getProjectName(), "Project name");
-            validateNotEmpty(scaProperties.getTenant(), "SCA tenant");
             validateNotEmpty(scaProperties.getUsername(), "Username");
             validateNotEmpty(scaProperties.getPassword(), "Password");
         }
@@ -249,7 +186,4 @@ public class ScaClientImpl extends AbstractAstClient {
         }
     }
 
-    private boolean isNotEmptyDouble(Double d) {
-        return (d != null && d >= 0.0);
-    }
 }
