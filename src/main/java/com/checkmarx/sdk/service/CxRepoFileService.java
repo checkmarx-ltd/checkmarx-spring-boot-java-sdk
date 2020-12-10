@@ -55,7 +55,7 @@ public class CxRepoFileService {
                 log.debug("Using gitlab clone");
                 token = token.replace("oauth2:","");
                 gitURL = gitURL.replace(uri.getUserInfo(), "gitlab-ci-token:".concat(token));
-                credentialsProvider = new UsernamePasswordCredentialsProvider("user", token);
+                credentialsProvider = new UsernamePasswordCredentialsProvider("oauth2", token);
             }
             else if(token.contains(":")){
                 String[] userDetails = token.split(":");
