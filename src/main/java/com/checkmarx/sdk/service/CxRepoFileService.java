@@ -64,6 +64,9 @@ public class CxRepoFileService {
                     credentialsProvider = new UsernamePasswordCredentialsProvider(userDetails[0], userDetails[1]);
                 }
             }
+            else if (gitURL.contains("@bitbucket.org")) {
+                credentialsProvider = new UsernamePasswordCredentialsProvider("x-token-auth", token);
+            }
             else{
                 credentialsProvider = new UsernamePasswordCredentialsProvider(token, "");
             }
