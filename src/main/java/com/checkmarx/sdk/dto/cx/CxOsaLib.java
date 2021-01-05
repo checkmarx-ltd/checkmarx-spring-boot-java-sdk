@@ -9,9 +9,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "id",
         "name",
         "version",
-        "highVulnerabilityCount",
-        "mediumVulnerabilityCount",
-        "lowVulnerabilityCount",
+        "highUniqueVulnerabilityCount",
+        "mediumUniqueVulnerabilityCount",
+        "lowUniqueVulnerabilityCount",
         "newestVersion",
         "newestVersionReleaseDate",
         "numberOfVersionsSinceLastUpdate",
@@ -27,12 +27,12 @@ public class CxOsaLib {
     public String version;
     @JsonProperty("severity")
     public String severity;
-    @JsonProperty("highVulnerabilityCount")
-    public Integer highVulnerabilityCount;
-    @JsonProperty("mediumVulnerabilityCount")
-    public Integer mediumVulnerabilityCount;
-    @JsonProperty("lowVulnerabilityCount")
-    public Integer lowVulnerabilityCount;
+    @JsonProperty("highUniqueVulnerabilityCount")
+    public Integer highUniqueVulnerabilityCount;
+    @JsonProperty("mediumUniqueVulnerabilityCount")
+    public Integer mediumUniqueVulnerabilityCount;
+    @JsonProperty("lowUniqueVulnerabilityCount")
+    public Integer lowUniqueVulnerabilityCount;
     @JsonProperty("newestVersion")
     public String newestVersion;
     @JsonProperty("newestVersionReleaseDate")
@@ -67,15 +67,15 @@ public class CxOsaLib {
     }
 
     public Integer getHighVulnerabilityCount() {
-        return this.highVulnerabilityCount;
+        return this.highUniqueVulnerabilityCount;
     }
 
     public Integer getMediumVulnerabilityCount() {
-        return this.mediumVulnerabilityCount;
+        return this.mediumUniqueVulnerabilityCount;
     }
 
     public Integer getLowVulnerabilityCount() {
-        return this.lowVulnerabilityCount;
+        return this.lowUniqueVulnerabilityCount;
     }
 
     public String getNewestVersion() {
@@ -110,16 +110,16 @@ public class CxOsaLib {
         this.severity = severity;
     }
 
-    public void setHighVulnerabilityCount(Integer highVulnerabilityCount) {
-        this.highVulnerabilityCount = highVulnerabilityCount;
+    public void setHighVulnerabilityCount(Integer highUniqueVulnerabilityCount) {
+        this.highUniqueVulnerabilityCount = highUniqueVulnerabilityCount;
     }
 
-    public void setMediumVulnerabilityCount(Integer mediumVulnerabilityCount) {
-        this.mediumVulnerabilityCount = mediumVulnerabilityCount;
+    public void setMediumVulnerabilityCount(Integer mediumUniqueVulnerabilityCount) {
+        this.mediumUniqueVulnerabilityCount = mediumUniqueVulnerabilityCount;
     }
 
-    public void setLowVulnerabilityCount(Integer lowVulnerabilityCount) {
-        this.lowVulnerabilityCount = lowVulnerabilityCount;
+    public void setLowVulnerabilityCount(Integer lowUniqueVulnerabilityCount) {
+        this.lowUniqueVulnerabilityCount = lowUniqueVulnerabilityCount;
     }
 
     public void setNewestVersion(String newestVersion) {
