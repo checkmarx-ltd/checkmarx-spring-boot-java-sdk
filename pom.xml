@@ -30,7 +30,7 @@
 		<dependency>
 			<groupId>com.checkmarx</groupId>
 			<artifactId>cx-client-common</artifactId>
-			<version>2020.4.132</version>
+			<version>2021.1.135</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
