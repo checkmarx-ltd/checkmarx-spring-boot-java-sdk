@@ -6,6 +6,7 @@ import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.AstClient;
 import com.cx.restclient.ast.dto.common.*;
+import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
 import com.cx.restclient.configuration.CxScanConfig;
 import com.cx.restclient.dto.ScanResults;
 import com.cx.restclient.dto.SourceLocationType;
@@ -55,7 +56,7 @@ public abstract class AbstractAstClient implements AstClient {
         return client.waitForScanResults();
     }
 
-    protected Map<Filter.Severity, Integer> getFindingCountMap(SummaryResults summary) {
+    protected Map<Filter.Severity, Integer> getFindingCountMap(AstScaSummaryResults summary) {
         EnumMap<Filter.Severity, Integer> result = new EnumMap<>(Filter.Severity.class);
         result.put(Filter.Severity.HIGH, summary.getHighVulnerabilityCount());
         result.put(Filter.Severity.MEDIUM, summary.getMediumVulnerabilityCount());
