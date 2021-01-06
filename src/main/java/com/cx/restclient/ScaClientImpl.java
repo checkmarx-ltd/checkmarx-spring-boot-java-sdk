@@ -132,6 +132,13 @@ public class ScaClientImpl extends AbstractAstClient {
             commonClientScaConfig.setTenant(sdkScaConfig.getTenant());
             commonClientScaConfig.setUsername(scaProperties.getUsername());
             commonClientScaConfig.setPassword(scaProperties.getPassword());
+
+            String zipPath = scanParams.getZipPath();
+            if (StringUtils.isNotEmpty(zipPath)) {
+                commonClientScaConfig.setZipFilePath(zipPath);
+                commonClientScaConfig.setIncludeSources(true);
+            }
+
         } else {
             log.warn("Unable to map SCA configuration to an internal object.");
         }
