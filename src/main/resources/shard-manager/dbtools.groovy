@@ -88,20 +88,6 @@ def addShardProject(conn, shardID, projectName, teamName) {
     stmt.close()
 }
 
-def updateShardProject(conn, sp) {
-    cxFlowLog.info("Updating shard project for project ${sp.project_name} and team ${sp.team_name}")
-    String updateShardProjectQry = """        
-        UPDATE shard_to_project SET
-            project_name = '${sp.project_name}',
-            team_name = '${sp.team_name}'            
-        WHERE
-            id = ${sp.id}
-    """
-    def stmt = conn.createStatement()
-    stmt.execute(updateShardProjectQry)
-    stmt.close()
-}
-
 def getShardProjects(conn, shardId) {
     String getShardProjectQry = """
         SELECT * FROM shard_to_project WHERE shard_id=${shardId}
@@ -122,18 +108,26 @@ def getShardProjects(conn, shardId) {
     return shardProjects
 }
 
-def updateShard(conn, shard) {
-    cxFlowLog.info("Updating shard ${shard.name}")
-    String updateShardQry = """        
-        UPDATE shard SET
-            project_cnt = ${shard.projectCnt},
-            team_cnt = ${shard.teamCnt}
-        WHERE
-            id = ${shard.id}
-    """
-    def stmt = conn.createStatement()
-    stmt.execute(updateShardQry)
-    stmt.close()
+def incShardProjectCnt(conn, shard) {
+    cxFlowLog.info("Incrementing shard project count for: ${shard.name}")
+    /*
+    def stmt = conn.prepareCall("call inc_shard_project_cnt(?)");
+    stmt.setInt(1, shard.id);
+    stmt.execute();
+    stmt.close();
+    */
+    def stmt = conn.prepareStatement("call inc_shard_project_cnt(?)");
+    stmt.setInt(1, shard.id);
+    stmt.execute();
+    stmt.close();
+}
+
+def incShardTeamCnt(conn, shard) {
+    cxFlowLog.info("Incrementing shard team count for: ${shard.name}")
+    def stmt = conn.prepareStatement("call inc_shard_team_cnt(?)");
+    stmt.setInt(1, shard.id);
+    stmt.execute();
+    stmt.close();
 }
 
 def getShardList(conn) {
@@ -184,3 +178,4 @@ class ShardProject {
     String projectName = ""
     String teamName = ""
 }
+
