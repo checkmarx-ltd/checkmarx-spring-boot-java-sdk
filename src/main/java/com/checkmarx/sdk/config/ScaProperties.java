@@ -28,4 +28,5 @@ public class ScaProperties {
     private String tenant;
     private String username;
     private String password;
+    private boolean enabledZipScan;
 }
