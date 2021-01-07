@@ -810,7 +810,7 @@ public class CxService implements CxClient{
     }
 
     public String getStateFullName(String key){
-        return ((Map<Integer, String>)MapUtils.invertMap(STATE_MAP)).get(Integer.parseInt(key));
+        return ((Map<Integer, String>) MapUtils.invertMap(STATE_MAP)).get(Integer.parseInt(key));
     }
     
     private Map<String, Object> getAdditionalIssueDetails(QueryType q, ResultType r) {

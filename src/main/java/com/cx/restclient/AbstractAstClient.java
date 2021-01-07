@@ -55,6 +55,7 @@ public abstract class AbstractAstClient implements AstClient {
 
         return client.waitForScanResults();
     }
+    
 
     protected Map<Filter.Severity, Integer> getFindingCountMap(AstScaSummaryResults summary) {
         EnumMap<Filter.Severity, Integer> result = new EnumMap<>(Filter.Severity.class);
@@ -63,7 +64,7 @@ public abstract class AbstractAstClient implements AstClient {
         result.put(Filter.Severity.LOW, summary.getLowVulnerabilityCount());
         return result;
     }
-
+    
     protected void validateNotEmpty(String parameter, String parameterDescr) {
         if (StringUtils.isEmpty(parameter)) {
             String message = String.format("%s %s wasn't provided", ERROR_PREFIX, parameterDescr);
