@@ -83,6 +83,14 @@ public class ScaClientImpl extends AbstractAstClient {
         results.setScaResults(result);
         return results;
     }
+    
+
+    @Override
+    protected void validateResults(ScanResults results) {
+        if (results!= null && results.getScaResults()!= null && results.getScaResults().getException() != null){
+            throw new ASTRuntimeException(results.getScaResults().getException().getMessage() );
+        }
+    }
 
     @Override
     public ASTResultsWrapper getLatestScanResults(ScanParams scanParams) {
@@ -146,7 +154,7 @@ public class ScaClientImpl extends AbstractAstClient {
     }
 
     @Override
-    protected void validate(ScanParams scanParams) {
+    protected void validateScanParams(ScanParams scanParams) {
         validateNotNull(scanParams);
 
         ScaConfig scaConfig = scanParams.getScaConfig();
