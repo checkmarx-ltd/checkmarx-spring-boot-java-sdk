@@ -26,7 +26,7 @@ public abstract class AbstractAstClient implements AstClient {
 
     @Override
     public ASTResultsWrapper scan(ScanParams scanParams) {
-        validate(scanParams);
+        validateScanParams(scanParams);
 
         CxScanConfig scanConfig = getScanConfig(scanParams);
         scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
@@ -50,11 +50,15 @@ public abstract class AbstractAstClient implements AstClient {
             String message = String.format("Error creating %s instance.", CxClientDelegator.class.getSimpleName());
             throw new ASTRuntimeException(message, e);
         }
-        client.init();
-        client.initiateScan();
-
-        return client.waitForScanResults();
+        ScanResults initResults = client.init();
+        validateResults(initResults);
+        ScanResults intermediateResults = client.initiateScan();
+        validateResults(intermediateResults);
+        ScanResults results = client.waitForScanResults();
+        validateResults(results);
+        return results;
     }
+    
 
     protected Map<Filter.Severity, Integer> getFindingCountMap(AstScaSummaryResults summary) {
         EnumMap<Filter.Severity, Integer> result = new EnumMap<>(Filter.Severity.class);
@@ -96,7 +100,9 @@ public abstract class AbstractAstClient implements AstClient {
         return !StringUtils.isAllEmpty(scanParams.getZipPath(), scanParams.getSourceDir());
     }
 
+    protected abstract void validateResults(ScanResults results);
+
     protected abstract CxScanConfig getScanConfig(ScanParams scaParams);
 
-    protected abstract void validate(ScanParams scaParams);
+    protected abstract void validateScanParams(ScanParams scaParams);
 }
