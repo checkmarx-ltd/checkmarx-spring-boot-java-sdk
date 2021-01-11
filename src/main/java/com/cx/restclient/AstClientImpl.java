@@ -47,6 +47,13 @@ public class AstClientImpl extends AbstractAstClient {
         return new ASTResultsWrapper();
     }
 
+    @Override
+    protected void validateResults(ScanResults results) {
+        if (results != null && results.getAstResults() != null && results.getAstResults().getException() != null) {
+            throw new ASTRuntimeException(results.getAstResults().getException().getMessage());
+        }
+    }
+
     private void validateNotNull(AstSastResults astResults) {
         if (astResults == null) {
             throw new ASTRuntimeException("AST results are missing.");
@@ -87,7 +94,7 @@ public class AstClientImpl extends AbstractAstClient {
     }
 
     @Override
-    protected void validate(ScanParams scanParams) {
+    protected void validateScanParams(ScanParams scanParams) {
         if (scanParams == null) {
             throw new ASTRuntimeException(String.format("%s Scan parameters weren't provided.", ERROR_PREFIX));
         }
