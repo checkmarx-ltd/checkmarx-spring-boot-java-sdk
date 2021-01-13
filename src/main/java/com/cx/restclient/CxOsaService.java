@@ -1,23 +1,15 @@
 package com.cx.restclient;
 
-import com.checkmarx.sdk.config.Constants;
+
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.service.CxOsaClient;
-/*import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.exception.CxClientException;
-import com.cx.restclient.httpClient.CxHttpClient;
-import com.cx.restclient.osa.dto.CVE;
-import com.cx.restclient.osa.dto.Library;
-import com.cx.restclient.osa.dto.OSAResults;*/
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
-import java.io.IOException;
+
 import java.util.*;
 
 /**

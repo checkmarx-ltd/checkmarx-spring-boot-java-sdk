@@ -8,7 +8,7 @@ import com.checkmarx.sdk.service.AstClient;
 import com.cx.restclient.ast.dto.common.*;
 import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
 import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.dto.ScanResults;
+import com.cx.restclient.dto.CommonScanResults;
 import com.cx.restclient.dto.SourceLocationType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +30,7 @@ public abstract class AbstractAstClient implements AstClient {
 
         CxScanConfig scanConfig = getScanConfig(scanParams);
         scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
-        ScanResults scanResults = executeScan(scanConfig);
+        CommonScanResults scanResults = executeScan(scanConfig);
         
         ASTResultsWrapper scaResults = toResults(scanResults);
         applyFilterToResults(scaResults, scanParams);
@@ -40,9 +40,9 @@ public abstract class AbstractAstClient implements AstClient {
 
     protected abstract void applyFilterToResults(ASTResultsWrapper scaResults, ScanParams scanParams);
 
-    protected abstract ASTResultsWrapper toResults(ScanResults scanResults);
+    protected abstract ASTResultsWrapper toResults(CommonScanResults scanResults);
 
-    protected ScanResults executeScan(CxScanConfig cxScanConfig) {
+    protected CommonScanResults executeScan(CxScanConfig cxScanConfig) {
         CxClientDelegator client;
         try {
             client = new CxClientDelegator(cxScanConfig, log);
@@ -50,11 +50,11 @@ public abstract class AbstractAstClient implements AstClient {
             String message = String.format("Error creating %s instance.", CxClientDelegator.class.getSimpleName());
             throw new ASTRuntimeException(message, e);
         }
-        ScanResults initResults = client.init();
+        CommonScanResults initResults = client.init();
         validateResults(initResults);
-        ScanResults intermediateResults = client.initiateScan();
+        CommonScanResults intermediateResults = client.initiateScan();
         validateResults(intermediateResults);
-        ScanResults results = client.waitForScanResults();
+        CommonScanResults results = client.waitForScanResults();
         validateResults(results);
         return results;
     }
@@ -100,7 +100,7 @@ public abstract class AbstractAstClient implements AstClient {
         return !StringUtils.isAllEmpty(scanParams.getZipPath(), scanParams.getSourceDir());
     }
 
-    protected abstract void validateResults(ScanResults results);
+    protected abstract void validateResults(CommonScanResults results);
 
     protected abstract CxScanConfig getScanConfig(ScanParams scaParams);
 

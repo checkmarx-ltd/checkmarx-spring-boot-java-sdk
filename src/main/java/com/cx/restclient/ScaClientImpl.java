@@ -17,7 +17,7 @@ import com.cx.restclient.ast.dto.sca.AstScaResults;
 import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
 import com.cx.restclient.ast.dto.sca.report.Finding;
 import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.dto.ScanResults;
+import com.cx.restclient.dto.CommonScanResults;
 import com.cx.restclient.dto.ScannerType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +69,7 @@ public class ScaClientImpl extends AbstractAstClient {
      * Convert Common Client representation of SCA results into an object from this SDK.
      */
     @Override
-    protected ASTResultsWrapper toResults(ScanResults scaResultsFromCommonClient) {
+    protected ASTResultsWrapper toResults(CommonScanResults scaResultsFromCommonClient) {
         validateNotNull(scaResultsFromCommonClient.getScaResults());
 
         AstScaSummaryResults summary = scaResultsFromCommonClient.getScaResults().getSummary();
@@ -86,7 +86,7 @@ public class ScaClientImpl extends AbstractAstClient {
     
 
     @Override
-    protected void validateResults(ScanResults results) {
+    protected void validateResults(CommonScanResults results) {
         if (results!= null && results.getScaResults()!= null && results.getScaResults().getException() != null){
             throw new ASTRuntimeException(results.getScaResults().getException().getMessage() );
         }
@@ -98,7 +98,7 @@ public class ScaClientImpl extends AbstractAstClient {
         try {
             CxClientDelegator client = new CxClientDelegator(commonClientScanConfig, log);
             client.init();
-            ScanResults commonClientResults = client.getLatestScanResults();
+            CommonScanResults commonClientResults = client.getLatestScanResults();
             ASTResultsWrapper result;
             if (commonClientResults.getScaResults() != null) {
                 result = toResults(commonClientResults);
@@ -119,7 +119,7 @@ public class ScaClientImpl extends AbstractAstClient {
     protected CxScanConfig getScanConfig(ScanParams scanParams) {
         CxScanConfig cxScanConfig = new CxScanConfig();
         cxScanConfig.addScannerType(ScannerType.AST_SCA);
-        cxScanConfig.setSastEnabled(false);
+//        cxScanConfig.setSastEnabled(false);
         cxScanConfig.setProjectName(scanParams.getProjectName());
 
         AstScaConfig scaConfig = getScaSpecificConfig(scanParams);
