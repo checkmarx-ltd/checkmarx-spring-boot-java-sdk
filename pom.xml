@@ -27,15 +27,15 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web-services</artifactId>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>com.checkmarx</groupId>-->
-<!--			<artifactId>cx-client-common</artifactId>-->
-<!--			<version>2021.1.136</version>-->
-<!--		</dependency>-->
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 			<version>4.5.11</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-compress</artifactId>
+			<version>1.20</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>

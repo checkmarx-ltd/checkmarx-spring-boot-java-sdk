@@ -57,14 +57,15 @@ import java.util.stream.Collectors;
  * SCA - Software Composition Analysis - is the successor of OSA.
  */
 public class AstScaClient extends AstClient implements Scanner {
-    private static final String RISK_MANAGEMENT_API = properties.get("astSca.riskManagementApi");
-    private static final String PROJECTS = RISK_MANAGEMENT_API + properties.get("astSca.projects");
-    private static final String SUMMARY_REPORT = RISK_MANAGEMENT_API + properties.get("astSca.summaryReport");
-    private static final String FINDINGS = RISK_MANAGEMENT_API + properties.get("astSca.findings");
-    private static final String PACKAGES = RISK_MANAGEMENT_API + properties.get("astSca.packages");
-    private static final String LATEST_SCAN = RISK_MANAGEMENT_API + properties.get("astSca.latestScan");
-    private static final String WEB_REPORT = properties.get("astSca.webReport");
-    private static final String RESOLVING_CONFIGURATION_API = properties.get("astSca.resolvingConfigurationApi");
+    
+    private static final String RISK_MANAGEMENT_API = "/risk-management/";
+    private static final String PROJECTS = RISK_MANAGEMENT_API + "projects";
+    private static final String SUMMARY_REPORT = RISK_MANAGEMENT_API + "riskReports/%s/summary";
+    private static final String FINDINGS = RISK_MANAGEMENT_API + "riskReports/%s/vulnerabilities";
+    private static final String PACKAGES = RISK_MANAGEMENT_API + "riskReports/%s/packages";
+    private static final String LATEST_SCAN = RISK_MANAGEMENT_API + "riskReports?size=1&projectId=%s";
+    private static final String WEB_REPORT = "/#/projects/%s/reports/%s";
+    private static final String RESOLVING_CONFIGURATION_API = "/settings/projects/%s/resolving-configuration";
 
     private static final String REPORT_SCA_PACKAGES = "cxSCAPackages";
     private static final String REPORT_SCA_FINDINGS = "cxSCAVulnerabilities";

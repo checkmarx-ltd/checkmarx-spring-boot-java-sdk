@@ -1,4 +1,4 @@
-package com.checkmarx.sdk.service;
+package com.checkmarx.sdk.service.sast;
 
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxConfig;
@@ -15,6 +15,9 @@ import com.checkmarx.sdk.dto.cx.xml.CxXMLResultsType;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
+import com.checkmarx.sdk.service.CxAuthService;
+import com.checkmarx.sdk.service.CxService;
+import com.checkmarx.sdk.service.CxUserService;
 import com.cx.restclient.CxOsaService;
 import org.junit.Ignore;
 import org.junit.Test;

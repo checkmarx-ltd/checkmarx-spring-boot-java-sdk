@@ -32,10 +32,10 @@ public abstract class AbstractAstClient implements AstClient {
         scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
         CommonScanResults scanResults = executeScan(scanConfig);
         
-        ASTResultsWrapper scaResults = toResults(scanResults);
-        applyFilterToResults(scaResults, scanParams);
+        ASTResultsWrapper results = toResults(scanResults);
+        applyFilterToResults(results, scanParams);
 
-        return scaResults;
+        return results;
     }
 
     protected abstract void applyFilterToResults(ASTResultsWrapper scaResults, ScanParams scanParams);

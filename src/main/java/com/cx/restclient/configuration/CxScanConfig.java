@@ -77,7 +77,7 @@ public class CxScanConfig implements Serializable {
 //    private String osaArchiveIncludePatterns;
     private Boolean osaGenerateJsonReport = true;
 //    private Boolean osaRunInstall = false;
-//    private Boolean osaThresholdsEnabled = false;
+    private Boolean osaThresholdsEnabled = false;
 //    private Integer osaHighThreshold;
 //    private Integer osaMediumThreshold;
 //    private Integer osaLowThreshold;
@@ -484,13 +484,13 @@ public class CxScanConfig implements Serializable {
 //        this.osaRunInstall = osaRunInstall;
 //    }
 //
-//    public Boolean getOsaThresholdsEnabled() {
-//        return osaThresholdsEnabled;
-//    }
-//
-//    public void setOsaThresholdsEnabled(Boolean osaThresholdsEnabled) {
-//        this.osaThresholdsEnabled = osaThresholdsEnabled;
-//    }
+    public Boolean getOsaThresholdsEnabled() {
+        return osaThresholdsEnabled;
+    }
+
+    public void setOsaThresholdsEnabled(Boolean osaThresholdsEnabled) {
+        this.osaThresholdsEnabled = osaThresholdsEnabled;
+    }
 //
 //    public Integer getOsaHighThreshold() {
 //        return osaHighThreshold;
@@ -766,10 +766,10 @@ public class CxScanConfig implements Serializable {
     public void setAstSastConfig(AstSastConfig astConfig) {
         this.astSastConfig = astConfig;
     }
-//
-//    public Set<ScannerType> getScannerTypes() {
-//        return scannerTypes;
-//    }
+
+    public Set<ScannerType> getScannerTypes() {
+        return scannerTypes;
+    }
 
     public void addScannerType(ScannerType scannerType) {
         this.scannerTypes.add(scannerType);
