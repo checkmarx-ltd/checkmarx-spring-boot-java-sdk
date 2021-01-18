@@ -1,9 +1,17 @@
 package com.checkmarx.sdk.service.sca;
 
+import com.checkmarx.sdk.GithubProperties;
+import com.checkmarx.sdk.config.CxProperties;
+import com.checkmarx.sdk.config.ScaProperties;
+import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.cx.restclient.CxClientDelegator;
+import com.cx.restclient.ast.dto.common.RemoteRepositoryInfo;
+import com.cx.restclient.ast.dto.sca.AstScaConfig;
 import com.cx.restclient.configuration.CxScanConfig;
 import com.cx.restclient.dto.CommonScanResults;
+import com.cx.restclient.dto.ProxyConfig;
+import com.cx.restclient.dto.ScannerType;
 import com.cx.restclient.dto.SourceLocationType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.*;
@@ -12,10 +20,15 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.springframework.util.ResourceUtils;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.*;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,8 +36,76 @@ import java.util.UUID;
 
 import static org.junit.Assert.fail;
 
+@RunWith(SpringRunner.class)
+@Import(SpringConfiguration.class)
+@SpringBootTest
 @Slf4j
-public class AstScaTests extends ScaTestsBase {
+public class AstScaTest extends ScaTestsBase {
+
+
+    @Autowired
+    ScaProperties scaProperties;
+
+    @Autowired
+    CxProperties cxProperties;
+
+    @Autowired
+    GithubProperties githubProperties;
+    
+    protected void setProxy(CxScanConfig config, String proxyHost, String proxyPort) {
+        ProxyConfig proxyConfig = new ProxyConfig();
+        proxyConfig.setHost(proxyHost);
+        proxyConfig.setPort(Integer.parseInt(proxyPort));
+        config.setProxyConfig(proxyConfig);
+    }
+
+    protected CxScanConfig initScaConfig(String repoUrlProp, boolean useOnPremAuthentication) throws MalformedURLException {
+        CxScanConfig config = initScaConfig(useOnPremAuthentication);
+        config.getAstScaConfig().setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
+        RemoteRepositoryInfo repoInfo = new RemoteRepositoryInfo();
+
+        URL repoUrl = new URL(repoUrlProp);
+        repoInfo.setUrl(repoUrl);
+        repoInfo.setUsername(githubProperties.getToken());
+
+        config.getAstScaConfig().setRemoteRepositoryInfo(repoInfo);
+        return config;
+    }
+
+    protected CxScanConfig initScaConfig(boolean useOnPremAuthentication){
+        CxScanConfig config = new CxScanConfig();
+        config.addScannerType(ScannerType.AST_SCA);
+        config.setProjectName("sdkScaProject");
+        config.setOsaProgressInterval(5);
+        AstScaConfig sca = getScaConfig(useOnPremAuthentication);
+        config.setAstScaConfig(sca);
+
+        return config;
+    }
+    protected AstScaConfig getScaConfig(boolean useOnPremiseAuthentication) {
+        String accessControlProp, usernameProp, passwordProp;
+        if (useOnPremiseAuthentication) {
+//            accessControlProp = onPremiseControlUrl;
+//            usernameProp = onPremiseUsername;
+//            passwordProp = onPremisePass;
+            throw new UnsupportedOperationException();
+        } else {
+            accessControlProp = scaProperties.getAccessControlUrl();
+            usernameProp = scaProperties.getUsername();
+            passwordProp = scaProperties.getPassword();
+        }
+
+        AstScaConfig result = new AstScaConfig();
+        result.setApiUrl(scaProperties.getApiUrl());
+        result.setWebAppUrl(scaProperties.getAppUrl());
+        result.setTenant(scaProperties.getTenant());
+        result.setAccessControlUrl(accessControlProp);
+        result.setUsername(usernameProp);
+        result.setPassword(passwordProp);
+        result.setIncludeSources(false);
+        return result;
+    }
+    
     @Test
     public void scan_localDirUpload() throws IOException, ASTRuntimeException {
         CxScanConfig config = initScaConfig(false);
@@ -45,12 +126,12 @@ public class AstScaTests extends ScaTestsBase {
 
     @Test
     public void scan_remotePublicRepo() throws MalformedURLException {
-        scanRemoteRepo(PUBLIC_REPO_PROP, false);
+        scanRemoteRepo(githubProperties.getUrl(), false);
     }
 
     @Test
     public void scan_remotePrivateRepo() throws MalformedURLException {
-        scanRemoteRepo(PRIVATE_REPO_PROP, false);
+        scanRemoteRepo(githubProperties.getUrl(), false);
     }
 
     @Test
@@ -99,14 +180,15 @@ public class AstScaTests extends ScaTestsBase {
     @Test
     @Ignore("There is no stable on-prem environment.")
     public void scan_onPremiseAuthentication() throws MalformedURLException {
-        scanRemoteRepo(PUBLIC_REPO_PROP, true);
+        scanRemoteRepo(githubProperties.getUrl(), true);
     }
 
     @Test
     @Ignore("Needs specific network configuration with a proxy.")
     public void runScaScanWithProxy() throws MalformedURLException, ASTRuntimeException {
         CxScanConfig config = initScaConfig(false);
-        setProxy(config);
+        //TODO - supply proxy host and port when running this
+        setProxy(config, "", "");
         CommonScanResults scanResults = runScan(config);
         verifyScanResults(scanResults);
     }
@@ -230,7 +312,7 @@ public class AstScaTests extends ScaTestsBase {
     }
 
     private static InputStream getTestProjectStream() {
-        String srcResourceName = AstScaTests.PACKED_SOURCES_TO_SCAN;
+        String srcResourceName = AstScaTest.PACKED_SOURCES_TO_SCAN;
         log.info("Getting resource stream from '{}'", srcResourceName);
         return Thread.currentThread()
                 .getContextClassLoader()

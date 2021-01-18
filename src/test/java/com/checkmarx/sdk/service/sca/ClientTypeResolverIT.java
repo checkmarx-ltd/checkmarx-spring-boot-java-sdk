@@ -1,5 +1,7 @@
 package com.checkmarx.sdk.service.sca;
 
+import com.checkmarx.sdk.config.ScaProperties;
+import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.CommonClientTest;
 import com.cx.restclient.ast.ClientTypeResolver;
@@ -10,20 +12,32 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit4.SpringRunner;
 
-
+@RunWith(SpringRunner.class)
+@Import(SpringConfiguration.class)
+@SpringBootTest
 @Slf4j
-public class ClientTypeResolverTest  extends CommonClientTest {
+public class ClientTypeResolverIT extends CommonClientTest {
+    
+    @Autowired
+    ScaProperties scaProperties;
+    
     @Test
     public void determineClientType_cloudAccessControl() {
-        testDetermineClientType("astSca.cloud.accessControlUrl");
+        testDetermineClientType(scaProperties.getAccessControlUrl());
     }
 
     //TODO : fix this test
     @Test
     @Ignore("this test fails and needs to be fixed")
     public void determineClientType_onPremAccessControl() {
-        testDetermineClientType("astSca.onPremise.accessControlUrl");
+        testDetermineClientType(scaProperties.getAccessControlUrl());
     }
 
     @Test
@@ -50,7 +64,7 @@ public class ClientTypeResolverTest  extends CommonClientTest {
 
     private void testDetermineClientType(String urlPropName) {
         ClientTypeResolver resolver = new ClientTypeResolver(new CxScanConfig());
-        ClientType clientType = resolver.determineClientType(prop(urlPropName));
+        ClientType clientType = resolver.determineClientType(urlPropName);
         Assert.assertNotNull("Client type is null.", clientType);
         Assert.assertTrue("Client ID is empty.", StringUtils.isNotEmpty(clientType.getClientId()));
         Assert.assertTrue("Scopes are empty.", StringUtils.isNotEmpty(clientType.getScopes()));

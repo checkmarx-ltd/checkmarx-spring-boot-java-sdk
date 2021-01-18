@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.service.sast;
 
-import com.checkmarx.sdk.config.CxConfig;
+import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.exception.CheckmarxException;
@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
-@Import(CxConfig.class)
+@Import(SpringConfiguration.class)
 @SpringBootTest
 public class CxServiceTest {
 

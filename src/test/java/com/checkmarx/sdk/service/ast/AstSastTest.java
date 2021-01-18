@@ -1,6 +1,9 @@
 package com.checkmarx.sdk.service.ast;
 
+import com.checkmarx.sdk.GithubProperties;
+import com.checkmarx.sdk.config.AstProperties;
 import com.checkmarx.sdk.config.CxProperties;
+import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.service.CommonClientTest;
 import com.cx.restclient.CxClientDelegator;
 import com.cx.restclient.ast.dto.common.RemoteRepositoryInfo;
@@ -19,14 +22,32 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
+@RunWith(SpringRunner.class)
+@Import(SpringConfiguration.class)
+@SpringBootTest
 @Slf4j
 public class AstSastTest extends CommonClientTest {
+
+    @Autowired
+    AstProperties astProperties;
+    
+    @Autowired 
+    CxProperties cxProperties;
+    
+    @Autowired
+    GithubProperties githubProperties;
+    
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
@@ -155,15 +176,15 @@ public class AstSastTest extends CommonClientTest {
 
     private CxScanConfig getScanConfig() throws MalformedURLException {
         AstSastConfig astConfig = AstSastConfig.builder()
-                .apiUrl(prop("astSast.apiUrl"))
-                .webAppUrl(prop("astSast.webAppUrl"))
-                .clientSecret(prop("astSast.clientSecret"))
+                .apiUrl(astProperties.getApiUrl())
+                .webAppUrl(astProperties.getWebAppUrl())
+                .clientSecret(astProperties.getClientSecret())
                 .clientId("CxFlow")
                 .sourceLocationType(SourceLocationType.REMOTE_REPOSITORY)
                 .build();
 
         RemoteRepositoryInfo repoInfo = new RemoteRepositoryInfo();
-        URL repoUrl = new URL(prop("astSast.remoteRepoUrl.public"));
+        URL repoUrl = new URL(githubProperties.getUrl());
         repoInfo.setUrl(repoUrl);
         astConfig.setRemoteRepositoryInfo(repoInfo);
         astConfig.setResultsPageSize(10);
@@ -171,7 +192,7 @@ public class AstSastTest extends CommonClientTest {
 
         CxScanConfig config = new CxScanConfig();
         config.setAstSastConfig(astConfig);
-        config.setProjectName(prop("astSast.projectName"));
+        config.setProjectName("sdkAstProject");
         config.addScannerType(ScannerType.AST_SAST);
         config.setOsaProgressInterval(5);
         return config;

@@ -25,32 +25,7 @@ public  abstract class ScaTestsBase extends CommonClientTest {
     // Storing the test project as an archive to avoid cluttering the current project
     // and also to prevent false positives during a vulnerability scan of the current project.
     protected static final String PACKED_SOURCES_TO_SCAN = "sources-to-scan.zip";
-    protected static final String PUBLIC_REPO_PROP = "astSca.remoteRepoUrl.public";
-    protected static final String PRIVATE_REPO_PROP = "astSca.remoteRepoUrl.private";
-
-    protected CxScanConfig initScaConfig(String repoUrlProp, boolean useOnPremAuthentication) throws MalformedURLException {
-        CxScanConfig config = initScaConfig(useOnPremAuthentication);
-        config.getAstScaConfig().setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
-        RemoteRepositoryInfo repoInfo = new RemoteRepositoryInfo();
-
-        URL repoUrl = new URL(prop(repoUrlProp));
-        repoInfo.setUrl(repoUrl);
-        repoInfo.setUsername(prop("astSca.remoteRepo.private.token"));
-
-        config.getAstScaConfig().setRemoteRepositoryInfo(repoInfo);
-        return config;
-    }
-
-    protected CxScanConfig initScaConfig(boolean useOnPremAuthentication){
-        CxScanConfig config = new CxScanConfig();
-        config.addScannerType(ScannerType.AST_SCA);
-        config.setProjectName(prop("astSca.projectName"));
-        config.setOsaProgressInterval(5);
-        AstScaConfig sca = getScaConfig(useOnPremAuthentication);
-        config.setAstScaConfig(sca);
-
-        return config;
-    }
+    
 
     protected void verifyScanResults(CommonScanResults results) {
         assertNotNull("Scan results are null.", results);

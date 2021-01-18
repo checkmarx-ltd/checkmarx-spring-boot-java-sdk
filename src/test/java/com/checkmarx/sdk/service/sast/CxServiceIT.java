@@ -1,7 +1,7 @@
 package com.checkmarx.sdk.service.sast;
 
 import com.checkmarx.sdk.config.Constants;
-import com.checkmarx.sdk.config.CxConfig;
+import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.CxUser;
 import com.checkmarx.sdk.dto.Filter;
@@ -35,7 +35,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@Import(CxConfig.class)
+@Import(SpringConfiguration.class)
 @SpringBootTest
 public class CxServiceIT {
 

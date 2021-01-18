@@ -1,13 +1,11 @@
 package com.checkmarx.sdk.service.cxgo;
 
-import com.checkmarx.sdk.config.CxConfig;
+import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.config.CxGoProperties;
-import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
-import com.checkmarx.sdk.dto.cxgo.Scan;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 
@@ -29,7 +27,7 @@ import java.util.Collections;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@Import(CxConfig.class)
+@Import(SpringConfiguration.class)
 @SpringBootTest
 public class CxGoServiceIT {
 

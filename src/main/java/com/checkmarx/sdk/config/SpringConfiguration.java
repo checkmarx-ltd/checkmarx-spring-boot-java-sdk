@@ -13,11 +13,11 @@ import org.springframework.ws.client.core.WebServiceTemplate;
 import java.nio.charset.Charset;
 
 @Configuration
-public class CxConfig {
+public class SpringConfiguration {
 
     private final CxProperties properties;
 
-    public CxConfig(CxProperties properties) {
+    public SpringConfiguration(CxProperties properties) {
         this.properties = properties;
     }
 
