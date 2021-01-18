@@ -23,7 +23,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @Import(SpringConfiguration.class)
 @SpringBootTest
 @Slf4j
-public class ClientTypeResolverIT extends CommonClientTest {
+public class ClientTypeResolverTest extends CommonClientTest {
     
     @Autowired
     ScaProperties scaProperties;
@@ -51,7 +51,7 @@ public class ClientTypeResolverIT extends CommonClientTest {
     }
 
     private static void checkThatExceptionIsThrown(String url) {
-        ClientTypeResolver resolver = new ClientTypeResolver(new CxScanConfig());
+        com.cx.restclient.ast.ClientTypeResolver resolver = new com.cx.restclient.ast.ClientTypeResolver(new CxScanConfig());
         try {
             resolver.determineClientType(url);
             Assert.fail("Expected exception, but didn't get any.");
@@ -63,7 +63,7 @@ public class ClientTypeResolverIT extends CommonClientTest {
     }
 
     private void testDetermineClientType(String urlPropName) {
-        ClientTypeResolver resolver = new ClientTypeResolver(new CxScanConfig());
+        com.cx.restclient.ast.ClientTypeResolver resolver = new com.cx.restclient.ast.ClientTypeResolver(new CxScanConfig());
         ClientType clientType = resolver.determineClientType(urlPropName);
         Assert.assertNotNull("Client type is null.", clientType);
         Assert.assertTrue("Client ID is empty.", StringUtils.isNotEmpty(clientType.getClientId()));
