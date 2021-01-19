@@ -926,10 +926,10 @@ public class CxGoClientImpl implements ScannerClient {
     /// I think things below here should be removed the public interface. They are specific
     /// Cx SAST.
     //
-
-    public String getTeamId(String parentTeamId, String teamName) throws CheckmarxException {
-        return UNKNOWN;
-    }
+//
+//    public String getTeamId(String parentTeamId, String teamName) throws CheckmarxException {
+//        return UNKNOWN;
+//    }
 
     public Integer getScanStatus(Integer scanId) {
         return UNKNOWN_INT;

@@ -49,6 +49,7 @@ public class CxServiceIT {
     private CxOsaService osaService;
     @Autowired
     private CxUserService userService;
+    private String token=null;
 
     @Test
     @Ignore("Stable environment required")
@@ -80,19 +81,21 @@ public class CxServiceIT {
 
     @Test
     public void login() {
-        try {
-            String token = authService.getAuthToken(
-                    properties.getUsername(),
-                    properties.getPassword(),
-                    properties.getClientId(),
-                    properties.getClientSecret(),
-                    properties.getScope()
-            );
+        if(token != null) {
+            try {
+                token = authService.getAuthToken(
+                        properties.getUsername(),
+                        properties.getPassword(),
+                        properties.getClientId(),
+                        properties.getClientSecret(),
+                        properties.getScope()
+                );
 
-            assertNotNull(token);
-            assertNotEquals("",token);
-        }catch (InvalidCredentialsException e){
-            fail("Unexpected InvalidCredentialsException");
+                assertNotNull(token);
+                assertNotEquals("", token);
+            } catch (InvalidCredentialsException e) {
+                fail("Unexpected InvalidCredentialsException");
+            }
         }
     }
 
@@ -110,6 +113,7 @@ public class CxServiceIT {
 
     @Test
     public void getRoles() {
+        login();
         try {
             List<CxRole> roles = service.getRoles();
             assertNotNull(roles);
@@ -122,6 +126,7 @@ public class CxServiceIT {
 
     @Test
     public void getRoleId() {
+        login();
         try {
             Integer id = service.getRoleId("Admin");
             assertNotNull(id);
@@ -135,6 +140,7 @@ public class CxServiceIT {
 
     @Test
     public void createTeam() {
+        login();
         try {
             String id = service.getTeamId(properties.getTeam());
             String newTeamId = service.createTeam(id, "Whatever");
@@ -146,6 +152,7 @@ public class CxServiceIT {
 
     @Test
     public void deleteTeam() {
+        login();
         try {
             String id = service.getTeamId(properties.getTeam().concat(properties.getTeamPathSeparator()).concat("Whatever"));
             service.deleteTeam(id);
@@ -156,6 +163,7 @@ public class CxServiceIT {
 
     @Test
     public void getLastScanDate() {
+        login();
         try {
             String teamId = service.getTeamId(properties.getTeam());
             Integer projectId = service.getProjectId(teamId, "Riches");

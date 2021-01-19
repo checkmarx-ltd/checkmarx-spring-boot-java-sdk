@@ -28,9 +28,9 @@ cxgo:
   base-url: https://example.net
   portal-url: https://example.net
   # CxOD Business unit that will contain the project/application/scan
-  team: \Demo\CxFlow
+  team: \Demo\CxFlow\SDK
   url: ${cxgo.base-url}
-  multi-tenant: true
+  multi-tenant: false
   configuration: Default Configuration
   #
   ## Available Scan defaults
@@ -47,7 +47,7 @@ cxgo:
   #   - CXOD_SERVICE = 10;
   #   - CXOD_SMART_DEVICE = 11;
   #   - CXOD_OTHER = 12;
-  scan-preset: 1,2,3,4,5,9
+  scan-preset: 52,53
   sca:
     filter-severity:
       - High

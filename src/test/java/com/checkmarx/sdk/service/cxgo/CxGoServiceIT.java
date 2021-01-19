@@ -31,6 +31,7 @@ import static org.junit.Assert.*;
 @SpringBootTest
 public class CxGoServiceIT {
 
+    private static final String GO_PROJECT_NAME = "SdkCI";
     @Autowired
     private CxGoProperties properties;
     @Autowired
@@ -39,24 +40,28 @@ public class CxGoServiceIT {
     private CxRepoFileService repoFileService;
     @Autowired
     private CxGoAuthService authService;
+    private HttpHeaders token;
 
     @Test
     public void login() {
-        try {
-            if(StringUtils.isNotEmpty(properties.getClientSecret())) {
-                HttpHeaders token = authService.createAuthHeaders();
-                assertNotNull(token);
+        if(token ==null) {
+            try {
+                if (StringUtils.isNotEmpty(properties.getClientSecret())) {
+                    token = authService.createAuthHeaders();
+                    assertNotNull(token);
+                }
+            } catch (InvalidCredentialsException e) {
+                fail("Unexpected InvalidCredentialsException");
             }
-        }catch (InvalidCredentialsException e){
-            fail("Unexpected InvalidCredentialsException");
         }
     }
 
     @Test
     public void getTeams() {
+        login();
         try {
             if(StringUtils.isNotEmpty(properties.getClientSecret())) {
-                String teamId = service.getTeamId(properties.getTeam(), null);
+                String teamId = service.getTeamId(properties.getTeam());
                 assertNotNull(teamId);
             }
         }catch (CheckmarxException e){
@@ -66,12 +71,13 @@ public class CxGoServiceIT {
 
     @Test
     public void getProject() {
+        login();
         try {
             if(StringUtils.isNotEmpty(properties.getClientSecret())) {
-                String teamId = service.getTeamId(properties.getTeam(), null);
+                String teamId = service.getTeamId(properties.getTeam());
                 Integer projId = service.getProjectId(teamId, "CircleCI");
                 if (projId == -1) {
-                    String projIdStr = service.createCxGoProject(teamId, "CircleCI", "1,2,3,4,5,9");
+                    String projIdStr = service.createCxGoProject(teamId, "CircleCI", properties.getScanPreset());
                     projId = Integer.parseInt(projIdStr);
                 }
                 assertNotNull(projId);
@@ -83,6 +89,7 @@ public class CxGoServiceIT {
 
     @Test
     public void gitClone() throws CheckmarxException {
+        login();
         CxScanParams params = new CxScanParams();
         params.setProjectName("CircleCI");
         params.setTeamId("1");
@@ -110,11 +117,12 @@ public class CxGoServiceIT {
     
     @Test
     public void completeScanFlow() throws CheckmarxException {
+        login();
         if(StringUtils.isNotEmpty(properties.getClientSecret())) {
-            String teamId = service.getTeamId(properties.getTeam(), null);
-            Integer projectId = service.getProjectId(teamId, "CircleCI");
+            String teamId = service.getTeamId(properties.getTeam());
+            Integer projectId = service.getProjectId(teamId, GO_PROJECT_NAME);
             CxScanParams params = new CxScanParams();
-            params.setProjectName("CircleCI");
+            params.setProjectName(GO_PROJECT_NAME);
             params.setTeamId(teamId);
             params.setProjectId(projectId);
             params.setGitUrl("https://github.com/Custodela/Riches.git");
