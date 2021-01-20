@@ -58,6 +58,7 @@ public class ScanStatus {
         UPLOADING("UPLOADING"),
         PROCESSING("PROCESSING"),
         COMPLETED("COMPLETED"),
+        PARTIAL("PARTIAL"),
         FAILED("FAILED");
 
         private String s;
