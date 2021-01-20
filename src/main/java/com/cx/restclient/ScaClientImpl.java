@@ -119,7 +119,7 @@ public class ScaClientImpl extends AbstractAstClient {
     protected CxScanConfig getScanConfig(ScanParams scanParams) {
         CxScanConfig cxScanConfig = new CxScanConfig();
         cxScanConfig.addScannerType(ScannerType.AST_SCA);
-//        cxScanConfig.setSastEnabled(false);
+
         cxScanConfig.setProjectName(scanParams.getProjectName());
 
         AstScaConfig scaConfig = getScaSpecificConfig(scanParams);

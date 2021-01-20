@@ -101,21 +101,7 @@ public class CxGoServiceIT {
         String zipFilePath = repoFileService.prepareRepoFile(params);
         assertTrue("Zip file path is empty.", StringUtils.isNotEmpty(zipFilePath));
     }
-
-//    @Test
-//    public void getResults(){
-//        Login();
-//        FilterConfiguration filterConfiguration = FilterConfiguration.builder()
-//                .simpleFilters(Collections.singletonList(new Filter(Filter.Type.SEVERITY, "High")))
-//                .build();
-//        //generate the results
-//        try {
-//            ScanResults results = service.getReportContentByScanId(92, filterConfiguration);
-//        } catch (CheckmarxException e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
+    
     
     @Test
     @Ignore //works only on Windows
