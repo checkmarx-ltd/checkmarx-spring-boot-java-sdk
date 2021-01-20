@@ -785,7 +785,7 @@ public class CxGoClientImpl implements ScannerClient {
         long timer = 0;
         try {
             while(!status.equals(ScanStatus.Status.COMPLETED) &&
-                    !status.equals(ScanStatus.Status.FAILED)) {
+                    !status.equals(ScanStatus.Status.FAILED) && !status.equals(ScanStatus.Status.PARTIAL)) {
                 Thread.sleep(cxGoProperties.getScanPolling());
                 scanStatus = getScanStatusById(scanId);
                 status = scanStatus.getStatus();
@@ -802,6 +802,15 @@ public class CxGoClientImpl implements ScannerClient {
         log.info("scanId: {}, status: {}, progress: {}", scanId, scanStatus.getStatus(), scanStatus.getProgress());
         if (status.equals(ScanStatus.Status.FAILED)) {
             throw new CheckmarxException("Scan was cancelled or failed");
+        }
+
+        if (status.equals(ScanStatus.Status.PARTIAL) && scanStatus.getProgress() < 100) {
+            try {
+                Thread.sleep(cxGoProperties.getScanPolling());
+                waitForScanCompletion(scanId);
+            } catch (InterruptedException e) {
+                log.error("Thread sleep error waiting for scan status!");
+            }
         }
     }
 
