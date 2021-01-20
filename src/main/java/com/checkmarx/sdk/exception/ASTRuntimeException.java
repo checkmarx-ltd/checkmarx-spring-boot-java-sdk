@@ -12,4 +12,8 @@ public class ASTRuntimeException extends RuntimeException {
     public ASTRuntimeException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public ASTRuntimeException(Throwable cause) {
+            super(cause);
+    }
 }

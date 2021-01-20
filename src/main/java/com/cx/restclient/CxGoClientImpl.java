@@ -921,19 +921,7 @@ public class CxGoClientImpl implements ScannerClient {
         }
         return null;
     }
-
-    //
-    /// I think things below here should be removed the public interface. They are specific
-    /// Cx SAST.
-    //
-
-    public String getTeamId(String parentTeamId, String teamName) throws CheckmarxException {
-        return UNKNOWN;
-    }
-
-    public Integer getScanStatus(Integer scanId) {
-        return UNKNOWN_INT;
-    }
+    
 
     public ScanStatus getScanStatusById(Integer scanId) throws CheckmarxException {
         HttpEntity<?> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
