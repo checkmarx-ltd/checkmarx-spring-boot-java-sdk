@@ -1,9 +1,12 @@
-package com.checkmarx.sdk.service;
+package com.checkmarx.sdk.service.sast;
 
-import com.checkmarx.sdk.config.CxConfig;
+import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.exception.CheckmarxException;
+import com.checkmarx.sdk.service.CxAuthService;
+import com.checkmarx.sdk.service.CxLegacyService;
+import com.checkmarx.sdk.service.CxService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
-@Import(CxConfig.class)
+@Import(SpringConfiguration.class)
 @SpringBootTest
 public class CxServiceTest {
 
@@ -41,34 +44,6 @@ public class CxServiceTest {
     @MockBean
     private RestTemplate restTemplate;
 
-
-    @Test
-    public void createScan() {
-    }
-
-    @Test
-    public void getLastScanId() {
-    }
-
-    @Test
-    public void getScanData() {
-    }
-
-    @Test
-    public void getLastScanDate() {
-    }
-
-    @Test
-    public void getScanStatus() {
-    }
-
-    @Test
-    public void createScanReport() {
-    }
-
-    @Test
-    public void getReportStatus() {
-    }
 
     @Test
     public void getReportContent() {
@@ -96,33 +71,6 @@ public class CxServiceTest {
         }
     }
 
-    @Test
-    public void getXmlReportContent() {
-    }
-
-    @Test
-    public void getAdditionalScanDetails() {
-    }
-
-    @Test
-    public void getCustomFields() {
-    }
-
-    @Test
-    public void getReportContent1() {
-    }
-
-    @Test
-    public void getOsaReportContent() {
-    }
-
-    @Test
-    public void getIssueDescription() {
-    }
-
-    @Test
-    public void createProject() {
-    }
 
     @Test
     public void branchProject() {
@@ -146,87 +94,4 @@ public class CxServiceTest {
         assertEquals(branchedProjectId, Integer.valueOf(-1));
     }
 
-    @Test
-    public void getProjects() {
-    }
-
-    @Test
-    public void getProjects1() {
-    }
-
-    @Test
-    public void getProjectId() {
-    }
-
-    @Test
-    public void getProject() {
-    }
-
-    @Test
-    public void scanExists() {
-    }
-
-    @Test
-    public void createScanSetting() {
-    }
-
-    @Test
-    public void setProjectRepositoryDetails() {
-    }
-
-    @Test
-    public void uploadProjectSource() {
-    }
-
-    @Test
-    public void setProjectExcludeDetails() {
-    }
-
-    @Test
-    public void getTeamId() {
-    }
-
-    @Test
-    public void createTeam() {
-    }
-
-    @Test
-    public void getScanConfiguration() {
-    }
-
-    @Test
-    public void getPresetId() {
-    }
-
-    @Test
-    public void getScanSummary() {
-    }
-
-    @Test
-    public void getScanSummary1() {
-    }
-
-    @Test
-    public void getScanSummary2() {
-    }
-
-    @Test
-    public void createScan1() {
-    }
-
-    @Test
-    public void createScanAndReport() {
-    }
-
-    @Test
-    public void createScanAndReport1() {
-    }
-
-    @Test
-    public void getLatestScanReport() {
-    }
-
-    @Test
-    public void getLatestScanResults() {
-    }
 }

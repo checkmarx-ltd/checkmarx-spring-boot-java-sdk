@@ -10,7 +10,7 @@ import com.cx.restclient.ast.dto.common.SummaryResults;
 import com.cx.restclient.ast.dto.sast.AstSastConfig;
 import com.cx.restclient.ast.dto.sast.AstSastResults;
 import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.dto.ScanResults;
+import com.cx.restclient.dto.CommonScanResults;
 import com.cx.restclient.dto.ScannerType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class AstClientImpl extends AbstractAstClient {
      * Convert Common Client representation of AST results into an object from this SDK.
      */
     @Override
-    protected ASTResultsWrapper toResults(ScanResults scanResults) {
+    protected ASTResultsWrapper toResults(CommonScanResults scanResults) {
         validateNotNull(scanResults.getAstResults());
 
         ModelMapper mapper = new ModelMapper();
@@ -48,7 +48,7 @@ public class AstClientImpl extends AbstractAstClient {
     }
 
     @Override
-    protected void validateResults(ScanResults results) {
+    protected void validateResults(CommonScanResults results) {
         if (results != null && results.getAstResults() != null && results.getAstResults().getException() != null) {
             throw new ASTRuntimeException(results.getAstResults().getException().getMessage());
         }
@@ -72,7 +72,7 @@ public class AstClientImpl extends AbstractAstClient {
     protected CxScanConfig getScanConfig(ScanParams scanParams) {
         CxScanConfig cxScanConfig = new CxScanConfig();
         cxScanConfig.addScannerType(ScannerType.AST_SAST);
-        cxScanConfig.setSastEnabled(false);
+        //cxScanConfig.setSastEnabled(false);
         cxScanConfig.setProjectName(scanParams.getProjectName());
 
         AstSastConfig astConfig = getAstSpecificConfig();

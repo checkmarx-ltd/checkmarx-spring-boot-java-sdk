@@ -50,6 +50,7 @@ public class CxRepoFileService {
             String token = uri.getUserInfo();
             if(token == null){
                 token = "";
+                log.info("empty token");
             }
             if(token.startsWith("oauth2:")){
                 log.debug("Using gitlab clone");
@@ -63,12 +64,14 @@ public class CxRepoFileService {
                     log.debug("Using clone with username/password");
                     credentialsProvider = new UsernamePasswordCredentialsProvider(userDetails[0], userDetails[1]);
                 }
+                log.info("credentialsProvider is not allocated");
             }
             else if (gitURL.contains("@bitbucket.org")) {
                 credentialsProvider = new UsernamePasswordCredentialsProvider("x-token-auth", token);
             }
             else{
                 credentialsProvider = new UsernamePasswordCredentialsProvider(token, "");
+                log.info("credentialsProvider without password");
             }
             log.info("Cloning code locally to {}", pathFile);
             Git.cloneRepository()
@@ -79,12 +82,16 @@ public class CxRepoFileService {
                     .setCredentialsProvider(credentialsProvider)
                     .call()
                     .close();
+            
+            log.info("After Clone");
             String cxZipFile = cxProperties.getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
             String exclusions = null;
             if(params.getFileExclude() != null && !params.getFileExclude().isEmpty()){
                 exclusions = String.join(",",params.getFileExclude());
             }
             runPostCloneScript(params, srcPath);
+            
+            log.info("running zip file");
             ZipUtils.zipFile(srcPath, cxZipFile, exclusions);
             try {
                 FileUtils.deleteDirectory(pathFile);

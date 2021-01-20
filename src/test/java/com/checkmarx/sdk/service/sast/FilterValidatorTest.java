@@ -1,4 +1,4 @@
-package com.checkmarx.sdk.service;
+package com.checkmarx.sdk.service.sast;
 
 import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.cx.xml.QueryType;
@@ -7,6 +7,8 @@ import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.dto.filtering.ScriptedFilter;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
+import com.checkmarx.sdk.service.FilterInputFactory;
+import com.checkmarx.sdk.service.FilterValidator;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
