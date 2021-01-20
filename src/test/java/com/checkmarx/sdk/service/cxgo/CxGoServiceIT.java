@@ -14,6 +14,7 @@ import com.checkmarx.sdk.service.CxRepoFileService;
 
 import com.cx.restclient.CxGoClientImpl;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +89,7 @@ public class CxGoServiceIT {
     }
 
     @Test
+    @Ignore //works only on Windows
     public void gitClone() throws CheckmarxException {
         login();
         CxScanParams params = new CxScanParams();
@@ -116,6 +118,7 @@ public class CxGoServiceIT {
 //    }
     
     @Test
+    @Ignore //works only on Windows
     public void completeScanFlow() throws CheckmarxException {
         login();
         if(StringUtils.isNotEmpty(properties.getClientSecret())) {

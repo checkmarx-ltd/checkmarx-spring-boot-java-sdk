@@ -285,32 +285,6 @@ public class AstScaTest extends ScaTestsBase {
         }
     }
 
-    private static Path createTempDirectory() {
-        String systemTempDir = FileUtils.getTempDirectoryPath();
-        String subdir = String.format("common-client-tests-%s", UUID.randomUUID());
-        Path result = Paths.get(systemTempDir, subdir);
-
-        log.info("Creating a temp dir: {}", result);
-        boolean success = result.toFile().mkdir();
-        if (!success) {
-            fail("Failed to create temp dir.");
-        }
-        return result;
-    }
-
-    private static void deleteDir(Path directory) {
-        if (directory == null) {
-            return;
-        }
-
-        log.info("Deleting '{}'", directory);
-        try {
-            FileUtils.deleteDirectory(directory.toFile());
-        } catch (IOException e) {
-            log.warn("Failed to delete temp dir.", e);
-        }
-    }
-
     private static InputStream getTestProjectStream() {
         String srcResourceName = AstScaTest.PACKED_SOURCES_TO_SCAN;
         log.info("Getting resource stream from '{}'", srcResourceName);

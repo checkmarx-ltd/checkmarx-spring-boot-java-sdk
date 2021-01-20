@@ -56,9 +56,9 @@ public class ClientTypeResolverTest extends CommonClientTest {
             resolver.determineClientType(url);
             Assert.fail("Expected exception, but didn't get any.");
         } catch (Exception e) {
-            log.info("Got an exception", e);
             Assert.assertTrue("Unexpected exception type.", e instanceof ASTRuntimeException);
             Assert.assertTrue("Exception message is empty.", StringUtils.isNotEmpty(e.getMessage()));
+            log.info("Got an expected exception");
         }
     }
 
