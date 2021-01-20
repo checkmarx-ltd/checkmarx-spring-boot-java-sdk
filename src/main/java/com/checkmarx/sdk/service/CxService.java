@@ -1607,28 +1607,23 @@ public class CxService implements CxClient{
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
         }
 
-        boolean remoteSettingsExist = false;
         boolean useSsh = false;
         if(projectExistedBeforeScan)
         {
             CxProjectSource projectSource = checkProjectRemoteSettings(projectId);
             if(projectSource !=null)
             {
-                String projectUrl = projectSource.getUrl();
                 useSsh = projectSource.getUseSsh();
-              //  remoteSettingsExist = ((StringUtils.isNotEmpty(projectUrl)) || useSsh );
             }
         }
 
         if(!useSsh) {
 
-            switch (params.getSourceType()) {
-                case GIT:
-                    setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
-                    break;
-                case FILE:
+            if((params.getSourceType()).equals(CxScanParams.Type.GIT)) {
+                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
+            }
+            else if((params.getSourceType()).equals(CxScanParams.Type.FILE)) {
                     uploadProjectSource(projectId, new File(params.getFilePath()));
-                    break;
             }
         }
         if(params.isIncremental() && projectExistedBeforeScan) {
