@@ -113,6 +113,7 @@ public class CxService implements CxClient{
     public static final String ERROR_WITH_XML_REPORT = "Error with XML report";
     public static final String ERROR_PROCESSING_SCAN_RESULTS = "Error while processing scan results";
     public static final String ERROR_GETTING_PROJECT = "Error occurred while retrieving project with id {}, http error {}";
+    public static final String ERROR_GETTING_PROJECT_REMOTE_SETTINGS = "Error occurred while retrieving project's remote settings, http error {}";
     public static final String FOUND_TEAM = "Found team {} with ID {}";
     public static final String ONLY_SUPPORTED_IN_90_PLUS = "Operation only supported in 9.0+";
     public static final String ERROR_GETTING_TEAMS = "Error occurred while retrieving Teams";
@@ -1176,6 +1177,19 @@ public class CxService implements CxClient{
         return scanSettingsClient.getPresetName(presetId);
     }
 
+    public CxProjectSource checkProjectRemoteSettings(Integer projectId) throws CheckmarxException {
+
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            ResponseEntity<CxProjectSource> response = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_SOURCE), HttpMethod.GET, httpEntity, CxProjectSource.class, projectId);
+            return response.getBody();
+
+        } catch (HttpStatusCodeException e) {
+            log.error(ERROR_GETTING_PROJECT_REMOTE_SETTINGS, e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return null;
+    }
     /**
      * Set Repository details for a project
      */
@@ -1592,13 +1606,25 @@ public class CxService implements CxClient{
             createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
         }
-        switch (params.getSourceType()) {
-            case GIT:
+
+        boolean useSsh = false;
+        if(projectExistedBeforeScan)
+        {
+            CxProjectSource projectSource = checkProjectRemoteSettings(projectId);
+            if(projectSource !=null)
+            {
+                useSsh = projectSource.getUseSsh();
+            }
+        }
+
+        if(!useSsh) {
+
+            if((params.getSourceType()).equals(CxScanParams.Type.GIT)) {
                 setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
-                break;
-            case FILE:
-                uploadProjectSource(projectId, new File(params.getFilePath()));
-                break;
+            }
+            else if((params.getSourceType()).equals(CxScanParams.Type.FILE)) {
+                    uploadProjectSource(projectId, new File(params.getFilePath()));
+            }
         }
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
