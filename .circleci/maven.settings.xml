@@ -7,8 +7,8 @@
             <configuration>
                 <httpConfiguration>
                     <put>
-                        <connectionTimeout>120000</connectionTimeout>
-                        <readTimeout>120000</readTimeout>
+                        <connectionTimeout>150000</connectionTimeout>
+                        <readTimeout>150000</readTimeout>
                     </put>
                 </httpConfiguration>
             </configuration>
