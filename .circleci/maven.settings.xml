@@ -7,10 +7,11 @@
             <configuration>
                 <httpConfiguration>
                     <put>
-                        <connectionTimeout>150000</connectionTimeout>
-                        <readTimeout>150000</readTimeout>
+                        <connectionTimeout>120000</connectionTimeout>
+                        <readTimeout>120000</readTimeout>
                     </put>
                 </httpConfiguration>
+                <stagingProgressTimeoutMinutes>35</stagingProgressTimeoutMinutes>
             </configuration>
         </server>
     </servers>
