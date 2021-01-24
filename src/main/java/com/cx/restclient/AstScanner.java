@@ -94,4 +94,10 @@ public class AstScanner extends AbstractScanner {
         validateNotEmpty(astProperties.getPreset(), "AST preset");
         validateNotEmpty(astProperties.getIncremental(), "Is Incremental flag");
     }
+
+    @Override
+    public ASTResultsWrapper getLatestScanResults(ScanParams scanParams) {
+        log.warn("Getting latest AST scan results is not implemented yet.");
+        return new ASTResultsWrapper();
+    }
 }

@@ -115,5 +115,6 @@ public abstract class AbstractScanner  {
     protected abstract RestClientConfig getScanConfig(ScanParams scaParams);
 
     protected abstract void validateScanParams(ScanParams scaParams);
-    
+
+    public abstract ASTResultsWrapper getLatestScanResults(ScanParams scanParams);
 }
