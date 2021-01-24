@@ -1,5 +1,6 @@
-package com.checkmarx.sdk.utils;
+package com.checkmarx.sdk.utils.common.zip;
 
+import com.checkmarx.sdk.utils.ScanUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -16,7 +17,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class ZipUtils {
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(com.checkmarx.sdk.utils.ZipUtils.class);
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(ZipUtils.class);
 
     private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 

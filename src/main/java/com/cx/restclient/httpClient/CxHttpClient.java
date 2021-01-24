@@ -97,10 +97,6 @@ public class CxHttpClient implements Closeable {
     private Logger log;
     private TokenLoginResponse token;
     private String rootUri;
-    private final String refreshToken;
-    private String cxOrigin;
-    private Boolean useSSo;
-    private Boolean useNTLM;
     private LoginSettings lastLoginSettings;
     private String teamPath;
     private CookieStore cookieStore = new BasicCookieStore();
@@ -108,14 +104,10 @@ public class CxHttpClient implements Closeable {
     private final Map<String, String> customHeaders = new HashMap<>();
 
 
-    public CxHttpClient(String rootUri, String origin, boolean disableSSLValidation, boolean isSSO, String refreshToken,
-                        boolean isProxy, @Nullable ProxyConfig proxyConfig, Logger log, Boolean useNTLM) throws ASTRuntimeException {
+    public CxHttpClient(String rootUri, boolean disableSSLValidation, 
+                         Logger log) throws ASTRuntimeException {
         this.log = log;
         this.rootUri = rootUri;
-        this.refreshToken = refreshToken;
-        this.cxOrigin = origin;
-        this.useSSo = isSSO;
-        this.useNTLM = useNTLM;
         //create httpclient
         cb.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build());
         setSSLTls("TLSv1.2", log);
@@ -142,26 +134,10 @@ public class CxHttpClient implements Closeable {
             cb.setConnectionManager(getHttpConnectionManager(false));
         }
         cb.setConnectionManagerShared(true);
-
-        if (isProxy) {
-            if (!setCustomProxy(cb, proxyConfig, log)) {
-                cb.useSystemProperties();
-            }
-        }
-
-        if (Boolean.TRUE.equals(useSSo)) {
-            cb.setDefaultCredentialsProvider(new WindowsCredentialsProvider(new SystemDefaultCredentialsProvider()));
-            cb.setDefaultCookieStore(cookieStore);
-        } else {
-            cb.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
-        }
+        
+        cb.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
         cb.setDefaultAuthSchemeRegistry(getAuthSchemeProviderRegistry());
-
-        if (useNTLM)
-        {
-            setNTLMProxy(proxyConfig, cb, log);
-        }
-        else apacheClient = cb.build();
+        apacheClient = cb.build();
 }
 
     public void setRootUri(String rootUri) {
@@ -171,41 +147,7 @@ public class CxHttpClient implements Closeable {
     public String getRootUri() {
         return rootUri;
     }
-
-  
-
-        private void setNTLMProxy(ProxyConfig proxyConfig, HttpClientBuilder cb, Logger log) {
-
-        if (proxyConfig == null ||
-                StringUtils.isEmpty(proxyConfig.getHost()) ||
-                proxyConfig.getPort() == 0) {
-            log.info("Proxy configuration not provided.");
-            apacheClient = cb.build();
-            return;
-        }
-
-        log.info("Setting NTLM proxy for Checkmarx http client");
-        HttpHost proxy = new HttpHost(proxyConfig.getHost(), proxyConfig.getPort(), "http");
-
-        HashMap<String, String> userDomainMap = splitDomainAndTheUserName(proxyConfig.getUsername());
-        String user = userDomainMap.get(KEY_USER);
-        String domain = userDomainMap.get(KEY_DOMAIN);
-
-        CredentialsProvider credsProvider = new BasicCredentialsProvider();
-        final NTCredentials credentials = new NTCredentials(user, proxyConfig.getPassword(), null, domain);
-        credsProvider.setCredentials(AuthScope.ANY, credentials);
-
-        apacheClient = HttpClientBuilder.create()
-                .setDefaultCredentialsProvider(credsProvider)
-                .setProxy(proxy)
-                .setProxyAuthenticationStrategy(ProxyAuthenticationStrategy.INSTANCE)
-                .setDefaultRequestConfig(RequestConfig.custom()
-                        .setAuthenticationEnabled(true)
-                        .setProxyPreferredAuthSchemes(Arrays.asList(AuthPolicy.NTLM))
-                        .build()
-                )
-                .build();
-    }
+    
 
     private static HashMap<String,String> splitDomainAndTheUserName(String userName)
     {
@@ -311,15 +253,6 @@ public class CxHttpClient implements Closeable {
 
         if (settings.getRefreshToken() != null) {
             token = getAccessTokenFromRefreshToken(settings);
-        } else if (Boolean.TRUE.equals(useSSo)) {
-            if (settings.getVersion().equals("lower than 9.0")) {
-                ssoLegacyLogin();
-            } else {
-                token = ssoLogin();
-                // Don't delete this print. VS Code plugin relies on CxCLI output to work properly.
-                // Also we don't want the token to appear in regular logs.
-                System.out.printf("Access Token: %s%n", token.getAccess_token());   // NOSONAR: we need standard output here.
-            }
         } else {
             token = generateToken(settings);
         }
@@ -575,7 +508,7 @@ public class CxHttpClient implements Closeable {
         int statusCode = 0;
 
         try {
-            httpMethod.addHeader(ORIGIN_HEADER, cxOrigin);
+            //httpMethod.addHeader(ORIGIN_HEADER, "");
             httpMethod.addHeader(TEAM_PATH, this.teamPath);
             if (token != null) {
                 httpMethod.addHeader(HttpHeaders.AUTHORIZATION, token.getToken_type() + " " + token.getAccess_token());

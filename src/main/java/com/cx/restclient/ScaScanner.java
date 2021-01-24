@@ -12,13 +12,13 @@ import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.FilterInputFactory;
 import com.checkmarx.sdk.service.FilterValidator;
+import com.cx.restclient.ast.ScaRestClient;
 import com.cx.restclient.ast.dto.sca.AstScaConfig;
 import com.cx.restclient.ast.dto.sca.AstScaResults;
 import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
 import com.cx.restclient.ast.dto.sca.report.Finding;
-import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.dto.CommonScanResults;
-import com.cx.restclient.dto.ScannerType;
+import com.cx.restclient.configuration.RestClientConfig;
+import com.cx.restclient.dto.IResults;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +32,7 @@ import java.util.Optional;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class ScaClientImpl extends AbstractAstClient {
+public class ScaScanner extends AbstractScanner {
     private final ScaProperties scaProperties;
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
@@ -69,39 +69,37 @@ public class ScaClientImpl extends AbstractAstClient {
      * Convert Common Client representation of SCA results into an object from this SDK.
      */
     @Override
-    protected ASTResultsWrapper toResults(CommonScanResults scaResultsFromCommonClient) {
-        validateNotNull(scaResultsFromCommonClient.getScaResults());
+    protected ASTResultsWrapper toResults(IResults scanResults) {
+        
+        AstScaResults scaResults = (AstScaResults)scanResults;
+        validateNotNull(scaResults);
 
-        AstScaSummaryResults summary = scaResultsFromCommonClient.getScaResults().getSummary();
+        AstScaSummaryResults summary = scaResults.getSummary();
         Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summary);
 
         ModelMapper mapper = new ModelMapper();
-        SCAResults result = mapper.map(scaResultsFromCommonClient.getScaResults(), SCAResults.class);
+        SCAResults result = mapper.map(scaResults, SCAResults.class);
         result.getSummary().setFindingCounts(findingCountsPerSeverity);
 
         ASTResultsWrapper results = new ASTResultsWrapper();
         results.setScaResults(result);
         return results;
     }
-    
 
     @Override
-    protected void validateResults(CommonScanResults results) {
-        if (results!= null && results.getScaResults()!= null && results.getScaResults().getException() != null){
-            throw new ASTRuntimeException(results.getScaResults().getException().getMessage() );
-        }
+    protected IRestClient allocateClient(RestClientConfig restClientConfig) {
+        return new ScaRestClient(restClientConfig, log);
     }
-
-    @Override
+    
     public ASTResultsWrapper getLatestScanResults(ScanParams scanParams) {
-        CxScanConfig commonClientScanConfig = getScanConfig(scanParams);
+        RestClientConfig config = getScanConfig(scanParams);
         try {
-            CxClientDelegator client = new CxClientDelegator(commonClientScanConfig, log);
+            IRestClient client = allocateClient(config);
             client.init();
-            CommonScanResults commonClientResults = client.getLatestScanResults();
+            IResults results = client.getLatestScanResults();
             ASTResultsWrapper result;
-            if (commonClientResults.getScaResults() != null) {
-                result = toResults(commonClientResults);
+            if (results != null) {
+                result = toResults(results);
                 applyFilterToResults(result, scanParams);
             } else {
                 result = new ASTResultsWrapper();
@@ -116,18 +114,16 @@ public class ScaClientImpl extends AbstractAstClient {
      * Convert scanParams to an object that is used by underlying logic in Common Client.
      */
     @Override
-    protected CxScanConfig getScanConfig(ScanParams scanParams) {
-        CxScanConfig cxScanConfig = new CxScanConfig();
-        cxScanConfig.addScannerType(ScannerType.AST_SCA);
-
-        cxScanConfig.setProjectName(scanParams.getProjectName());
+    protected RestClientConfig getScanConfig(ScanParams scanParams) {
+        RestClientConfig restClientConfig = new RestClientConfig();
+        restClientConfig.setProjectName(scanParams.getProjectName());
 
         AstScaConfig scaConfig = getScaSpecificConfig(scanParams);
-        setSourceLocation(scanParams, cxScanConfig, scaConfig);
+        setSourceLocation(scanParams, restClientConfig, scaConfig);
 
-        cxScanConfig.setAstScaConfig(scaConfig);
+        restClientConfig.setAstScaConfig(scaConfig);
 
-        return cxScanConfig;
+        return restClientConfig;
     }
 
     private AstScaConfig getScaSpecificConfig(ScanParams scanParams) {

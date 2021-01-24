@@ -1,9 +1,9 @@
 package com.cx.restclient.ast;
 
 import com.checkmarx.sdk.exception.ASTRuntimeException;
-//import com.cx.restclient.common.ShragaUtils;
-import com.cx.restclient.common.ShragaUtils;
-import com.cx.restclient.configuration.CxScanConfig;
+//import com.cx.restclient.sca.utils.common.ShragaUtils;
+import com.checkmarx.sdk.utils.common.ShragaUtils;
+import com.cx.restclient.configuration.RestClientConfig;
 import com.cx.restclient.httpClient.CxHttpClient;
 import com.cx.restclient.httpClient.utils.ContentType;
 import com.cx.restclient.ast.dto.common.ScanInfoResponse;
@@ -22,16 +22,18 @@ import java.net.URLEncoder;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.cx.restclient.ast.AstClient.ENCODING;
+import static com.cx.restclient.ast.AbstractRestClient.ENCODING;
 
 @RequiredArgsConstructor
 public class AstWaiter {
+    private static final int CONNECTION_RETRIES = 3;
     private final CxHttpClient httpClient;
-    private final CxScanConfig config;
+    private final RestClientConfig config;
     private final String scannerDisplayName;
     private long startTimestampSec;
     private final Logger log;
-
+    private static final int DEFAULT_TIMEOUT = 30;
+    
     public void waitForScanToFinish(String scanId) {
         startTimestampSec = System.currentTimeMillis() / 1000;
         Duration timeout = getTimeout(config);
@@ -41,7 +43,7 @@ public class AstWaiter {
         AtomicInteger errorCounter = new AtomicInteger();
 
         try {
-            String urlPath = String.format(AstClient.GET_SCAN, URLEncoder.encode(scanId, ENCODING));
+            String urlPath = String.format(AbstractRestClient.GET_SCAN, URLEncoder.encode(scanId, ENCODING));
 
             Awaitility.await()
                     .atMost(timeout)
@@ -61,20 +63,17 @@ public class AstWaiter {
         }
     }
 
-    private static Duration getTimeout(CxScanConfig config) {
-        Integer rawTimeout = config.getOsaScanTimeoutInMinutes();
-        final int DEFAULT_TIMEOUT = 30;
-        rawTimeout = rawTimeout != null && rawTimeout > 0 ? rawTimeout : DEFAULT_TIMEOUT;
-        return Duration.ofMinutes(rawTimeout);
+    private static Duration getTimeout(RestClientConfig config) {
+        return Duration.ofMinutes(DEFAULT_TIMEOUT);
     }
 
-    private static Duration getPollInterval(CxScanConfig config) {
+    private static Duration getPollInterval(RestClientConfig config) {
         int rawPollInterval = ObjectUtils.defaultIfNull(config.getOsaProgressInterval(), 20);
         return Duration.ofSeconds(rawPollInterval);
     }
 
-    private static int getMaxErrorCount(CxScanConfig config) {
-        return ObjectUtils.defaultIfNull(config.getConnectionRetries(), 3);
+    private static int getMaxErrorCount(RestClientConfig config) {
+        return CONNECTION_RETRIES;
     }
 
     private boolean scanIsCompleted(String path, AtomicInteger errorCounter, int maxErrorCount) {

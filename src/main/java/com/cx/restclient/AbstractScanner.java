@@ -4,33 +4,32 @@ import com.checkmarx.sdk.dto.Filter;
 import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
-import com.checkmarx.sdk.service.AstClient;
 import com.cx.restclient.ast.dto.common.*;
 import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
-import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.dto.CommonScanResults;
+import com.checkmarx.sdk.utils.common.State;
+import com.cx.restclient.configuration.RestClientConfig;
+import com.cx.restclient.dto.IResults;
 import com.cx.restclient.dto.SourceLocationType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.util.EnumMap;
 import java.util.Map;
 
 @Slf4j
-public abstract class AbstractAstClient implements AstClient {
+public abstract class AbstractScanner  {
     
     private static final int SCA_SCAN_INTERVAL_IN_SECONDS = 5;
     protected static final String ERROR_PREFIX = "Scan cannot be initiated.";
-
-    @Override
+    private IRestClient client;
+    
     public ASTResultsWrapper scan(ScanParams scanParams) {
         validateScanParams(scanParams);
 
-        CxScanConfig scanConfig = getScanConfig(scanParams);
+        RestClientConfig scanConfig = getScanConfig(scanParams);
         scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
-        CommonScanResults scanResults = executeScan(scanConfig);
+        IResults scanResults = executeScan(scanConfig);
         
         ASTResultsWrapper results = toResults(scanResults);
         applyFilterToResults(results, scanParams);
@@ -40,25 +39,28 @@ public abstract class AbstractAstClient implements AstClient {
 
     protected abstract void applyFilterToResults(ASTResultsWrapper scaResults, ScanParams scanParams);
 
-    protected abstract ASTResultsWrapper toResults(CommonScanResults scanResults);
+    protected abstract ASTResultsWrapper toResults(IResults scanResults);
 
-    protected CommonScanResults executeScan(CxScanConfig cxScanConfig) {
-        CxClientDelegator client;
+    protected IResults executeScan(RestClientConfig restClientConfig) {
+
+        IResults finalResults;
+                
         try {
-            client = new CxClientDelegator(cxScanConfig, log);
-        } catch (MalformedURLException e) {
-            String message = String.format("Error creating %s instance.", CxClientDelegator.class.getSimpleName());
-            throw new ASTRuntimeException(message, e);
+            this.client = allocateClient(restClientConfig);
+            IResults initResults = client.init();
+            validateResults(initResults);
+            IResults intermediateResults = client.initiateScan();
+            validateResults(intermediateResults);
+            finalResults = client.waitForScanResults();
+            validateResults(finalResults);
+        }finally {
+            client.close();
         }
-        CommonScanResults initResults = client.init();
-        validateResults(initResults);
-        CommonScanResults intermediateResults = client.initiateScan();
-        validateResults(intermediateResults);
-        CommonScanResults results = client.waitForScanResults();
-        validateResults(results);
-        return results;
+        return finalResults;
     }
-    
+
+    protected abstract IRestClient allocateClient(RestClientConfig restClientConfig);
+
 
     protected Map<Filter.Severity, Integer> getFindingCountMap(AstScaSummaryResults summary) {
         EnumMap<Filter.Severity, Integer> result = new EnumMap<>(Filter.Severity.class);
@@ -75,7 +77,7 @@ public abstract class AbstractAstClient implements AstClient {
         }
     }
 
-    protected static void setSourceLocation(ScanParams scanParams, CxScanConfig scanConfig, ASTConfig astConfig) {
+    protected static void setSourceLocation(ScanParams scanParams, RestClientConfig scanConfig, ASTConfig astConfig) {
         if (localSourcesAreSpecified(scanParams)) {
             astConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
 
@@ -100,9 +102,18 @@ public abstract class AbstractAstClient implements AstClient {
         return !StringUtils.isAllEmpty(scanParams.getZipPath(), scanParams.getSourceDir());
     }
 
-    protected abstract void validateResults(CommonScanResults results);
 
-    protected abstract CxScanConfig getScanConfig(ScanParams scaParams);
+    protected void validateResults(IResults results) {
+        if (results!= null && results!= null && results.getException() != null){
+            throw new ASTRuntimeException(results.getException().getMessage() );
+        }else if(client.getState() != State.SUCCESS) {
+            throw new ASTRuntimeException("Scanner State Failure");
+        }
+        
+    }
+
+    protected abstract RestClientConfig getScanConfig(ScanParams scaParams);
 
     protected abstract void validateScanParams(ScanParams scaParams);
+    
 }

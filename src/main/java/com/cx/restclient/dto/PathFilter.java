@@ -1,6 +1,6 @@
 package com.cx.restclient.dto;
 
-import com.cx.restclient.common.ShragaUtils;
+import com.checkmarx.sdk.utils.common.ShragaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 

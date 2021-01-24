@@ -3,7 +3,7 @@ package com.cx.restclient.ast.dto.sca;
 import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
 import com.cx.restclient.ast.dto.sca.report.Finding;
 import com.cx.restclient.ast.dto.sca.report.Package;
-import com.cx.restclient.dto.Results;
+import com.cx.restclient.dto.IResults;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +18,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AstScaResults extends Results implements Serializable {
+public class AstScaResults extends IResults implements Serializable {
     private String scanId;
     private AstScaSummaryResults summary;
     private String webReportLink;

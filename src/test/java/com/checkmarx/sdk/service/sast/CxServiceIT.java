@@ -18,7 +18,6 @@ import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.service.CxAuthService;
 import com.checkmarx.sdk.service.CxService;
 import com.checkmarx.sdk.service.CxUserService;
-import com.cx.restclient.CxOsaService;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,8 +44,7 @@ public class CxServiceIT {
     private CxService service;
     @Autowired
     private CxAuthService authService;
-    @Autowired
-    private CxOsaService osaService;
+
     @Autowired
     private CxUserService userService;
     private String token=null;

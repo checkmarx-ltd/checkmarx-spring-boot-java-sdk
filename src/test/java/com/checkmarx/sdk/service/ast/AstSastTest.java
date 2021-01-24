@@ -4,27 +4,26 @@ import com.checkmarx.sdk.GithubProperties;
 import com.checkmarx.sdk.config.AstProperties;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.SpringConfiguration;
+import com.checkmarx.sdk.dto.ast.ASTResults;
+import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
+import com.checkmarx.sdk.dto.ast.ScanParams;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.service.CommonClientTest;
-import com.cx.restclient.CxClientDelegator;
+import com.cx.restclient.AstScanner;
 import com.cx.restclient.ast.dto.common.RemoteRepositoryInfo;
 import com.cx.restclient.ast.dto.sast.AstSastConfig;
-import com.cx.restclient.ast.dto.sast.AstSastResults;
 import com.cx.restclient.ast.dto.sast.report.AstSastSummaryResults;
 import com.cx.restclient.ast.dto.sast.report.Finding;
-import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.dto.CommonScanResults;
-import com.cx.restclient.dto.ScannerType;
+import com.cx.restclient.configuration.RestClientConfig;
 import com.cx.restclient.dto.SourceLocationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -52,35 +51,59 @@ public class AstSastTest extends CommonClientTest {
 
     @Test
     public void scan_remotePublicRepo() throws MalformedURLException {
-        CxScanConfig config = getScanConfig();
+        RestClientConfig config = getScanConfig();
 
-        CxClientDelegator client = new CxClientDelegator(config, log);
-        try {
-            client.init();
-            CommonScanResults initialResults = client.initiateScan();
-            validateInitialResults(initialResults);
-
-            CommonScanResults finalResults = client.waitForScanResults();
-            validateFinalResults(finalResults);
-        } catch (Exception e) {
-            failOnException(e);
-        }
+        AstScanner scanner = getScanner();
+        ASTResultsWrapper scanResults = scanner.scan(toSdkScanParams(config));
+        validateFinalResults(scanResults);
+ 
     }
 
-    private void validateFinalResults(CommonScanResults finalResults) {
+    private ScanParams toSdkScanParams(RestClientConfig config) throws MalformedURLException {
+        URL parsedUrl = new URL(config.getUrl());
+
+        ScanParams scanParams = ScanParams.builder()
+                .projectName(config.getProjectName())
+                .remoteRepoUrl(parsedUrl)
+                .filterConfiguration(FilterConfiguration.builder().build())
+                .build();
+        return scanParams;
+    }
+
+//    
+//    protected AstSastConfig getScanParams(RestClientConfig config) throws MalformedURLException {
+//        AstSastConfig astSastConfig = new AstSastConfig();
+//        astSastConfig.setWebAppUrl(astProperties.getWebAppUrl());
+//        astSastConfig.setApiUrl(astProperties.getApiUrl());
+//        astSastConfig.setPresetName(astProperties.getPreset());
+//        astSastConfig.setClientId(astProperties.getClientId());
+//        astSastConfig.setClientSecret(astProperties.getClientSecret());
+//        astSastConfig.setRemoteRepositoryInfo(new RemoteRepositoryInfo());
+//
+//        astSastConfig.getRemoteRepositoryInfo().setUrl(new URL(config.getUrl()));
+//        astSastConfig.getRemoteRepositoryInfo().setBranch("master");
+//        
+//        new ScanParams()
+//        return astSastConfig;
+//    }
+
+    protected AstScanner getScanner() {
+            return new AstScanner(astProperties);
+    }
+    private void validateFinalResults(ASTResultsWrapper finalResults) {
         Assert.assertNotNull("Final scan results are null.", finalResults);
 
-        AstSastResults astSastResults = finalResults.getAstResults();
+        ASTResults astSastResults = finalResults.getAstResults();
         Assert.assertNotNull("AST-SAST results are null.", astSastResults);
-        Assert.assertTrue("Scan ID is missing.", StringUtils.isNotEmpty(astSastResults.getScanId()));
-        Assert.assertTrue("Web report link is missing.", StringUtils.isNotEmpty(astSastResults.getWebReportLink()));
+        Assert.assertTrue("Scan ID is missing.", StringUtils.isNotEmpty(astSastResults.getResults().getScanId()));
+        Assert.assertTrue("Web report link is missing.", StringUtils.isNotEmpty(astSastResults.getResults().getWebReportLink()));
 
         validateFindings(astSastResults);
         validateSummary(astSastResults);
     }
 
-    private void validateSummary(AstSastResults astSastResults) {
-        AstSastSummaryResults summary = astSastResults.getSummary();
+    private void validateSummary(ASTResults astSastResults) {
+        AstSastSummaryResults summary = astSastResults.getResults().getSummary();
         Assert.assertNotNull("Summary is null.", summary);
         Assert.assertTrue("No medium-severity vulnerabilities.",
                 summary.getMediumVulnerabilityCount() > 0);
@@ -90,12 +113,12 @@ public class AstSastTest extends CommonClientTest {
 
         Assert.assertTrue("Expected total counter to be a positive value.", summary.getTotalCounter() > 0);
 
-        int actualFindingCount = astSastResults.getFindings().size();
+        int actualFindingCount = astSastResults.getResults().getFindings().size();
         Assert.assertEquals("Total finding count from summary doesn't correspond to the actual count.",
                 actualFindingCount,
                 summary.getTotalCounter());
 
-        long actualFindingCountExceptInfo = astSastResults.getFindings()
+        long actualFindingCountExceptInfo = astSastResults.getResults().getFindings()
                 .stream()
                 .filter(finding -> !StringUtils.equalsIgnoreCase(finding.getSeverity(), "info"))
                 .count();
@@ -109,8 +132,8 @@ public class AstSastTest extends CommonClientTest {
                 countFromSummaryExceptInfo);
     }
 
-    private void validateFindings(AstSastResults astSastResults) {
-        List<Finding> findings = astSastResults.getFindings();
+    private void validateFindings(ASTResults astSastResults) {
+        List<Finding> findings = astSastResults.getResults().getFindings();
         Assert.assertNotNull("Finding list is null.", findings);
         Assert.assertFalse("Finding list is empty.", findings.isEmpty());
 
@@ -166,15 +189,8 @@ public class AstSastTest extends CommonClientTest {
             Assert.fail("Error serializing finding to JSON.");
         }
     }
-
-
-    private void validateInitialResults(CommonScanResults initialResults) {
-        Assert.assertNotNull("Initial scan results are null.", initialResults);
-        Assert.assertNotNull("AST-SAST results are null.", initialResults.getAstResults());
-        Assert.assertTrue("Scan ID is missing.", StringUtils.isNotEmpty(initialResults.getAstResults().getScanId()));
-    }
-
-    private CxScanConfig getScanConfig() throws MalformedURLException {
+    
+    private RestClientConfig getScanConfig() throws MalformedURLException {
         AstSastConfig astConfig = AstSastConfig.builder()
                 .apiUrl(astProperties.getApiUrl())
                 .webAppUrl(astProperties.getWebAppUrl())
@@ -190,10 +206,9 @@ public class AstSastTest extends CommonClientTest {
         astConfig.setResultsPageSize(10);
         astConfig.setPresetName("Checkmarx Default");
 
-        CxScanConfig config = new CxScanConfig();
+        RestClientConfig config = new RestClientConfig();
         config.setAstSastConfig(astConfig);
         config.setProjectName("sdkAstProject");
-        config.addScannerType(ScannerType.AST_SAST);
         config.setOsaProgressInterval(5);
         return config;
     }

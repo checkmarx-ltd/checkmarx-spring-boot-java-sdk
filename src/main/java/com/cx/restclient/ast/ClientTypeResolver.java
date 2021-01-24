@@ -2,7 +2,7 @@ package com.cx.restclient.ast;
 
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.cx.restclient.ast.dto.sca.ClientType;
-import com.cx.restclient.configuration.CxScanConfig;
+import com.cx.restclient.configuration.RestClientConfig;
 import com.cx.restclient.httpClient.CxHttpClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -30,9 +30,9 @@ public class ClientTypeResolver {
 
     private CxHttpClient httpClient;
 
-    private CxScanConfig config;
+    private RestClientConfig config;
 
-    public ClientTypeResolver(CxScanConfig config) {
+    public ClientTypeResolver(RestClientConfig config) {
         this.config = config;
     }
 
@@ -89,14 +89,8 @@ public class ClientTypeResolver {
         if (httpClient == null) {
             httpClient = new CxHttpClient(
                     StringUtils.appendIfMissing(acBaseUrl, "/"),
-                    config.getCxOrigin(),
                     config.isDisableCertificateValidation(),
-                    config.isUseSSOLogin(),
-                    config.getRefreshToken(),
-                    config.isProxy(),
-                    config.getProxyConfig(),
-                    log,
-                    config.getNTLM());
+                    log);
         }
         return httpClient;
     }

@@ -1,4 +1,4 @@
-package com.cx.restclient.common;
+package com.checkmarx.sdk.utils.common;
 
 import java.net.MalformedURLException;
 import java.net.URL;

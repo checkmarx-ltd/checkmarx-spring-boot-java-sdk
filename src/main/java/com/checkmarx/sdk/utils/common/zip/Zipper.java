@@ -3,7 +3,7 @@
 // (powered by Fernflower decompiler)
 //
 
-package com.cx.restclient.common.zip;
+package com.checkmarx.sdk.utils.common.zip;
 
 
 import org.apache.commons.io.IOUtils;

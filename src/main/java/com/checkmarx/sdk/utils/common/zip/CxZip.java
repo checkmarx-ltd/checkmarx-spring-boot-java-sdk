@@ -1,4 +1,4 @@
-package com.cx.restclient.common.zip;
+package com.checkmarx.sdk.utils.common.zip;
 
 
 import com.cx.restclient.dto.PathFilter;

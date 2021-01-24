@@ -1,4 +1,4 @@
-package com.cx.restclient.common;
+package com.checkmarx.sdk.utils.common;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

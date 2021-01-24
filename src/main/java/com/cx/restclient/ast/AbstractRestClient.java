@@ -2,11 +2,10 @@ package com.cx.restclient.ast;
 
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.cx.restclient.ast.dto.common.*;
-import com.cx.restclient.common.State;
-import com.cx.restclient.common.UrlUtils;
-import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.configuration.PropertyFileLoader;
-import com.cx.restclient.dto.Results;
+import com.checkmarx.sdk.utils.common.State;
+import com.checkmarx.sdk.utils.common.UrlUtils;
+import com.cx.restclient.configuration.RestClientConfig;
+import com.cx.restclient.dto.IResults;
 import com.cx.restclient.dto.SourceLocationType;
 import com.cx.restclient.httpClient.CxHttpClient;
 import com.cx.restclient.httpClient.utils.ContentType;
@@ -28,13 +27,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class AstClient {
+public abstract class AbstractRestClient {
 
     private static final String LOCATION_HEADER = "Location";
     private static final String CREDENTIAL_TYPE_PASSWORD = "password";
     protected static final String ENCODING = StandardCharsets.UTF_8.name();
 
-    protected final CxScanConfig config;
+    protected final RestClientConfig config;
     protected final Logger log;
 
     protected CxHttpClient httpClient;
@@ -46,7 +45,7 @@ public abstract class AstClient {
     public static final String CREATE_SCAN = "/api/scans";
     public static final String GET_UPLOAD_URL = "/api/uploads";
 
-    public AstClient(CxScanConfig config, Logger log) {
+    public AbstractRestClient(RestClientConfig config, Logger log) {
         validate(config, log);
         this.config = config;
         this.log = log;
@@ -65,21 +64,15 @@ public abstract class AstClient {
     protected CxHttpClient createHttpClient(String baseUrl) {
         log.debug("Creating HTTP client.");
         CxHttpClient client = new CxHttpClient(baseUrl,
-                config.getCxOrigin(),
                 config.isDisableCertificateValidation(),
-                false,      // AST clients don't support SSO.
-                null,
-                config.isProxy(),
-                config.getProxyConfig(),
-                log,
-                config.getNTLM());
+                log);
         //initializing Team Path to prevent null pointer in login when called from automation
         client.setTeamPathHeader("");
 
         return client;
     }
 
-    private void validate(CxScanConfig config, Logger log) {
+    private void validate(RestClientConfig config, Logger log) {
         if (config == null && log == null) {
             throw new ASTRuntimeException("Both scan config and log must be provided.");
         }
@@ -228,7 +221,7 @@ public abstract class AstClient {
         return result;
     }
 
-    protected void handleInitError(Exception e, Results results) {
+    protected void handleInitError(Exception e, IResults results) {
         String message = String.format("Failed to init %s client. %s", getScannerDisplayName(), e.getMessage());
         log.error(message);
         setState(State.FAILED);

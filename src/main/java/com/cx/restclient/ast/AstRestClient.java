@@ -7,19 +7,16 @@ import com.cx.restclient.ast.dto.sast.AstSastResults;
 import com.cx.restclient.ast.dto.sast.SastScanConfigValue;
 import com.cx.restclient.ast.dto.sast.report.*;
 import com.cx.restclient.ast.dto.sca.ClientType;
-import com.cx.restclient.common.Scanner;
-import com.cx.restclient.common.State;
-import com.cx.restclient.common.UrlUtils;
-import com.cx.restclient.common.zip.CxZipUtils;
-import com.cx.restclient.configuration.CxScanConfig;
+import com.cx.restclient.IRestClient;
+import com.checkmarx.sdk.utils.common.State;
+import com.checkmarx.sdk.utils.common.UrlUtils;
+import com.checkmarx.sdk.utils.common.zip.CxZipUtils;
+import com.cx.restclient.configuration.RestClientConfig;
 import com.cx.restclient.dto.*;
 import com.cx.restclient.dto.scansummary.Severity;
 import com.cx.restclient.exception.CxHTTPClientException;
 import com.cx.restclient.httpClient.CxHttpClient;
 import com.cx.restclient.httpClient.utils.ContentType;
-//import com.cx.restclient.osa.dto.ClientType;
-//import com.cx.restclient.sast.utils.State;
-//import com.cx.restclient.sast.utils.zip.CxZipUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.EnumUtils;
@@ -38,7 +35,7 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class AstSastClient extends AstClient implements Scanner {
+public class AstRestClient extends AbstractRestClient implements IRestClient {
     
     private static final String ENGINE_TYPE_FOR_API = "sast";
     private static final String REF_TYPE_BRANCH = "branch";
@@ -62,7 +59,7 @@ public class AstSastClient extends AstClient implements Scanner {
 
     private String scanId;
 
-    public AstSastClient(CxScanConfig config, Logger log) {
+    public AstRestClient(RestClientConfig config, Logger log) {
         super(config, log);
 
         AstSastConfig astConfig = this.config.getAstSastConfig();
@@ -76,7 +73,7 @@ public class AstSastClient extends AstClient implements Scanner {
     }
 
     @Override
-    public Results init() {
+    public IResults init() {
         log.debug("Initializing {} client.", getScannerDisplayName());
         AstSastResults astResults = new AstSastResults();
         try {
@@ -131,7 +128,7 @@ public class AstSastClient extends AstClient implements Scanner {
     }
     
     @Override
-    public Results initiateScan() {
+    public IResults initiateScan() {
         log.info("----------------------------------- Initiating {} Scan:------------------------------------",
                 getScannerDisplayName());
 
@@ -197,7 +194,7 @@ public class AstSastClient extends AstClient implements Scanner {
     }
 
     @Override
-    public Results waitForScanResults() {
+    public IResults waitForScanResults() {
         AstSastResults result;
         try {
             waitForScanToFinish(scanId);
@@ -487,7 +484,7 @@ public class AstSastClient extends AstClient implements Scanner {
     }
 
     @Override
-    public Results getLatestScanResults() {
+    public IResults getLatestScanResults() {
         log.error("Unsupported Operation.");
         AstSastResults result = new AstSastResults();
         result.setException(new ASTRuntimeException(new UnsupportedOperationException()));

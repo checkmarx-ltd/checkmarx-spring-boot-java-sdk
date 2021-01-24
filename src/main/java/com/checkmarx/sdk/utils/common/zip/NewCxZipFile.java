@@ -1,4 +1,4 @@
-package com.cx.restclient.common.zip;
+package com.checkmarx.sdk.utils.common.zip;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;

@@ -1,4 +1,4 @@
-package com.cx.restclient.common.zip;
+package com.checkmarx.sdk.utils.common.zip;
 
 /**
  * Created by Galn on 05/03/2018.

@@ -6,21 +6,20 @@ import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.cx.restclient.ast.AstRestClient;
 import com.cx.restclient.ast.dto.common.SummaryResults;
 import com.cx.restclient.ast.dto.sast.AstSastConfig;
 import com.cx.restclient.ast.dto.sast.AstSastResults;
-import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.dto.CommonScanResults;
-import com.cx.restclient.dto.ScannerType;
+import com.cx.restclient.configuration.RestClientConfig;
+import com.cx.restclient.dto.IResults;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class AstClientImpl extends AbstractAstClient {
+public class AstScanner extends AbstractScanner {
     private final AstProperties astProperties;
 
     @Override
@@ -32,28 +31,20 @@ public class AstClientImpl extends AbstractAstClient {
      * Convert Common Client representation of AST results into an object from this SDK.
      */
     @Override
-    protected ASTResultsWrapper toResults(CommonScanResults scanResults) {
-        validateNotNull(scanResults.getAstResults());
-
-        ModelMapper mapper = new ModelMapper();
-        ASTResults astResults = mapper.map(scanResults.getAstResults(), ASTResults.class);
+    protected ASTResultsWrapper toResults(IResults scanResults) {
+        ASTResults astResults = new ASTResults((AstSastResults) scanResults);
+        
+        validateNotNull(astResults.getResults());
 
         return new ASTResultsWrapper(new SCAResults(), astResults);
     }
 
     @Override
-    public ASTResultsWrapper getLatestScanResults(ScanParams scanParams) {
-        log.warn("Getting latest AST scan results is not implemented yet.");
-        return new ASTResultsWrapper();
+    protected IRestClient allocateClient(RestClientConfig restClientConfig) {
+        return new AstRestClient(restClientConfig, log);
     }
-
-    @Override
-    protected void validateResults(CommonScanResults results) {
-        if (results != null && results.getAstResults() != null && results.getAstResults().getException() != null) {
-            throw new ASTRuntimeException(results.getAstResults().getException().getMessage());
-        }
-    }
-
+    
+    
     private void validateNotNull(AstSastResults astResults) {
         if (astResults == null) {
             throw new ASTRuntimeException("AST results are missing.");
@@ -69,17 +60,16 @@ public class AstClientImpl extends AbstractAstClient {
      * Convert scanParams to an object that is used by underlying logic in Common Client.
      */
     @Override
-    protected CxScanConfig getScanConfig(ScanParams scanParams) {
-        CxScanConfig cxScanConfig = new CxScanConfig();
-        cxScanConfig.addScannerType(ScannerType.AST_SAST);
-        //cxScanConfig.setSastEnabled(false);
-        cxScanConfig.setProjectName(scanParams.getProjectName());
+    protected RestClientConfig getScanConfig(ScanParams scanParams) {
+        RestClientConfig restClientConfig = new RestClientConfig();
+
+        restClientConfig.setProjectName(scanParams.getProjectName());
 
         AstSastConfig astConfig = getAstSpecificConfig();
-        setSourceLocation(scanParams, cxScanConfig, astConfig);
-        cxScanConfig.setAstSastConfig(astConfig);
+        setSourceLocation(scanParams, restClientConfig, astConfig);
+        restClientConfig.setAstSastConfig(astConfig);
 
-        return cxScanConfig;
+        return restClientConfig;
     }
 
     private AstSastConfig getAstSpecificConfig() {

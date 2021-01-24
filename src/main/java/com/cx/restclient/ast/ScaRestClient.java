@@ -9,13 +9,13 @@ import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
 import com.cx.restclient.ast.dto.sca.report.Finding;
 import com.cx.restclient.ast.dto.sca.report.Package;
 
-import com.cx.restclient.common.Scanner;
-import com.cx.restclient.common.State;
-import com.cx.restclient.common.UrlUtils;
-import com.cx.restclient.common.zip.CxZipUtils;
-import com.cx.restclient.common.zip.NewCxZipFile;
-import com.cx.restclient.common.zip.Zipper;
-import com.cx.restclient.configuration.CxScanConfig;
+import com.cx.restclient.IRestClient;
+import com.checkmarx.sdk.utils.common.State;
+import com.checkmarx.sdk.utils.common.UrlUtils;
+import com.checkmarx.sdk.utils.common.zip.CxZipUtils;
+import com.checkmarx.sdk.utils.common.zip.NewCxZipFile;
+import com.checkmarx.sdk.utils.common.zip.Zipper;
+import com.cx.restclient.configuration.RestClientConfig;
 import com.cx.restclient.dto.*;
 
 import com.cx.restclient.exception.CxHTTPClientException;
@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 /**
  * SCA - Software Composition Analysis - is the successor of OSA.
  */
-public class AstScaClient extends AstClient implements Scanner {
+public class ScaRestClient extends AbstractRestClient implements IRestClient {
     
     private static final String RISK_MANAGEMENT_API = "/risk-management/";
     private static final String PROJECTS = RISK_MANAGEMENT_API + "projects";
@@ -94,7 +94,7 @@ public class AstScaClient extends AstClient implements Scanner {
     private CxSCAResolvingConfiguration resolvingConfiguration;
     private static final String FINGERPRINT_FILE_NAME = ".cxsca.sig";
 
-    public AstScaClient(CxScanConfig config, Logger log) {
+    public ScaRestClient(RestClientConfig config, Logger log) {
         super(config, log);
 
         this.astScaConfig = config.getAstScaConfig();
@@ -164,7 +164,7 @@ public class AstScaClient extends AstClient implements Scanner {
     }
 
     @Override
-    public Results init() {
+    public IResults init() {
         log.debug("Initializing {} client.", getScannerDisplayName());
         AstScaResults scaResults = new AstScaResults();
         try {
@@ -193,16 +193,11 @@ public class AstScaClient extends AstClient implements Scanner {
      * @throws ASTRuntimeException in case of a network error, scan failure or when scan is aborted by timeout.
      */
     @Override
-    public Results waitForScanResults() {
+    public IResults waitForScanResults() {
         AstScaResults scaResults;
         try {
             waitForScanToFinish(scanId);
             scaResults = tryGetScanResults().orElseThrow(() -> new ASTRuntimeException("Unable to get scan results: scan not found."));
-            if (config.getScaJsonReport() != null) {
-                writeJsonToFile(REPORT_SCA_FINDINGS + JSON_EXTENSION, scaResults.getFindings(), config.getReportsDir(), config.getOsaGenerateJsonReport(), log);
-                writeJsonToFile(REPORT_SCA_PACKAGES + JSON_EXTENSION, scaResults.getPackages(), config.getReportsDir(), config.getOsaGenerateJsonReport(), log);
-                writeJsonToFile(REPORT_SCA_SUMMARY + JSON_EXTENSION, scaResults.getSummary(), config.getReportsDir(), config.getOsaGenerateJsonReport(), log);
-            }
         } catch (ASTRuntimeException e) {
             log.error(e.getMessage());
             scaResults = new AstScaResults();
@@ -230,7 +225,7 @@ public class AstScaClient extends AstClient implements Scanner {
     }
     
     @Override
-    public Results initiateScan() {
+    public IResults initiateScan() {
         log.info("----------------------------------- Initiating {} Scan:------------------------------------",
                 getScannerDisplayName());
         AstScaResults scaResults = new AstScaResults();
@@ -271,8 +266,8 @@ public class AstScaClient extends AstClient implements Scanner {
     protected HttpResponse submitAllSourcesFromLocalDir(String projectId, String zipFilePath) throws IOException {
         log.info("Using local directory flow.");
 
-        PathFilter filter = new PathFilter(config.getOsaFolderExclusions(), config.getOsaFilterPattern(), log);
-        String sourceDir = config.getEffectiveSourceDirForDependencyScan();
+        PathFilter filter = new PathFilter("", "", log);
+        String sourceDir = config.getSourceDir();
         byte[] zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
 
         return initiateScanForUpload(projectId, zipFile, zipFilePath);
@@ -281,9 +276,9 @@ public class AstScaClient extends AstClient implements Scanner {
     private HttpResponse submitManifestsAndFingerprintsFromLocalDir(String projectId) throws IOException {
         log.info("Using manifest only and fingerprint flow");
 
-        String sourceDir = config.getEffectiveSourceDirForDependencyScan();
+        String sourceDir = config.getSourceDir();
 
-        PathFilter userFilter = new PathFilter(config.getOsaFolderExclusions(), config.getOsaFilterPattern(), log);
+        PathFilter userFilter = new PathFilter("", "", log);
         if (ArrayUtils.isNotEmpty(userFilter.getIncludes()) && !ArrayUtils.contains(userFilter.getIncludes(), "**")) {
             userFilter.addToIncludes("**");
         }
@@ -323,7 +318,7 @@ public class AstScaClient extends AstClient implements Scanner {
         }
         File tempFile = getZipFile();
         log.debug("Collecting files to zip archive: {}", tempFile.getAbsolutePath());
-        long maxZipSizeBytes = config.getMaxZipSize() != null ? config.getMaxZipSize() * 1024 * 1024 : CxZipUtils.MAX_ZIP_SIZE_BYTES;
+        long maxZipSizeBytes = CxZipUtils.MAX_ZIP_SIZE_BYTES;
 
         try (NewCxZipFile zipper = new NewCxZipFile(tempFile, maxZipSizeBytes, log)) {
             zipper.addMultipleFilesToArchive(new File(sourceDir), paths);
@@ -405,7 +400,7 @@ public class AstScaClient extends AstClient implements Scanner {
      * @return results of the latest successful scan for a project, if present; null - otherwise.
      */
     @Override
-    public Results getLatestScanResults() {
+    public IResults getLatestScanResults() {
         AstScaResults result = new AstScaResults();
         try {
             log.info("Getting latest scan results.");
