@@ -565,6 +565,10 @@ public class CxGoClientImpl implements ScannerClient {
             xIssue.setDetails(new HashMap<>());
         }
 
+        if (sastResult.getState() == SASTScanResult.State.NOT_EXPLOITABLE.getValue()) {
+            setXIssueFalsePositiveCount(xIssue);
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("source",getNodeData(sastResult.getSourceNode()));
         result.put("sink",getNodeData(sastResult.getSinkNode()));
@@ -621,6 +625,10 @@ public class CxGoClientImpl implements ScannerClient {
                 .description(finding.getDescription())
                 .scaDetails(scaDetails)
                 .build());
+    }
+
+    private void setXIssueFalsePositiveCount(ScanResults.XIssue xIssue) {
+        xIssue.setFalsePositiveCount(xIssue.getFalsePositiveCount() +1);
     }
 
     private static Finding toFinding(SCAScanResult scaResult) {
