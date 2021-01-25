@@ -60,7 +60,7 @@ public class FilterValidator {
         } else {
             result = passesSimpleFilter(finding, filterConfiguration);
         }
-
+        
         return result;
     }
 
@@ -184,4 +184,5 @@ public class FilterValidator {
         }
         return isMatch;
     }
+
 }
