@@ -565,7 +565,7 @@ public class CxGoClientImpl implements ScannerClient {
             xIssue.setDetails(new HashMap<>());
         }
 
-        if (sastResult.getState() == 2) { // Not Exploitable
+        if (sastResult.getState() == SASTScanResult.State.NOT_EXPLOITABLE.getValue()) {
             setXIssueFalsePositiveCount(xIssue);
         }
 
