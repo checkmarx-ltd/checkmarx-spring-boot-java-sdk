@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.config;
 
-import com.cx.restclient.dto.scansummary.Severity;
+import com.checkmarx.sdk.dto.scansummary.Severity;
 import com.typesafe.config.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

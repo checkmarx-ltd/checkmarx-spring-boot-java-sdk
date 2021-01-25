@@ -1,9 +1,9 @@
 package com.checkmarx.sdk.service;
 
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.exception.CheckmarxException;
-//import com.cx.restclient.osa.dto.OSAResults;
+//import com.checkmarx.sdk.scanner.restclient.osa.dto.OSAResults;
 
 import java.util.List;
 

@@ -4,7 +4,7 @@ import checkmarx.wsdl.portal.*;
 import com.checkmarx.sdk.ShardManager.ShardSession;
 import com.checkmarx.sdk.ShardManager.ShardSessionTracker;
 import com.checkmarx.sdk.config.CxProperties;
-import com.checkmarx.sdk.dto.CxUser;
+import com.checkmarx.sdk.dto.sast.CxUser;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CheckmarxLegacyException;
 import com.checkmarx.sdk.utils.ScanUtils;

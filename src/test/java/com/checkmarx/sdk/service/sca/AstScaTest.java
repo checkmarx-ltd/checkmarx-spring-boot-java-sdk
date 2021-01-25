@@ -2,18 +2,16 @@ package com.checkmarx.sdk.service.sca;
 
 import com.checkmarx.sdk.GithubProperties;
 import com.checkmarx.sdk.config.*;
-import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
+import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.FilterInputFactory;
 import com.checkmarx.sdk.service.FilterValidator;
-import com.cx.restclient.AstScanner;
-import com.cx.restclient.ScaScanner;
-import com.cx.restclient.ast.dto.common.RemoteRepositoryInfo;
-import com.cx.restclient.ast.dto.sca.AstScaConfig;
-import com.cx.restclient.configuration.RestClientConfig;
-import com.cx.restclient.dto.ProxyConfig;
-import com.cx.restclient.dto.SourceLocationType;
+import com.checkmarx.sdk.service.ScaScanner;
+import com.checkmarx.sdk.dto.RemoteRepositoryInfo;
+import com.checkmarx.sdk.dto.sca.AstScaConfig;
+import com.checkmarx.sdk.config.RestClientConfig;
+import com.checkmarx.sdk.dto.SourceLocationType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.*;
 import org.apache.commons.io.IOUtils;
@@ -65,10 +63,10 @@ public class AstScaTest extends ScaTestsBase {
         return config;
     }
 
-    protected ASTResultsWrapper runScan(RestClientConfig config) {
+    protected AstScaResults runScan(RestClientConfig config) {
 
         ScaScanner scanner = getScanner();
-        ASTResultsWrapper results = scanner.scan(getScanParams(config));
+        AstScaResults results = scanner.scan(getScanParams(config));
 
         return results;
     }
@@ -117,7 +115,7 @@ public class AstScaTest extends ScaTestsBase {
             sourcesDir = extractTestProjectFromResources();
             config.setSourceDir(sourcesDir.toString());
 
-            ASTResultsWrapper scanResults = runScan(config);
+            AstScaResults scanResults = runScan(config);
             verifyScanResults(scanResults);
         } finally {
             deleteDir(sourcesDir);
@@ -137,7 +135,7 @@ public class AstScaTest extends ScaTestsBase {
     @Test
     public void getLatestScanResults_existingResults() {
         RestClientConfig config = initScaConfig(false);
-        ASTResultsWrapper latestResults = getLatestResults(config);
+        AstScaResults latestResults = getLatestResults(config);
         verifyScanResults(latestResults);
     }
 
@@ -172,7 +170,7 @@ public class AstScaTest extends ScaTestsBase {
         log.info("Checking that scaResults are null for the {} project", projectName);
         RestClientConfig config = initScaConfig(false);
         config.setProjectName(projectName);
-        ASTResultsWrapper latestResults = getLatestResults(config);
+        AstScaResults latestResults = getLatestResults(config);
         Assert.assertNotNull("scanResults must not be null.", latestResults);
         Assert.assertNull("scaResults must be null.", latestResults.getScaResults());
     }
@@ -183,7 +181,7 @@ public class AstScaTest extends ScaTestsBase {
         scanRemoteRepo(githubProperties.getUrl(), true);
     }
 
-    private ASTResultsWrapper getLatestResults(RestClientConfig config) {
+    private AstScaResults getLatestResults(RestClientConfig config) {
         
             ScaScanner client = getScanner();
             Assert.assertNotNull(client);
@@ -212,7 +210,7 @@ public class AstScaTest extends ScaTestsBase {
             sourcesDir = extractTestProjectFromResources();
             config.setSourceDir(sourcesDir.toString());
 
-            ASTResultsWrapper scanResults = runScan(config);
+            AstScaResults scanResults = runScan(config);
             verifyScanResults(scanResults);
         } finally {
             deleteDir(sourcesDir);
@@ -262,7 +260,7 @@ public class AstScaTest extends ScaTestsBase {
     
     private void scanRemoteRepo(String repoUrlProp, boolean useOnPremAuthentication) throws MalformedURLException {
         RestClientConfig config = initScaConfig(repoUrlProp, useOnPremAuthentication);
-        ASTResultsWrapper scanResults = runScan(config);
+        AstScaResults scanResults = runScan(config);
         verifyScanResults(scanResults);
     }
 

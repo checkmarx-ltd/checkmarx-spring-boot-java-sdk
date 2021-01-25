@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.service.sast;
 
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;

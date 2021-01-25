@@ -1,12 +1,6 @@
 package com.checkmarx.sdk.service;
 
 
-import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
-import com.checkmarx.sdk.dto.ast.ScanParams;
-import com.cx.restclient.AbstractScanner;
-import com.cx.restclient.AstScanner;
-import com.cx.restclient.ScaScanner;
-import com.cx.restclient.configuration.RestClientConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;

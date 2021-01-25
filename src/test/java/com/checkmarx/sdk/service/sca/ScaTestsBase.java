@@ -1,13 +1,11 @@
 package com.checkmarx.sdk.service.sca;
 
-import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
+import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.Summary;
 import com.checkmarx.sdk.service.CommonClientTest;
-import com.cx.restclient.ast.dto.sca.AstScaResults;
-import com.cx.restclient.ast.dto.sca.report.AstScaSummaryResults;
-import com.cx.restclient.ast.dto.sca.report.Finding;
-import com.cx.restclient.ast.dto.sca.report.Package;
+import com.checkmarx.sdk.dto.sca.report.Finding;
+import com.checkmarx.sdk.dto.sca.report.Package;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,7 +20,7 @@ public  abstract class ScaTestsBase extends CommonClientTest {
     protected static final String PACKED_SOURCES_TO_SCAN = "sources-to-scan.zip";
     
 
-    protected void verifyScanResults(ASTResultsWrapper results) {
+    protected void verifyScanResults(AstScaResults results) {
         assertNotNull("Scan results are null.", results);
 
         SCAResults scaResults = results.getScaResults();

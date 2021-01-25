@@ -1,8 +1,8 @@
 package com.checkmarx.sdk.utils.common.zip;
 
 
-import com.cx.restclient.configuration.RestClientConfig;
-import com.cx.restclient.dto.PathFilter;
+import com.checkmarx.sdk.config.RestClientConfig;
+import com.checkmarx.sdk.dto.PathFilter;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 

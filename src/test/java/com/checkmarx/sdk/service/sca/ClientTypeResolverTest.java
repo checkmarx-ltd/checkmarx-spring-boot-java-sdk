@@ -4,8 +4,9 @@ import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.CommonClientTest;
-import com.cx.restclient.ast.dto.sca.ClientType;
-import com.cx.restclient.configuration.RestClientConfig;
+import com.checkmarx.sdk.dto.sca.ClientType;
+import com.checkmarx.sdk.config.RestClientConfig;
+import com.checkmarx.sdk.utils.ClientTypeResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -49,7 +50,7 @@ public class ClientTypeResolverTest extends CommonClientTest {
     }
 
     private static void checkThatExceptionIsThrown(String url) {
-        com.cx.restclient.ast.ClientTypeResolver resolver = new com.cx.restclient.ast.ClientTypeResolver(new RestClientConfig());
+        ClientTypeResolver resolver = new ClientTypeResolver(new RestClientConfig());
         try {
             resolver.determineClientType(url);
             Assert.fail("Expected exception, but didn't get any.");
@@ -61,7 +62,7 @@ public class ClientTypeResolverTest extends CommonClientTest {
     }
 
     private void testDetermineClientType(String urlPropName) {
-        com.cx.restclient.ast.ClientTypeResolver resolver = new com.cx.restclient.ast.ClientTypeResolver(new RestClientConfig());
+        ClientTypeResolver resolver = new ClientTypeResolver(new RestClientConfig());
         ClientType clientType = resolver.determineClientType(urlPropName);
         Assert.assertNotNull("Client type is null.", clientType);
         Assert.assertTrue("Client ID is empty.", StringUtils.isNotEmpty(clientType.getClientId()));

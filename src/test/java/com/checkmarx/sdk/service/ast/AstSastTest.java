@@ -5,17 +5,17 @@ import com.checkmarx.sdk.config.AstProperties;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.dto.ast.ASTResults;
-import com.checkmarx.sdk.dto.ast.ASTResultsWrapper;
+import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.service.CommonClientTest;
-import com.cx.restclient.AstScanner;
-import com.cx.restclient.ast.dto.common.RemoteRepositoryInfo;
-import com.cx.restclient.ast.dto.sast.AstSastConfig;
-import com.cx.restclient.ast.dto.sast.report.AstSastSummaryResults;
-import com.cx.restclient.ast.dto.sast.report.Finding;
-import com.cx.restclient.configuration.RestClientConfig;
-import com.cx.restclient.dto.SourceLocationType;
+import com.checkmarx.sdk.service.AstScanner;
+import com.checkmarx.sdk.dto.RemoteRepositoryInfo;
+import com.checkmarx.sdk.dto.ast.AstSastConfig;
+import com.checkmarx.sdk.dto.ast.report.AstSastSummaryResults;
+import com.checkmarx.sdk.dto.ast.report.Finding;
+import com.checkmarx.sdk.config.RestClientConfig;
+import com.checkmarx.sdk.dto.SourceLocationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ public class AstSastTest extends CommonClientTest {
         RestClientConfig config = getScanConfig();
 
         AstScanner scanner = getScanner();
-        ASTResultsWrapper scanResults = scanner.scan(toSdkScanParams(config));
+        AstScaResults scanResults = scanner.scan(toSdkScanParams(config));
         validateFinalResults(scanResults);
  
     }
@@ -89,7 +89,7 @@ public class AstSastTest extends CommonClientTest {
     protected AstScanner getScanner() {
             return new AstScanner(astProperties);
     }
-    private void validateFinalResults(ASTResultsWrapper finalResults) {
+    private void validateFinalResults(AstScaResults finalResults) {
         Assert.assertNotNull("Final scan results are null.", finalResults);
 
         ASTResults astSastResults = finalResults.getAstResults();
