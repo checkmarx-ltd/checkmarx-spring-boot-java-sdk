@@ -11,6 +11,7 @@
                         <readTimeout>120000</readTimeout>
                     </put>
                 </httpConfiguration>
+                <stagingProgressTimeoutMinutes>35</stagingProgressTimeoutMinutes>
             </configuration>
         </server>
     </servers>
