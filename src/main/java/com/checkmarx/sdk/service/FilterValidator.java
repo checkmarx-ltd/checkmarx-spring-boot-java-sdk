@@ -61,7 +61,6 @@ public class FilterValidator {
             result = passesSimpleFilter(finding, filterConfiguration);
         }
 
-        logFilteringResult(finding, result);
         return result;
     }
 
@@ -176,13 +175,5 @@ public class FilterValidator {
     private static boolean fieldMatches(String fieldValue, List<String> allowedValues) {
         return allowedValues.isEmpty() ||
                 allowedValues.contains(fieldValue.toUpperCase(Locale.ROOT));
-    }
-
-    private static void logFilteringResult(FilterInput finding, boolean passes) {
-        if (log.isDebugEnabled()) {
-            String idForLog = StringUtils.isNotEmpty(finding.getId()) ? finding.getId() : "n/a";
-            String message = (passes ? "passes" : "does not pass");
-            log.debug("Finding (ID: {}) {} the filter.", idForLog, message);
-        }
     }
 }
