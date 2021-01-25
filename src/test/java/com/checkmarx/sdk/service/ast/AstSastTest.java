@@ -60,11 +60,10 @@ public class AstSastTest extends CommonClientTest {
     }
 
     private ScanParams toSdkScanParams(RestClientConfig config) throws MalformedURLException {
-        URL parsedUrl = new URL(config.getUrl());
-
+        
         ScanParams scanParams = ScanParams.builder()
                 .projectName(config.getProjectName())
-                .remoteRepoUrl(parsedUrl)
+                .remoteRepoUrl(config.getAstSastConfig().getRemoteRepositoryInfo().getUrl())
                 .filterConfiguration(FilterConfiguration.builder().build())
                 .build();
         return scanParams;
@@ -139,12 +138,9 @@ public class AstSastTest extends CommonClientTest {
 
         boolean someNodeListsAreEmpty = findings.stream().anyMatch(finding -> finding.getNodes().isEmpty());
         Assert.assertFalse("Some of the finding node lists are empty.", someNodeListsAreEmpty);
-
-                
+        
         log.info("Validating each finding.");
-
         findings.forEach(this::validateFinding);
-
         validateDescriptions(findings);
     }
 
