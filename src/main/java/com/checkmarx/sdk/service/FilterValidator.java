@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.service;
 
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
@@ -60,7 +60,7 @@ public class FilterValidator {
         } else {
             result = passesSimpleFilter(finding, filterConfiguration);
         }
-
+        
         return result;
     }
 
@@ -184,4 +184,5 @@ public class FilterValidator {
         }
         return isMatch;
     }
+
 }

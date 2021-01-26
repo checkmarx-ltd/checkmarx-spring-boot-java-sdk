@@ -3,7 +3,7 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.*;
@@ -12,6 +12,7 @@ import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
+import com.checkmarx.sdk.service.scanner.CxClient;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,7 +55,7 @@ import java.util.*;
  * Class used to orchestrate submitting scans and retrieving results
  */
 @Service
-public class CxService implements CxClient{
+public class CxService implements CxClient {
 
     private static final String UNKNOWN = "-1";
     private static final Integer UNKNOWN_INT = -1;

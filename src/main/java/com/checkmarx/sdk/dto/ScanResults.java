@@ -1,8 +1,8 @@
 package com.checkmarx.sdk.dto;
 
 import com.checkmarx.sdk.dto.ast.ASTResults;
-import com.cx.restclient.ast.dto.sca.report.Finding;
-import com.cx.restclient.ast.dto.sca.report.Package;
+import com.checkmarx.sdk.dto.sca.report.Finding;
+import com.checkmarx.sdk.dto.sca.report.Package;
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 
@@ -188,6 +188,7 @@ public class ScanResults{
     public boolean isSastResults(){
         return Optional.ofNullable(getScanSummary()).isPresent();
     }
+    
     @Override
     public String toString() {
         return "ScanResults(osa=" + this.getOsa()  + ", link=" + this.getLink() + ", files=" + this.getFiles() + ", loc=" + this.getLoc() + ", scanType=" + this.getScanType() + ", xIssues=" + this.getXIssues() + ")";

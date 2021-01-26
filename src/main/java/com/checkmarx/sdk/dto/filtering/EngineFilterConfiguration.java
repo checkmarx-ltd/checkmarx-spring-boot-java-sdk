@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.dto.filtering;
 
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

@@ -3,8 +3,8 @@ package com.checkmarx.sdk.dto.ast;
 
 import lombok.Getter;
 import lombok.Setter;
-import com.cx.restclient.ast.dto.sca.report.Finding;
-import com.cx.restclient.ast.dto.sca.report.Package;
+import com.checkmarx.sdk.dto.sca.report.Finding;
+import com.checkmarx.sdk.dto.sca.report.Package;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.List;

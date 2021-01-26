@@ -3,8 +3,8 @@ package com.checkmarx.sdk.service.sast;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.config.CxProperties;
-import com.checkmarx.sdk.dto.CxUser;
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.CxUser;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.CxProject;
 import com.checkmarx.sdk.dto.cx.CxRole;
@@ -18,7 +18,7 @@ import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.service.CxAuthService;
 import com.checkmarx.sdk.service.CxService;
 import com.checkmarx.sdk.service.CxUserService;
-import com.cx.restclient.CxOsaService;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,6 +37,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringRunner.class)
 @Import(SpringConfiguration.class)
 @SpringBootTest
+@Slf4j
 public class CxServiceIT {
 
     @Autowired
@@ -45,8 +46,7 @@ public class CxServiceIT {
     private CxService service;
     @Autowired
     private CxAuthService authService;
-    @Autowired
-    private CxOsaService osaService;
+
     @Autowired
     private CxUserService userService;
     private String token=null;
@@ -78,7 +78,7 @@ public class CxServiceIT {
         ScanResults results = service.getReportContentByScanId(x, filterConfiguration);
         assertNotNull(results);
     }
-
+    
     @Test
     public void login() {
         if(token != null) {
@@ -126,7 +126,6 @@ public class CxServiceIT {
 
     @Test
     public void getRoleId() {
-        login();
         try {
             Integer id = service.getRoleId("Admin");
             assertNotNull(id);
@@ -140,7 +139,6 @@ public class CxServiceIT {
 
     @Test
     public void createTeam() {
-        login();
         try {
             String id = service.getTeamId(properties.getTeam());
             String newTeamId = service.createTeam(id, "Whatever");
@@ -152,7 +150,6 @@ public class CxServiceIT {
 
     @Test
     public void deleteTeam() {
-        login();
         try {
             String id = service.getTeamId(properties.getTeam().concat(properties.getTeamPathSeparator()).concat("Whatever"));
             service.deleteTeam(id);
@@ -163,7 +160,6 @@ public class CxServiceIT {
 
     @Test
     public void getLastScanDate() {
-        login();
         try {
             String teamId = service.getTeamId(properties.getTeam());
             Integer projectId = service.getProjectId(teamId, "Riches");
@@ -279,15 +275,18 @@ public class CxServiceIT {
             fail("Unexpected CheckmarxException");
         }
     }
-
+    
     @Test
     public void createScan() {
+        log.info("Creating scan");
+        login();
         try {
             CxScanParams params = new CxScanParams()
                     .withSourceType(CxScanParams.Type.GIT)
                     .withGitUrl("https://github.com/Custodela/Riches.git")
                     .withBranch("refs/heads/master")
                     .withProjectName("CxSBSDK-IT");
+                   // .withProjectName("Riches");
             //String teamId = service.getTeamId(properties.getTeam());
             Integer id = service.createScan(params, "Automated Comment");
             assertNotNull(id);
