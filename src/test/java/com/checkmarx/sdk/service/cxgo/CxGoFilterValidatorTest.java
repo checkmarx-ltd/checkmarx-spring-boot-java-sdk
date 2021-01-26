@@ -148,15 +148,7 @@ public class CxGoFilterValidatorTest {
                 .simpleFilters(Collections.singletonList(score))
                 .build();
 
-        FilterInput input = FilterInput.builder()
-                .id("424")
-                .score(valueToCheck)
-                .severity("high")
-                .cwe("cwe")
-                .state("to-verify")
-                .category("XSS")
-                .status("new")
-                .build();
+        FilterInput input = FilterInput.builder().id("424").score(valueToCheck).build();
 
         String message = String.format("Unexpected score filter result (valueToCheck: %f, valueFromFilter: %s)",
                 valueToCheck, valueFromFilter);
