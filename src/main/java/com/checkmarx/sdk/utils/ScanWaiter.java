@@ -69,7 +69,7 @@ public class ScanWaiter {
     }
 
     private static Duration getPollInterval(RestClientConfig config) {
-        int rawPollInterval = ObjectUtils.defaultIfNull(config.getOsaProgressInterval(), 20);
+        int rawPollInterval = ObjectUtils.defaultIfNull(config.getProgressInterval(), 20);
         return Duration.ofSeconds(rawPollInterval);
     }
 

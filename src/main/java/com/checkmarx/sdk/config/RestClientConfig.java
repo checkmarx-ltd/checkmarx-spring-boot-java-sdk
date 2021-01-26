@@ -29,7 +29,7 @@ public class RestClientConfig  {
     private TokenLoginResponse token;
     private File zipFile;
     
-    private Integer osaProgressInterval;
+    private Integer progressInterval;
     private AstScaConfig astScaConfig;
     private AstConfig astConfig;
 

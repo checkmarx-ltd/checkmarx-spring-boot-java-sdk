@@ -30,7 +30,7 @@ public abstract class AbstractScanner  {
         validateScanParams(scanParams);
 
         RestClientConfig scanConfig = getScanConfig(scanParams);
-        scanConfig.setOsaProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
+        scanConfig.setProgressInterval(SCA_SCAN_INTERVAL_IN_SECONDS);
         ResultsBase scanResults = executeScan(scanConfig);
         
         AstScaResults results = toResults(scanResults);

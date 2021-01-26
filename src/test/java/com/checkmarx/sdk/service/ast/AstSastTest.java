@@ -188,7 +188,7 @@ public class AstSastTest extends CommonClientTest {
         RestClientConfig config = new RestClientConfig();
         config.setAstConfig(astConfig);
         config.setProjectName("sdkAstProject");
-        config.setOsaProgressInterval(5);
+        config.setProgressInterval(5);
         return config;
     }
 }

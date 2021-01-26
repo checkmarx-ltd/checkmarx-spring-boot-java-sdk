@@ -74,7 +74,7 @@ public class AstScaTest extends ScaTestsBase {
     protected RestClientConfig initScaConfig(boolean useOnPremAuthentication){
         RestClientConfig config = new RestClientConfig();
         config.setProjectName("sdkScaProject");
-        config.setOsaProgressInterval(5);
+        config.setProgressInterval(5);
         AstScaConfig sca = getScaConfig(useOnPremAuthentication);
         config.setAstScaConfig(sca);
 
