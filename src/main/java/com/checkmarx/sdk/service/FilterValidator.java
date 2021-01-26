@@ -175,9 +175,12 @@ public class FilterValidator {
     private static boolean fieldMatches(String fieldValue, List<String> allowedValues) {
         boolean isMatch = false;
 
+        if (allowedValues.isEmpty()) {
+            return true;
+        }
+
         if (fieldValue != null) {
-            isMatch = allowedValues.isEmpty() ||
-                    allowedValues.contains(fieldValue.toUpperCase(Locale.ROOT));
+            isMatch =  allowedValues.contains(fieldValue.toUpperCase(Locale.ROOT));
         }
         return isMatch;
     }
