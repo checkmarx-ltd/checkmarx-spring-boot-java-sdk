@@ -12,7 +12,7 @@ import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
-import com.checkmarx.sdk.scanner.client.CxClient;
+import com.checkmarx.sdk.service.scanner.CxClient;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

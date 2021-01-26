@@ -3,6 +3,7 @@ package com.checkmarx.sdk.service.sca;
 import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.Summary;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.service.CommonClientTest;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
@@ -40,10 +41,12 @@ public  abstract class ScaTestsBase extends CommonClientTest {
         assertNotNull("SCA summary is null", summary);
         assertTrue("SCA hasn't found any packages.", summary.getTotalPackages() > 0);
 
-//        boolean anyVulnerabilitiesDetected = summary.getHighVulnerabilityCount() > 0 ||
-//                summary.getMediumVulnerabilityCount() > 0 ||
-//                summary.getLowVulnerabilityCount() > 0;
-//        assertTrue("Expected that at least one vulnerability would be detected.", anyVulnerabilitiesDetected);
+        boolean anyVulnerabilitiesDetected = 
+                summary.getFindingCounts().get(Filter.Severity.HIGH) > 0 || 
+                        summary.getFindingCounts().get(Filter.Severity.MEDIUM) > 0 ||
+                        summary.getFindingCounts().get(Filter.Severity.LOW) > 0 ;
+        
+        assertTrue("Expected that at least one vulnerability would be detected.", anyVulnerabilitiesDetected);
     }
 
     private void verifyPackages(SCAResults scaResults) {

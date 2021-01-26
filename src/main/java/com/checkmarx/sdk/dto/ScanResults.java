@@ -188,6 +188,7 @@ public class ScanResults{
     public boolean isSastResults(){
         return Optional.ofNullable(getScanSummary()).isPresent();
     }
+    
     @Override
     public String toString() {
         return "ScanResults(osa=" + this.getOsa()  + ", link=" + this.getLink() + ", files=" + this.getFiles() + ", loc=" + this.getLoc() + ", scanType=" + this.getScanType() + ", xIssues=" + this.getXIssues() + ")";

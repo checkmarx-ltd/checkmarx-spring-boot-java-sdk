@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.dto;
 
-import com.checkmarx.sdk.utils.common.ShragaUtils;
+import com.checkmarx.sdk.utils.SdkUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 
@@ -12,9 +12,9 @@ public class PathFilter {
     private String[] excludes;
 
     public PathFilter(String folderExclusions, String filterPattern, Logger log) {
-        Map<String, List<String>> stringListMap = ShragaUtils.generateIncludesExcludesPatternLists(folderExclusions, filterPattern, log);
-        includes = getArray(stringListMap, ShragaUtils.INCLUDES_LIST);
-        excludes = getArray(stringListMap, ShragaUtils.EXCLUDES_LIST);
+        Map<String, List<String>> stringListMap = SdkUtils.generateIncludesExcludesPatternLists(folderExclusions, filterPattern, log);
+        includes = getArray(stringListMap, SdkUtils.INCLUDES_LIST);
+        excludes = getArray(stringListMap, SdkUtils.EXCLUDES_LIST);
     }
 
     public String[] getIncludes() {

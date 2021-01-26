@@ -1,6 +1,5 @@
 package com.checkmarx.sdk.config;
 
-//import com.checkmarx.sdk.scanner.restclient.httpClient.CxHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

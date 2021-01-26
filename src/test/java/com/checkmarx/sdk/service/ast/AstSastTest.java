@@ -9,9 +9,9 @@ import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.service.CommonClientTest;
-import com.checkmarx.sdk.service.AstScanner;
+import com.checkmarx.sdk.service.scanner.AstScanner;
 import com.checkmarx.sdk.dto.RemoteRepositoryInfo;
-import com.checkmarx.sdk.dto.ast.AstSastConfig;
+import com.checkmarx.sdk.dto.ast.AstConfig;
 import com.checkmarx.sdk.dto.ast.report.AstSastSummaryResults;
 import com.checkmarx.sdk.dto.ast.report.Finding;
 import com.checkmarx.sdk.config.RestClientConfig;
@@ -63,28 +63,11 @@ public class AstSastTest extends CommonClientTest {
         
         ScanParams scanParams = ScanParams.builder()
                 .projectName(config.getProjectName())
-                .remoteRepoUrl(config.getAstSastConfig().getRemoteRepositoryInfo().getUrl())
+                .remoteRepoUrl(config.getAstConfig().getRemoteRepositoryInfo().getUrl())
                 .filterConfiguration(FilterConfiguration.builder().build())
                 .build();
         return scanParams;
     }
-
-//    
-//    protected AstSastConfig getScanParams(RestClientConfig config) throws MalformedURLException {
-//        AstSastConfig astSastConfig = new AstSastConfig();
-//        astSastConfig.setWebAppUrl(astProperties.getWebAppUrl());
-//        astSastConfig.setApiUrl(astProperties.getApiUrl());
-//        astSastConfig.setPresetName(astProperties.getPreset());
-//        astSastConfig.setClientId(astProperties.getClientId());
-//        astSastConfig.setClientSecret(astProperties.getClientSecret());
-//        astSastConfig.setRemoteRepositoryInfo(new RemoteRepositoryInfo());
-//
-//        astSastConfig.getRemoteRepositoryInfo().setUrl(new URL(config.getUrl()));
-//        astSastConfig.getRemoteRepositoryInfo().setBranch("master");
-//        
-//        new ScanParams()
-//        return astSastConfig;
-//    }
 
     protected AstScanner getScanner() {
             return new AstScanner(astProperties);
@@ -187,7 +170,7 @@ public class AstSastTest extends CommonClientTest {
     }
     
     private RestClientConfig getScanConfig() throws MalformedURLException {
-        AstSastConfig astConfig = AstSastConfig.builder()
+        AstConfig astConfig = AstConfig.builder()
                 .apiUrl(astProperties.getApiUrl())
                 .webAppUrl(astProperties.getWebAppUrl())
                 .clientSecret(astProperties.getClientSecret())
@@ -203,7 +186,7 @@ public class AstSastTest extends CommonClientTest {
         astConfig.setPresetName("Checkmarx Default");
 
         RestClientConfig config = new RestClientConfig();
-        config.setAstSastConfig(astConfig);
+        config.setAstConfig(astConfig);
         config.setProjectName("sdkAstProject");
         config.setOsaProgressInterval(5);
         return config;

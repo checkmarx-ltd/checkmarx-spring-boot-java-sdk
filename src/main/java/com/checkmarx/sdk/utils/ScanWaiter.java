@@ -2,10 +2,9 @@ package com.checkmarx.sdk.utils;
 
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 
-import com.checkmarx.sdk.utils.common.ShragaUtils;
 import com.checkmarx.sdk.config.RestClientConfig;
-import com.checkmarx.sdk.scanner.client.AbstractRestClient;
-import com.checkmarx.sdk.scanner.client.httpClient.CxHttpClient;
+import com.checkmarx.sdk.utils.scanner.client.ScanClientHelper;
+import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
 import com.checkmarx.sdk.config.ContentType;
 import com.checkmarx.sdk.dto.ScanInfoResponse;
 import com.checkmarx.sdk.dto.ScanStatus;
@@ -45,7 +44,7 @@ public class ScanWaiter {
         AtomicInteger errorCounter = new AtomicInteger();
 
         try {
-            String urlPath = String.format(AbstractRestClient.GET_SCAN, URLEncoder.encode(scanId, ENCODING));
+            String urlPath = String.format(ScanClientHelper.GET_SCAN, URLEncoder.encode(scanId, ENCODING));
 
             Awaitility.await()
                     .atMost(timeout)
@@ -131,7 +130,7 @@ public class ScanWaiter {
 
     private ScanStatus extractScanStatusFrom(ScanInfoResponse response) {
         String rawStatus = response.getStatus();
-        String elapsedTimestamp = ShragaUtils.getTimestampSince(startTimestampSec);
+        String elapsedTimestamp = SdkUtils.getTimestampSince(startTimestampSec);
         log.info(String.format("Waiting for %s scan results. Elapsed time: %s. Status: %s.",
                 scannerDisplayName,
                 elapsedTimestamp,

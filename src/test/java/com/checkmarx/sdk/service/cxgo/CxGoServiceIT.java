@@ -12,7 +12,7 @@ import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.service.CxGoAuthService;
 import com.checkmarx.sdk.service.CxRepoFileService;
 
-import com.checkmarx.sdk.service.CxGoScanner;
+import com.checkmarx.sdk.service.scanner.GoScanner;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -36,7 +36,7 @@ public class CxGoServiceIT {
     @Autowired
     private CxGoProperties properties;
     @Autowired
-    private CxGoScanner service;
+    private GoScanner service;
     @Autowired
     private CxRepoFileService repoFileService;
     @Autowired

@@ -47,22 +47,5 @@ public abstract class CommonClientTest {
         }
         return result;
     }
-
-//    protected CommonScanResults runScan(CxScanConfig config, AbstractScanner scanner) throws MalformedURLException, ASTRuntimeException {
-//        CxClientDelegator client = new CxClientDelegator(config, log);
-//        try {
-//            client.init();
-//            log.info("Initiate scan for the following scanners: " + config.getScannerTypes());
-//            client.initiateScan();
-//            log.info("Waiting for results of " + config.getScannerTypes());
-//            CommonScanResults results =  client.waitForScanResults();
-//            Assert.assertNotNull(results);
-//            log.info("Results retrieved" );
-//            return results;
-//        } catch (Exception e) {
-//            failOnException(e);
-//            throw new ASTRuntimeException(e);
-//        }
-//    }
-
+    
 }

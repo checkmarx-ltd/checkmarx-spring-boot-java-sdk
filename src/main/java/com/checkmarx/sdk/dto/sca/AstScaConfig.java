@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.dto.sca;
 
+import com.checkmarx.sdk.dto.ScaConfig;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,7 +8,7 @@ import java.io.Serializable;
 
 @Getter
 @Setter
-public class AstScaConfig extends com.checkmarx.sdk.dto.AstScaConfig implements Serializable {
+public class AstScaConfig extends ScaConfig implements Serializable {
     private String accessControlUrl;
     private String username;
     private String password;

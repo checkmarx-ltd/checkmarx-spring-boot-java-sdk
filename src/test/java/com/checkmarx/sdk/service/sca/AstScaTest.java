@@ -7,7 +7,7 @@ import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.FilterInputFactory;
 import com.checkmarx.sdk.service.FilterValidator;
-import com.checkmarx.sdk.service.ScaScanner;
+import com.checkmarx.sdk.service.scanner.ScaScanner;
 import com.checkmarx.sdk.dto.RemoteRepositoryInfo;
 import com.checkmarx.sdk.dto.sca.AstScaConfig;
 import com.checkmarx.sdk.config.RestClientConfig;

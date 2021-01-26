@@ -3,7 +3,7 @@ package com.checkmarx.sdk.dto.sca;
 import com.checkmarx.sdk.dto.sca.report.AstScaSummaryResults;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
-import com.checkmarx.sdk.dto.IResults;
+import com.checkmarx.sdk.dto.ResultsBase;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +18,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AstScaResults extends IResults implements Serializable {
+public class AstScaResults extends ResultsBase implements Serializable {
     private String scanId;
     private AstScaSummaryResults summary;
     private String webReportLink;

@@ -6,7 +6,7 @@ import com.checkmarx.sdk.exception.ASTRuntimeException;
 import com.checkmarx.sdk.service.CommonClientTest;
 import com.checkmarx.sdk.dto.sca.ClientType;
 import com.checkmarx.sdk.config.RestClientConfig;
-import com.checkmarx.sdk.utils.ClientTypeResolver;
+import com.checkmarx.sdk.utils.scanner.client.ClientTypeResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
