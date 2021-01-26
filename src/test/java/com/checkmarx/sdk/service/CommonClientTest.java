@@ -1,21 +1,12 @@
 package com.checkmarx.sdk.service;
 
 
-import com.checkmarx.sdk.exception.ASTRuntimeException;
-import com.cx.restclient.CxClientDelegator;
-import com.cx.restclient.ast.dto.sca.AstScaConfig;
-import com.cx.restclient.configuration.CxScanConfig;
-import com.cx.restclient.configuration.PropertyFileLoader;
-import com.cx.restclient.dto.CommonScanResults;
-import com.cx.restclient.dto.ProxyConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
@@ -57,21 +48,4 @@ public abstract class CommonClientTest {
         return result;
     }
     
-    protected CommonScanResults runScan(CxScanConfig config) throws MalformedURLException, ASTRuntimeException {
-        CxClientDelegator client = new CxClientDelegator(config, log);
-        try {
-            client.init();
-            log.info("Initiate scan for the following scanners: " + config.getScannerTypes());
-            client.initiateScan();
-            log.info("Waiting for results of " + config.getScannerTypes());
-            CommonScanResults results =  client.waitForScanResults();
-            Assert.assertNotNull(results);
-            log.info("Results retrieved" );
-            return results;
-        } catch (Exception e) {
-            failOnException(e);
-            throw new ASTRuntimeException(e);
-        }
-    }
-
 }

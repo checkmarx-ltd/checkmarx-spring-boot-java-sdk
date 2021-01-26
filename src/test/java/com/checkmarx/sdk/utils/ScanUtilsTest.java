@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.utils;
 
-import com.checkmarx.sdk.dto.CxConfig;
+import com.checkmarx.sdk.dto.sast.CxConfig;
 import org.junit.Test;
 
 import java.io.File;

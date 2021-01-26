@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.service.cxgo;
 
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.filtering.*;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
 import com.checkmarx.sdk.service.FilterValidator;

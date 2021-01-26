@@ -1,11 +1,10 @@
 package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.config.CxGoProperties;
-import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.utils.ScanUtils;
-import com.checkmarx.sdk.utils.ZipUtils;
+import com.checkmarx.sdk.utils.zip.ZipUtils;
 import groovy.lang.Binding;
 import groovy.lang.GroovyRuntimeException;
 import groovy.util.GroovyScriptEngine;

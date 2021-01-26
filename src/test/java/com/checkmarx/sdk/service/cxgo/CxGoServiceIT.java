@@ -2,7 +2,7 @@ package com.checkmarx.sdk.service.cxgo;
 
 import com.checkmarx.sdk.config.SpringConfiguration;
 import com.checkmarx.sdk.config.CxGoProperties;
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
@@ -12,7 +12,7 @@ import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.service.CxGoAuthService;
 import com.checkmarx.sdk.service.CxRepoFileService;
 
-import com.cx.restclient.CxGoClientImpl;
+import com.checkmarx.sdk.service.scanner.GoScanner;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -36,7 +36,7 @@ public class CxGoServiceIT {
     @Autowired
     private CxGoProperties properties;
     @Autowired
-    private CxGoClientImpl service;
+    private GoScanner service;
     @Autowired
     private CxRepoFileService repoFileService;
     @Autowired

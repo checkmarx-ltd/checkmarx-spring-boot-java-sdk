@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.dto.ast;
 
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import lombok.Getter;
 import lombok.Setter;
 
