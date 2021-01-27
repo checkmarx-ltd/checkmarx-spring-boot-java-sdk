@@ -14,6 +14,8 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.service.scanner.CxClient;
 import com.checkmarx.sdk.utils.ScanUtils;
+import com.checkmarx.sdk.utils.scanner.client.ScanClientHelper;
+import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -1652,7 +1654,7 @@ public class CxService implements CxClient {
                 .build();
 
         HttpHeaders headers = authClient.createAuthHeaders();
-        headers.add("cxOrigin","CxFlow");
+        headers.add(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
         HttpEntity<CxScan> requestEntity = new HttpEntity<>(scan, headers);
 
         log.info("Creating Scan for project Id {}", projectId);
