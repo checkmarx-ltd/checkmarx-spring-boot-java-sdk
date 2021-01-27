@@ -43,6 +43,7 @@ public abstract class ScanClientHelper {
     public static final String GET_SCAN ="/api/scans/%s";
     public static final String CREATE_SCAN = "/api/scans";
     public static final String GET_UPLOAD_URL = "/api/uploads";
+    public static final String CX_FLOW_SCAN_ORIGIN_NAME = "CxFlow";
 
     public ScanClientHelper(RestClientConfig config, Logger log) {
         validate(config, log);

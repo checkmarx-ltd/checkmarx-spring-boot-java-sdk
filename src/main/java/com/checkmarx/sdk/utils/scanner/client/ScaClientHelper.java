@@ -106,6 +106,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         // Pass tenant name in a custom header. This will allow to get token from on-premise access control server
         // and then use this token for SCA authentication in cloud.
         httpClient.addCustomHeader(TENANT_HEADER_NAME, config.getAstScaConfig().getTenant());
+        httpClient.addCustomHeader(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
     }
 
     @Override
