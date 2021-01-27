@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.dto.sca;
 
-import com.checkmarx.sdk.dto.sca.report.AstScaSummaryResults;
+import com.checkmarx.sdk.dto.ast.Summary;
+import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
 import com.checkmarx.sdk.dto.ResultsBase;
@@ -18,16 +19,17 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AstScaResults extends ResultsBase implements Serializable {
+public class SCAResults extends ResultsBase implements Serializable {
     private String scanId;
-    private AstScaSummaryResults summary;
+    private ScaSummaryBaseFormat summaryBaseFormat;
     private String webReportLink;
     private List<Finding> findings;
     private List<Package> packages;
     private boolean scaResultReady;
     private int nonVulnerableLibraries;
     private int vulnerableAndOutdated;
-
+    private Summary summary;
+    
     public void calculateVulnerableAndOutdatedPackages() {
         int sum;
         if (this.packages != null) {

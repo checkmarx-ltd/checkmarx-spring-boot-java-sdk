@@ -104,7 +104,7 @@ public class CxGoServiceIT {
     
     
     @Test
-    @Ignore //works only on Windows
+    //@Ignore //works only on Windows
     public void completeScanFlow() throws CheckmarxException {
         login();
         if(StringUtils.isNotEmpty(properties.getClientSecret())) {

@@ -1,7 +1,7 @@
 package com.checkmarx.sdk.utils.scanner.client.httpClient;
 
 
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.exception.CxHTTPClientException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
@@ -23,7 +23,7 @@ public abstract class HttpClientHelper {
     private HttpClientHelper() {
     }
 
-    public static <T> T convertToObject(HttpResponse response, Class<T> responseType, boolean isCollection) throws IOException, ASTRuntimeException {
+    public static <T> T convertToObject(HttpResponse response, Class<T> responseType, boolean isCollection) throws IOException, ScannerRuntimeException {
 
         if (responseType != null && responseType.isInstance(response)) {
             return (T) response;
@@ -52,7 +52,7 @@ public abstract class HttpClientHelper {
         return convertToStrObject(response, responseType);
     }
 
-    private static <T> T convertToStrObject(HttpResponse response, Class<T> valueType) throws ASTRuntimeException {
+    private static <T> T convertToStrObject(HttpResponse response, Class<T> valueType) throws ScannerRuntimeException {
         ObjectMapper mapper = getObjectMapper();
         try {
             if (response.getEntity() == null) {
@@ -65,30 +65,30 @@ public abstract class HttpClientHelper {
             return mapper.readValue(json, valueType);
 
         } catch (IOException e) {
-            throw new ASTRuntimeException("Failed to parse json response: " + e.getMessage());
+            throw new ScannerRuntimeException("Failed to parse json response: " + e.getMessage());
         }
     }
 
-    public static String convertToJson(Object o) throws ASTRuntimeException {
+    public static String convertToJson(Object o) throws ScannerRuntimeException {
         ObjectMapper mapper = getObjectMapper();
         try {
             return mapper.writeValueAsString(o);
         } catch (Exception e) {
-            throw new ASTRuntimeException("Failed convert object to json: " + e.getMessage());
+            throw new ScannerRuntimeException("Failed convert object to json: " + e.getMessage());
         }
     }
 
-    public static StringEntity convertToStringEntity(Object o) throws ASTRuntimeException, UnsupportedEncodingException {
+    public static StringEntity convertToStringEntity(Object o) throws ScannerRuntimeException, UnsupportedEncodingException {
         return new StringEntity(convertToJson(o));
     }
 
-    private static <T> T convertToCollectionObject(HttpResponse response, JavaType javaType) throws ASTRuntimeException {
+    private static <T> T convertToCollectionObject(HttpResponse response, JavaType javaType) throws ScannerRuntimeException {
         ObjectMapper mapper = getObjectMapper();
         try {
             String json = IOUtils.toString(response.getEntity().getContent(), Charset.defaultCharset());
             return mapper.readValue(json, javaType);
         } catch (IOException e) {
-            throw new ASTRuntimeException("Failed to parse json response: " + e.getMessage(), e);
+            throw new ScannerRuntimeException("Failed to parse json response: " + e.getMessage(), e);
         }
     }
 
@@ -100,7 +100,7 @@ public abstract class HttpClientHelper {
         return result;
     }
 
-    public static void validateResponse(HttpResponse response, int expectedStatus, String message) throws ASTRuntimeException {
+    public static void validateResponse(HttpResponse response, int expectedStatus, String message) throws ScannerRuntimeException {
         int actualStatusCode = response.getStatusLine().getStatusCode();
         if (actualStatusCode != expectedStatus) {
             String responseBody = extractResponseBody(response);

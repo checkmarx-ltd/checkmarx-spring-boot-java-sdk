@@ -1,10 +1,10 @@
 package com.checkmarx.sdk.dto;
 
 import com.checkmarx.sdk.dto.ast.ASTResults;
+import com.checkmarx.sdk.dto.sca.SCAResults;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
-import com.checkmarx.sdk.dto.ast.SCAResults;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -182,7 +182,7 @@ public class ScanResults{
     }
 
     public boolean isAstResults(){
-        return Optional.ofNullable(getAstResults()).isPresent() &&  Optional.ofNullable(getAstResults().getResults()).isPresent();
+        return Optional.ofNullable(getAstResults()).isPresent() ;
     }
 
     public boolean isSastResults(){

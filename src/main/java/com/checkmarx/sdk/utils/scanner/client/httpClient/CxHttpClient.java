@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.utils.scanner.client.httpClient;
 
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 
 import com.checkmarx.sdk.dto.sca.ClientType;
 import com.checkmarx.sdk.dto.LoginSettings;
@@ -95,7 +95,7 @@ public class CxHttpClient implements Closeable {
 
 
     public CxHttpClient(String rootUri, boolean disableSSLValidation, 
-                         Logger log) throws ASTRuntimeException {
+                         Logger log) throws ScannerRuntimeException {
         this.log = log;
         this.rootUri = rootUri;
         //create httpclient
@@ -178,7 +178,7 @@ public class CxHttpClient implements Closeable {
         try {
             sslContext = SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
         } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
-            throw new ASTRuntimeException("Fail to set trust all certificate, 'SSLConnectionSocketFactory'", e);
+            throw new ScannerRuntimeException("Fail to set trust all certificate, 'SSLConnectionSocketFactory'", e);
         }
         return new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
     }
@@ -240,7 +240,7 @@ public class CxHttpClient implements Closeable {
         } catch (IOException e) {
             String message = LOGIN_FAILED_MSG + e.getMessage();
             log.error(message);
-            throw new ASTRuntimeException(message);
+            throw new ScannerRuntimeException(message);
         } finally {
             HttpClientUtils.closeQuietly(loginResponse);
         }
@@ -319,14 +319,14 @@ public class CxHttpClient implements Closeable {
             response = apacheClient.execute(request);
             return extractToken(response);
         } catch (IOException e) {
-            throw new ASTRuntimeException(LOGIN_FAILED_MSG + e.getMessage());
+            throw new ScannerRuntimeException(LOGIN_FAILED_MSG + e.getMessage());
         }
     }
 
     private TokenLoginResponse extractToken(HttpResponse response) {
         String redirectURL = response.getHeaders(LOCATION_HEADER)[0].getValue();
         if (!redirectURL.contains("access_token")) {
-            throw new ASTRuntimeException("Failed retrieving access token from server");
+            throw new ScannerRuntimeException("Failed retrieving access token from server");
         }
         return new Gson().fromJson(urlToJson(redirectURL), TokenLoginResponse.class);
     }
@@ -351,9 +351,9 @@ public class CxHttpClient implements Closeable {
         try {
             return request(post, ContentType.APPLICATION_FORM_URLENCODED.toString(), requestEntity,
                     TokenLoginResponse.class, HttpStatus.SC_OK, AUTH_MESSAGE, false, false);
-        } catch (ASTRuntimeException e) {
+        } catch (ScannerRuntimeException e) {
             if (!e.getMessage().contains("invalid_scope")) {
-                throw new ASTRuntimeException(String.format("Failed to generate access token, failure error was: %s", e.getMessage()), e);
+                throw new ScannerRuntimeException(String.format("Failed to generate access token, failure error was: %s", e.getMessage()), e);
             }
             ClientType.RESOURCE_OWNER.setScopes("sast_rest_api");
             settings.setClientTypeForPasswordAuth(ClientType.RESOURCE_OWNER);
@@ -369,8 +369,8 @@ public class CxHttpClient implements Closeable {
         try {
             return request(post, ContentType.APPLICATION_FORM_URLENCODED.toString(), requestEntity,
                     TokenLoginResponse.class, HttpStatus.SC_OK, AUTH_MESSAGE, false, false);
-        } catch (ASTRuntimeException e) {
-            throw new ASTRuntimeException(String.format("Failed to generate access token from refresh token. The error was: %s", e.getMessage()), e);
+        } catch (ScannerRuntimeException e) {
+            throw new ScannerRuntimeException(String.format("Failed to generate access token from refresh token. The error was: %s", e.getMessage()), e);
         }
     }
 
@@ -380,8 +380,8 @@ public class CxHttpClient implements Closeable {
         try {
             request(post, ContentType.APPLICATION_FORM_URLENCODED.toString(), requestEntity,
                     String.class, HttpStatus.SC_OK, "revocation", false, false);
-        } catch (ASTRuntimeException e) {
-            throw new ASTRuntimeException(String.format("Token revocation failure error was: %s", e.getMessage()), e);
+        } catch (ScannerRuntimeException e) {
+            throw new ScannerRuntimeException(String.format("Token revocation failure error was: %s", e.getMessage()), e);
         }
     }
 
@@ -550,7 +550,7 @@ public class CxHttpClient implements Closeable {
             urlParameters.add(new BasicNameValuePair("providerid", providerId));
             return new UrlEncodedFormEntity(urlParameters, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
-            throw new ASTRuntimeException(e.getMessage());
+            throw new ScannerRuntimeException(e.getMessage());
         }
     }
 

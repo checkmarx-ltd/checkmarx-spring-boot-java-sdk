@@ -1,28 +1,26 @@
 package com.checkmarx.sdk.service.scanner;
 
-import com.checkmarx.sdk.config.ScaConfig;
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.AstScaResults;
-import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.dto.sca.SCAResults;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.service.FilterInputFactory;
 import com.checkmarx.sdk.service.FilterValidator;
 import com.checkmarx.sdk.utils.scanner.client.IScanClientHelper;
 import com.checkmarx.sdk.utils.scanner.client.ScaClientHelper;
-import com.checkmarx.sdk.dto.sca.AstScaConfig;
-import com.checkmarx.sdk.dto.sca.report.AstScaSummaryResults;
+import com.checkmarx.sdk.dto.sca.ScaConfig;
+import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.dto.ResultsBase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -71,18 +69,16 @@ public class ScaScanner extends AbstractScanner {
     @Override
     protected AstScaResults toResults(ResultsBase scanResults) {
         
-        com.checkmarx.sdk.dto.sca.AstScaResults scaResults = (com.checkmarx.sdk.dto.sca.AstScaResults)scanResults;
+        SCAResults scaResults = (SCAResults)scanResults;
         validateNotNull(scaResults);
 
-        AstScaSummaryResults summary = scaResults.getSummary();
+        ScaSummaryBaseFormat summary = scaResults.getSummaryBaseFormat();
         Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summary);
 
-        ModelMapper mapper = new ModelMapper();
-        SCAResults result = mapper.map(scaResults, SCAResults.class);
-        result.getSummary().setFindingCounts(findingCountsPerSeverity);
+        scaResults.getSummary().setFindingCounts(findingCountsPerSeverity);
 
         AstScaResults results = new AstScaResults();
-        results.setScaResults(result);
+        results.setScaResults(scaResults);
         return results;
     }
 
@@ -106,7 +102,7 @@ public class ScaScanner extends AbstractScanner {
             }
             return result;
         } catch (Exception e) {
-            throw new ASTRuntimeException("Error getting latest scan results.", e);
+            throw new ScannerRuntimeException("Error getting latest scan results.", e);
         }
     }
 
@@ -118,17 +114,17 @@ public class ScaScanner extends AbstractScanner {
         RestClientConfig restClientConfig = new RestClientConfig();
         restClientConfig.setProjectName(scanParams.getProjectName());
 
-        AstScaConfig scaConfig = getScaSpecificConfig(scanParams);
+        ScaConfig scaConfig = getScaSpecificConfig(scanParams);
         setSourceLocation(scanParams, restClientConfig, scaConfig);
 
-        restClientConfig.setAstScaConfig(scaConfig);
+        restClientConfig.setScaConfig(scaConfig);
 
         return restClientConfig;
     }
 
-    private AstScaConfig getScaSpecificConfig(ScanParams scanParams) {
-        AstScaConfig commonClientScaConfig = new AstScaConfig();
-        ScaConfig sdkScaConfig = scanParams.getScaConfig();
+    private ScaConfig getScaSpecificConfig(ScanParams scanParams) {
+        ScaConfig commonClientScaConfig = new ScaConfig();
+        com.checkmarx.sdk.config.ScaConfig sdkScaConfig = scanParams.getScaConfig();
         if (sdkScaConfig != null) {
             commonClientScaConfig.setWebAppUrl(sdkScaConfig.getAppUrl());
             commonClientScaConfig.setApiUrl(sdkScaConfig.getApiUrl());
@@ -153,7 +149,7 @@ public class ScaScanner extends AbstractScanner {
     protected void validateScanParams(ScanParams scanParams) {
         validateNotNull(scanParams);
 
-        ScaConfig scaConfig = scanParams.getScaConfig();
+        com.checkmarx.sdk.config.ScaConfig scaConfig = scanParams.getScaConfig();
         if (Optional.ofNullable(scaConfig).isPresent()) {
             validateNotEmpty(scaConfig.getAppUrl(), "SCA application URL");
             validateNotEmpty(scaConfig.getApiUrl(), "SCA API URL");
@@ -166,14 +162,14 @@ public class ScaScanner extends AbstractScanner {
 
     private static void validateNotNull(ScanParams scanParams) {
         if (scanParams == null) {
-            throw new ASTRuntimeException(String.format("%s SCA parameters weren't provided.", ERROR_PREFIX));
+            throw new ScannerRuntimeException(String.format("%s SCA parameters weren't provided.", ERROR_PREFIX));
         }
 
         if (scanParams.getRemoteRepoUrl() == null && !localSourcesAreSpecified(scanParams)) {
             String message = String.format("%s Source location is not specified. Please specify either " +
                     "repository URL, zip file path or source directory path.", ERROR_PREFIX);
 
-            throw new ASTRuntimeException(message);
+            throw new ScannerRuntimeException(message);
         }
 
         validateSpecifiedPathExists(scanParams.getZipPath());
@@ -182,18 +178,18 @@ public class ScaScanner extends AbstractScanner {
 
     private static void validateSpecifiedPathExists(String path) {
         if (StringUtils.isNotEmpty(path) && !new File(path).exists()) {
-            throw new ASTRuntimeException(String.format("%s Source location (%s) does not exist.", ERROR_PREFIX, path));
+            throw new ScannerRuntimeException(String.format("%s Source location (%s) does not exist.", ERROR_PREFIX, path));
         }
     }
 
-    private void validateNotNull(com.checkmarx.sdk.dto.sca.AstScaResults scaResults) {
+    private void validateNotNull(SCAResults scaResults) {
         if (scaResults == null) {
-            throw new ASTRuntimeException("SCA results are missing.");
+            throw new ScannerRuntimeException("SCA results are missing.");
         }
 
-        AstScaSummaryResults summary = scaResults.getSummary();
+        ScaSummaryBaseFormat summary = scaResults.getSummaryBaseFormat();
         if (summary == null) {
-            throw new ASTRuntimeException("SCA results don't contain a summary.");
+            throw new ScannerRuntimeException("SCA results don't contain a summary.");
         }
     }
 

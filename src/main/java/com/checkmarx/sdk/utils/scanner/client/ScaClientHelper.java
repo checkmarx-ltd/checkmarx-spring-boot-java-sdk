@@ -1,11 +1,11 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.dto.*;
-import com.checkmarx.sdk.dto.sca.AstScaConfig;
-import com.checkmarx.sdk.dto.sca.AstScaResults;
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.dto.sca.ScaConfig;
+import com.checkmarx.sdk.dto.sca.SCAResults;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.dto.sca.*;
-import com.checkmarx.sdk.dto.sca.report.AstScaSummaryResults;
+import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
 
@@ -85,7 +85,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             // We need this feature to properly deserialize finding severity,
             // e.g. "High" (in JSON) -> Severity.HIGH (in Java).
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
-    private final AstScaConfig astScaConfig;
+    private final ScaConfig scaConfig;
 
 
     private String projectId;
@@ -97,15 +97,15 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     public ScaClientHelper(RestClientConfig config, Logger log) {
         super(config, log);
 
-        this.astScaConfig = config.getAstScaConfig();
-        validate(astScaConfig);
+        this.scaConfig = config.getScaConfig();
+        validate(scaConfig);
 
-        httpClient = createHttpClient(astScaConfig.getApiUrl());
+        httpClient = createHttpClient(scaConfig.getApiUrl());
         this.resolvingConfiguration = null;
         fingerprintCollector = new FingerprintCollector(log);
         // Pass tenant name in a custom header. This will allow to get token from on-premise access control server
         // and then use this token for SCA authentication in cloud.
-        httpClient.addCustomHeader(TENANT_HEADER_NAME, config.getAstScaConfig().getTenant());
+        httpClient.addCustomHeader(TENANT_HEADER_NAME, config.getScaConfig().getTenant());
         httpClient.addCustomHeader(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
     }
 
@@ -129,7 +129,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             //
             // We can't just ignore the branch, because it will lead to confusion.
             String message = String.format("Branch specification is not yet supported by %s.", getScannerDisplayName());
-            throw new ASTRuntimeException(message);
+            throw new ScannerRuntimeException(message);
         }
         return null;
     }
@@ -159,7 +159,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 result = repoInfo.getUrl();
             }
         } catch (Exception e) {
-            throw new ASTRuntimeException("Error getting effective repo URL.");
+            throw new ScannerRuntimeException("Error getting effective repo URL.");
         }
         return result;
     }
@@ -167,7 +167,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     @Override
     public ResultsBase init() {
         log.debug("Initializing {} client.", getScannerDisplayName());
-        AstScaResults scaResults = new AstScaResults();
+        SCAResults scaResults = new SCAResults();
         try {
             login();
         } catch (Exception e) {
@@ -191,17 +191,17 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     /**
      * Waits for SCA scan to finish, then gets scan results.
      *
-     * @throws ASTRuntimeException in case of a network error, scan failure or when scan is aborted by timeout.
+     * @throws ScannerRuntimeException in case of a network error, scan failure or when scan is aborted by timeout.
      */
     @Override
     public ResultsBase waitForScanResults() {
-        AstScaResults scaResults;
+        SCAResults scaResults;
         try {
             waitForScanToFinish(scanId);
-            scaResults = tryGetScanResults().orElseThrow(() -> new ASTRuntimeException("Unable to get scan results: scan not found."));
-        } catch (ASTRuntimeException e) {
+            scaResults = tryGetScanResults().orElseThrow(() -> new ScannerRuntimeException("Unable to get scan results: scan not found."));
+        } catch (ScannerRuntimeException e) {
             log.error(e.getMessage());
-            scaResults = new AstScaResults();
+            scaResults = new SCAResults();
             scaResults.setException(e);
         }
         return scaResults;
@@ -229,16 +229,16 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     public ResultsBase initiateScan() {
         log.info("----------------------------------- Initiating {} Scan:------------------------------------",
                 getScannerDisplayName());
-        AstScaResults scaResults = new AstScaResults();
+        SCAResults scaResults = new SCAResults();
         scanId = null;
         projectId = null;
         try {
-            AstScaConfig scaConfig = config.getAstScaConfig();
+            ScaConfig scaConfig = config.getScaConfig();
             SourceLocationType locationType = scaConfig.getSourceLocationType();
             HttpResponse response;
 
             projectId = resolveRiskManagementProject();
-            boolean isManifestAndFingerprintsOnly = !config.getAstScaConfig().isIncludeSources();
+            boolean isManifestAndFingerprintsOnly = !config.getScaConfig().isIncludeSources();
             if (isManifestAndFingerprintsOnly) {
                 this.resolvingConfiguration = getCxSCAResolvingConfigurationForProject(this.projectId);
                 log.info("Got the following manifest patterns {}", this.resolvingConfiguration.getManifests());
@@ -249,7 +249,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 response = submitSourcesFromRemoteRepo(scaConfig, projectId);
             } else {
                 if (scaConfig.isIncludeSources()) {
-                    response = submitAllSourcesFromLocalDir(projectId, astScaConfig.getZipFilePath());
+                    response = submitAllSourcesFromLocalDir(projectId, this.scaConfig.getZipFilePath());
                 } else {
                     response = submitManifestsAndFingerprintsFromLocalDir(projectId);
                 }
@@ -259,7 +259,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         } catch (Exception e) {
             log.error(e.getMessage());
             setState(State.FAILED);
-            scaResults.setException(new ASTRuntimeException("Error creating scan.", e));
+            scaResults.setException(new ScannerRuntimeException("Error creating scan.", e));
         }
         return scaResults;
     }
@@ -287,7 +287,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
         PathFilter manifestIncludeFilter = new PathFilter(null, getManifestsIncludePattern(), log);
         if (manifestIncludeFilter.getIncludes().length == 0) {
-            throw new ASTRuntimeException(String.format("Using manifest only mode requires include filter. Resolving config does not have include patterns defined: %s", getManifestsIncludePattern()));
+            throw new ScannerRuntimeException(String.format("Using manifest only mode requires include filter. Resolving config does not have include patterns defined: %s", getManifestsIncludePattern()));
         }
 
         List<String> filesToZip =
@@ -308,7 +308,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
         optionallyWriteFingerprintsToFile(fingerprints);
 
-        return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), astScaConfig.getZipFilePath());
+        return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), scaConfig.getZipFilePath());
     }
 
 
@@ -341,56 +341,56 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         }
     }
 
-    private ASTRuntimeException handleFileDeletion(File file, IOException ioException) {
+    private ScannerRuntimeException handleFileDeletion(File file, IOException ioException) {
         try {
             Files.delete(file.toPath());
         } catch (IOException e) {
-            return new ASTRuntimeException(e);
+            return new ScannerRuntimeException(e);
         }
 
-        return new ASTRuntimeException(ioException);
+        return new ScannerRuntimeException(ioException);
 
     }
 
-    private ASTRuntimeException handleFileDeletion(File file) {
+    private ScannerRuntimeException handleFileDeletion(File file) {
         try {
             Files.delete(file.toPath());
         } catch (IOException e) {
-            return new ASTRuntimeException(e.getMessage());
+            return new ScannerRuntimeException(e.getMessage());
         }
 
-        return new ASTRuntimeException("No files found to zip and no supported fingerprints found");
+        return new ScannerRuntimeException("No files found to zip and no supported fingerprints found");
     }
 
     private String getFingerprintsIncludePattern() {
-        if (StringUtils.isNotEmpty(astScaConfig.getFingerprintsIncludePattern())) {
-            return astScaConfig.getFingerprintsIncludePattern();
+        if (StringUtils.isNotEmpty(scaConfig.getFingerprintsIncludePattern())) {
+            return scaConfig.getFingerprintsIncludePattern();
         }
 
         return resolvingConfiguration.getFingerprintsIncludePattern();
     }
 
     private String getManifestsIncludePattern() {
-        if (StringUtils.isNotEmpty(astScaConfig.getManifestsIncludePattern())) {
-            return astScaConfig.getManifestsIncludePattern();
+        if (StringUtils.isNotEmpty(scaConfig.getManifestsIncludePattern())) {
+            return scaConfig.getManifestsIncludePattern();
         }
 
         return resolvingConfiguration.getManifestsIncludePattern();
     }
 
     private File getZipFile() throws IOException {
-        if (StringUtils.isNotEmpty(astScaConfig.getZipFilePath())) {
-            return new File(astScaConfig.getZipFilePath());
+        if (StringUtils.isNotEmpty(scaConfig.getZipFilePath())) {
+            return new File(scaConfig.getZipFilePath());
         }
         return File.createTempFile(CxZipUtils.TEMP_FILE_NAME_TO_ZIP, ".bin");
     }
 
     private void optionallyWriteFingerprintsToFile(CxSCAScanFingerprints fingerprints) {
-        if (StringUtils.isNotEmpty(astScaConfig.getFingerprintFilePath())) {
+        if (StringUtils.isNotEmpty(scaConfig.getFingerprintFilePath())) {
             try {
-                fingerprintCollector.writeScanFingerprintsFile(fingerprints, astScaConfig.getFingerprintFilePath());
+                fingerprintCollector.writeScanFingerprintsFile(fingerprints, scaConfig.getFingerprintFilePath());
             } catch (IOException ioException) {
-                log.error(String.format("Failed writing fingerprint file to %s", astScaConfig.getFingerprintFilePath()), ioException);
+                log.error(String.format("Failed writing fingerprint file to %s", scaConfig.getFingerprintFilePath()), ioException);
             }
         }
     }
@@ -402,7 +402,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
      */
     @Override
     public ResultsBase getLatestScanResults() {
-        AstScaResults result = new AstScaResults();
+        SCAResults result = new SCAResults();
         try {
             log.info("Getting latest scan results.");
             projectId = getRiskManagementProjectId(config.getProjectName());
@@ -410,13 +410,13 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             result = tryGetScanResults().orElse(null);
         } catch (Exception e) {
             log.error(e.getMessage());
-            result.setException(new ASTRuntimeException("Error getting latest scan results.", e));
+            result.setException(new ScannerRuntimeException("Error getting latest scan results.", e));
         }
         return result;
     }
 
-    private Optional<AstScaResults> tryGetScanResults() {
-        AstScaResults result = null;
+    private Optional<SCAResults> tryGetScanResults() {
+        SCAResults result = null;
         if (StringUtils.isNotEmpty(scanId)) {
             result = getScanResults();
         } else {
@@ -448,7 +448,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     }
 
 
-    private void printWebReportLink(AstScaResults scaResult) {
+    private void printWebReportLink(SCAResults scaResult) {
         if (!StringUtils.isEmpty(scaResult.getWebReportLink())) {
             log.info("{} scan results location: {}", getScannerDisplayName(), scaResult.getWebReportLink());
         }
@@ -462,7 +462,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
     public void login() throws IOException {
         log.info("Logging into {}", getScannerDisplayName());
-        AstScaConfig scaConfig = config.getAstScaConfig();
+        ScaConfig scaConfig = config.getScaConfig();
 
         String acUrl = scaConfig.getAccessControlUrl();
         LoginSettings settings = LoginSettings.builder()
@@ -496,7 +496,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         try {
             testConnection();
         } catch (IOException e) {
-            throw new ASTRuntimeException(e);
+            throw new ScannerRuntimeException(e);
         }
     }
 
@@ -518,7 +518,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         log.info("Getting project ID by name: '{}'", projectName);
 
         if (StringUtils.isEmpty(projectName)) {
-            throw new ASTRuntimeException("Non-empty project name must be provided.");
+            throw new ScannerRuntimeException("Non-empty project name must be provided.");
         }
 
         Project project = sendGetProjectRequest(projectName);
@@ -578,15 +578,15 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         return newProject.getId();
     }
 
-    private AstScaResults getScanResults() {
-        AstScaResults result;
+    private SCAResults getScanResults() {
+        SCAResults result;
         log.debug("Getting results for scan ID {}", scanId);
         try {
-            result = new AstScaResults();
+            result = new SCAResults();
             result.setScanId(this.scanId);
 
-            AstScaSummaryResults scanSummary = getSummaryReport(scanId);
-            result.setSummary(scanSummary);
+            ScaSummaryBaseFormat scanSummary = getSummaryReport(scanId);
+            result.setSummaryBaseFormat(scanSummary);
             printSummary(scanSummary, this.scanId);
 
             List<Finding> findings = getFindings(scanId);
@@ -595,13 +595,13 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             List<Package> packages = getPackages(scanId);
             result.setPackages(packages);
 
-            String reportLink = getWebReportLink(config.getAstScaConfig().getWebAppUrl());
+            String reportLink = getWebReportLink(config.getScaConfig().getWebAppUrl());
             result.setWebReportLink(reportLink);
             printWebReportLink(result);
             result.setScaResultReady(true);
             log.info("Retrieved SCA results successfully.");
         } catch (IOException e) {
-            throw new ASTRuntimeException("Error retrieving CxSCA scan results.", e);
+            throw new ScannerRuntimeException("Error retrieving CxSCA scan results.", e);
         }
         return result;
     }
@@ -613,14 +613,14 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 URLEncoder.encode(scanId, ENCODING));
     }
 
-    private AstScaSummaryResults getSummaryReport(String scanId) throws IOException {
+    private ScaSummaryBaseFormat getSummaryReport(String scanId) throws IOException {
         log.debug("Getting summary report.");
 
         String path = String.format(SUMMARY_REPORT, URLEncoder.encode(scanId, ENCODING));
 
         return httpClient.getRequest(path,
                 ContentType.CONTENT_TYPE_APPLICATION_JSON,
-                AstScaSummaryResults.class,
+                ScaSummaryBaseFormat.class,
                 HttpStatus.SC_OK,
                 "CxSCA report summary",
                 false);
@@ -656,7 +656,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 true);
     }
 
-    private void printSummary(AstScaSummaryResults summary, String scanId) {
+    private void printSummary(ScaSummaryBaseFormat summary, String scanId) {
         if (log.isInfoEnabled()) {
             log.info("----CxSCA risk report summary----");
             log.info("Created on: {}", summary.getCreatedOn());
@@ -671,7 +671,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         }
     }
 
-    private void validate(AstScaConfig config) {
+    private void validate(ScaConfig config) {
         String error = null;
         if (config == null) {
             error = "%s config must be provided.";

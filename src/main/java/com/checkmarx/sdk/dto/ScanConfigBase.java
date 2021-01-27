@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Setter
 @NoArgsConstructor
 @SuperBuilder
-public abstract class ScaConfig implements Serializable {
+public abstract class ScanConfigBase implements Serializable {
     private String apiUrl;
     private String webAppUrl;
     private SourceLocationType sourceLocationType;

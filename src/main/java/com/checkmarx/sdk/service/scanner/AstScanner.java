@@ -1,15 +1,14 @@
 package com.checkmarx.sdk.service.scanner;
 
 import com.checkmarx.sdk.config.AstProperties;
-import com.checkmarx.sdk.dto.ast.ASTResults;
 import com.checkmarx.sdk.dto.AstScaResults;
-import com.checkmarx.sdk.dto.ast.SCAResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.dto.sca.SCAResults;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.scanner.client.AstClientHelper;
 import com.checkmarx.sdk.dto.SummaryResults;
-import com.checkmarx.sdk.dto.ast.AstConfig;
-import com.checkmarx.sdk.dto.ast.AstSastResults;
+import com.checkmarx.sdk.config.AstConfig;
+import com.checkmarx.sdk.dto.ast.ASTResults;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.dto.ResultsBase;
 import com.checkmarx.sdk.utils.scanner.client.IScanClientHelper;
@@ -33,9 +32,9 @@ public class AstScanner extends AbstractScanner {
      */
     @Override
     protected AstScaResults toResults(ResultsBase scanResults) {
-        ASTResults astResults = new ASTResults((AstSastResults) scanResults);
+        ASTResults astResults =  (ASTResults) scanResults;
         
-        validateNotNull(astResults.getResults());
+        validateNotNull(astResults);
 
         return new AstScaResults(new SCAResults(), astResults);
     }
@@ -46,14 +45,14 @@ public class AstScanner extends AbstractScanner {
     }
     
     
-    private void validateNotNull(AstSastResults astResults) {
+    private void validateNotNull(ASTResults astResults) {
         if (astResults == null) {
-            throw new ASTRuntimeException("AST results are missing.");
+            throw new ScannerRuntimeException("AST results are missing.");
         }
 
         SummaryResults summary = astResults.getSummary();
         if (summary == null) {
-            throw new ASTRuntimeException("AST results don't contain a summary.");
+            throw new ScannerRuntimeException("AST results don't contain a summary.");
         }
     }
 
@@ -87,7 +86,7 @@ public class AstScanner extends AbstractScanner {
     @Override
     protected void validateScanParams(ScanParams scanParams) {
         if (scanParams == null) {
-            throw new ASTRuntimeException(String.format("%s Scan parameters weren't provided.", ERROR_PREFIX));
+            throw new ScannerRuntimeException(String.format("%s Scan parameters weren't provided.", ERROR_PREFIX));
         }
         validateNotEmpty(astProperties.getApiUrl(), "AST API URL");
         validateNotEmpty(astProperties.getClientId(), "AST client ID");

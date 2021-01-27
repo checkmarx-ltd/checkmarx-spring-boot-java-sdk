@@ -1,7 +1,7 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.dto.*;
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.ScanWaiter;
 import com.checkmarx.sdk.utils.State;
 import com.checkmarx.sdk.utils.UrlUtils;
@@ -74,7 +74,7 @@ public abstract class ScanClientHelper {
 
     private void validate(RestClientConfig config, Logger log) {
         if (config == null && log == null) {
-            throw new ASTRuntimeException("Both scan config and log must be provided.");
+            throw new ScannerRuntimeException("Both scan config and log must be provided.");
         }
     }
 
@@ -105,7 +105,7 @@ public abstract class ScanClientHelper {
                 HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
     }
 
-    protected HttpResponse submitSourcesFromRemoteRepo(ScaConfig config, String projectId) throws IOException {
+    protected HttpResponse submitSourcesFromRemoteRepo(ScanConfigBase config, String projectId) throws IOException {
         log.info("Using remote repository flow.");
         RemoteRepositoryInfo repoInfo = config.getRemoteRepositoryInfo();
         validateRepoInfo(repoInfo);
@@ -196,7 +196,7 @@ public abstract class ScanClientHelper {
                     getScannerDisplayName(),
                     SourceLocationType.REMOTE_REPOSITORY.name());
 
-            throw new ASTRuntimeException(message);
+            throw new ScannerRuntimeException(message);
         }
     }
 
@@ -216,7 +216,7 @@ public abstract class ScanClientHelper {
 
             log.info("Scan started successfully. Scan ID: {}", result);
         } else {
-            throw new ASTRuntimeException("Unable to get scan ID.");
+            throw new ScannerRuntimeException("Unable to get scan ID.");
         }
         return result;
     }
@@ -225,7 +225,7 @@ public abstract class ScanClientHelper {
         String message = String.format("Failed to init %s client. %s", getScannerDisplayName(), e.getMessage());
         log.error(message);
         setState(State.FAILED);
-        results.setException(new ASTRuntimeException(message, e));
+        results.setException(new ScannerRuntimeException(message, e));
     }
 
     protected HttpResponse initiateScanForUpload(String projectId, byte[] zipFile, String zipFilePath) throws IOException {
@@ -249,7 +249,7 @@ public abstract class ScanClientHelper {
                 HttpStatus.SC_OK, "get upload URL for sources");
 
         if (response == null || response.get("url") == null) {
-            throw new ASTRuntimeException("Unable to get the upload URL.");
+            throw new ScannerRuntimeException("Unable to get the upload URL.");
         }
 
         return response.get("url").asText();

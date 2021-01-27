@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.utils;
 
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.utils.scanner.client.ScanClientHelper;
@@ -58,7 +58,7 @@ public class ScanWaiter {
                             "reached the user-specified timeout (%d minutes).",
                     scannerDisplayName,
                     timeout.toMinutes());
-            throw new ASTRuntimeException(message);
+            throw new ScannerRuntimeException(message);
         } catch (UnsupportedEncodingException e) {
             log.error("Unexpected error.", e);
         }
@@ -106,7 +106,7 @@ public class ScanWaiter {
             completedSuccessfully = true;
         } else if (status == ScanStatus.FAILED) {
             // Scan has failed on the back end, no need to retry.
-            throw new ASTRuntimeException(String.format("Scan status is %s, aborting.", status));
+            throw new ScannerRuntimeException(String.format("Scan status is %s, aborting.", status));
         } else if (status == null) {
             log.warn("Unknown status.");
         }
@@ -118,7 +118,7 @@ public class ScanWaiter {
         int triesLeft = maxErrorCount - currentErrorCount;
         if (triesLeft < 0) {
             String fullMessage = String.format("Maximum number of errors was reached (%d), aborting.", maxErrorCount);
-            throw new ASTRuntimeException(fullMessage);
+            throw new ScannerRuntimeException(fullMessage);
         } else {
             String note = (triesLeft == 0 ? "last attempt" : String.format("tries left: %d", triesLeft));
             log.info(String.format("Failed to get status from %s with the message: %s. Retrying (%s)",

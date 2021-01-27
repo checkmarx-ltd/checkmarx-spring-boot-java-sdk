@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.dto.sca.ClientType;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
@@ -70,7 +70,7 @@ public class ClientTypeResolver {
                     scopesForOnPremAuth,
                     supportedScopes);
 
-            throw new ASTRuntimeException(message);
+            throw new ScannerRuntimeException(message);
         }
         log.debug(String.format("Using scopes: %s", result));
         return result;
@@ -81,7 +81,7 @@ public class ClientTypeResolver {
             String res = getHttpClient(accessControlServerBaseUrl).getRequest(WELL_KNOWN_CONFIG_PATH, CONTENT_TYPE_APPLICATION_JSON_V1, String.class, 200, "Get openId configuration", false);
             return objectMapper.readTree(res);
         } catch (Exception e) {
-            throw new ASTRuntimeException("Error getting OpenID config response.", e);
+            throw new ScannerRuntimeException("Error getting OpenID config response.", e);
         }
     }
 

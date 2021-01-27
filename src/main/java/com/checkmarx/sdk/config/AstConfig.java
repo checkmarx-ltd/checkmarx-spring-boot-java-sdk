@@ -1,6 +1,6 @@
-package com.checkmarx.sdk.dto.ast;
+package com.checkmarx.sdk.config;
 
-import com.checkmarx.sdk.dto.ScaConfig;
+import com.checkmarx.sdk.dto.ScanConfigBase;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,7 +12,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @NoArgsConstructor
-public class AstConfig extends ScaConfig implements Serializable  {
+public class AstConfig extends ScanConfigBase implements Serializable  {
     private String clientSecret;
     private String clientId;
     private String presetName;
