@@ -39,7 +39,6 @@ public abstract class ScanClientHelper {
 
     private State state = State.SUCCESS;
     
-   // protected static final PropertyFileLoader properties = PropertyFileLoader.getDefaultInstance();
     public static final String GET_SCAN ="/api/scans/%s";
     public static final String CREATE_SCAN = "/api/scans";
     public static final String GET_UPLOAD_URL = "/api/uploads";
