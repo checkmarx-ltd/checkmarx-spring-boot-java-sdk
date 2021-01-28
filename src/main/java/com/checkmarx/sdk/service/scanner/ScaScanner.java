@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.service.scanner;
 
 import com.checkmarx.sdk.config.ScaProperties;
+import com.checkmarx.sdk.dto.ast.Summary;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
@@ -21,6 +22,7 @@ import com.checkmarx.sdk.dto.ResultsBase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -72,10 +74,13 @@ public class ScaScanner extends AbstractScanner {
         SCAResults scaResults = (SCAResults)scanResults;
         validateNotNull(scaResults);
 
-        ScaSummaryBaseFormat summary = scaResults.getSummaryBaseFormat();
-        Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summary);
+        ScaSummaryBaseFormat summaryBaseFormat = scaResults.getSummaryBaseFormat();
+        ModelMapper mapper = new ModelMapper();
+        Summary summary = mapper.map(summaryBaseFormat, Summary.class);
 
-        scaResults.getSummary().setFindingCounts(findingCountsPerSeverity);
+        Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summaryBaseFormat);
+        summary.setFindingCounts(findingCountsPerSeverity);
+        scaResults.setSummary(summary);
 
         AstScaResults results = new AstScaResults();
         results.setScaResults(scaResults);
