@@ -2,7 +2,6 @@ package com.checkmarx.sdk.service.scanner;
 
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.ast.Summary;
-import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
@@ -15,18 +14,14 @@ import com.checkmarx.sdk.service.FilterValidator;
 import com.checkmarx.sdk.utils.scanner.client.IScanClientHelper;
 import com.checkmarx.sdk.utils.scanner.client.ScaClientHelper;
 import com.checkmarx.sdk.dto.sca.ScaConfig;
-import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.dto.ResultsBase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-
 import java.io.File;
-import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
