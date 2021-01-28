@@ -1,7 +1,7 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.dto.*;
-import com.checkmarx.sdk.dto.ast.Summary;
+import com.checkmarx.sdk.dto.sca.Summary;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.dto.sca.SCAResults;

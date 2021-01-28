@@ -182,7 +182,7 @@ public class ScanResults{
     }
 
     public boolean isAstResults(){
-        return Optional.ofNullable(getAstResults()).isPresent() ;
+        return getAstResults() != null ;
     }
 
     public boolean isSastResults(){

@@ -1,7 +1,7 @@
 package com.checkmarx.sdk.service.scanner;
 
 import com.checkmarx.sdk.config.ScaProperties;
-import com.checkmarx.sdk.dto.ast.Summary;
+import com.checkmarx.sdk.dto.sca.Summary;
 import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
@@ -142,7 +142,7 @@ public class ScaScanner extends AbstractScanner {
         validateNotNull(scanParams);
 
         com.checkmarx.sdk.config.ScaConfig scaConfig = scanParams.getScaConfig();
-        if (Optional.ofNullable(scaConfig).isPresent()) {
+        if (scaConfig != null) {
             validateNotEmpty(scaConfig.getAppUrl(), "SCA application URL");
             validateNotEmpty(scaConfig.getApiUrl(), "SCA API URL");
             validateNotEmpty(scaConfig.getAccessControlUrl(), "SCA Access Control URL");

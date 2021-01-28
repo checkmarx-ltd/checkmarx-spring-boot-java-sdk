@@ -3,8 +3,6 @@ package com.checkmarx.sdk.config;
 import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.dto.ScannerType;
 import com.checkmarx.sdk.dto.TokenLoginResponse;
-//import com.checkmarx.sdk.scanner.restclient.sast.dto.ReportType;
-//import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

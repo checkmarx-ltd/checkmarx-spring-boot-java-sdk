@@ -1,7 +1,5 @@
 package com.checkmarx.sdk.dto.sca;
 
-import com.checkmarx.sdk.dto.ast.Summary;
-import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
 import com.checkmarx.sdk.dto.ResultsBase;
