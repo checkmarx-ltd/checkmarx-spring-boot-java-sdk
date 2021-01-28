@@ -1,6 +1,8 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.dto.*;
+import com.checkmarx.sdk.dto.ast.Summary;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.dto.sca.SCAResults;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
@@ -40,6 +42,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -585,10 +588,18 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             result = new SCAResults();
             result.setScanId(this.scanId);
 
-            ScaSummaryBaseFormat scanSummary = getSummaryReport(scanId);
-            result.setSummaryBaseFormat(scanSummary);
-            printSummary(scanSummary, this.scanId);
+            ScaSummaryBaseFormat summaryBaseFormat = getSummaryReport(scanId);
+ 
+            printSummary(summaryBaseFormat, this.scanId);
 
+            ModelMapper mapper = new ModelMapper();
+            Summary summary = mapper.map(summaryBaseFormat, Summary.class);
+
+            Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summaryBaseFormat);
+            summary.setFindingCounts(findingCountsPerSeverity);
+
+            result.setSummary(summary);
+            
             List<Finding> findings = getFindings(scanId);
             result.setFindings(findings);
 
@@ -603,6 +614,14 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         } catch (IOException e) {
             throw new ScannerRuntimeException("Error retrieving CxSCA scan results.", e);
         }
+        return result;
+    }
+
+    protected Map<Filter.Severity, Integer> getFindingCountMap(ScaSummaryBaseFormat summary) {
+        EnumMap<Filter.Severity, Integer> result = new EnumMap<>(Filter.Severity.class);
+        result.put(Filter.Severity.HIGH, summary.getHighVulnerabilityCount());
+        result.put(Filter.Severity.MEDIUM, summary.getMediumVulnerabilityCount());
+        result.put(Filter.Severity.LOW, summary.getLowVulnerabilityCount());
         return result;
     }
 

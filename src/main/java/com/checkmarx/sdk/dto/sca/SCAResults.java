@@ -21,7 +21,6 @@ import java.util.List;
 @AllArgsConstructor
 public class SCAResults extends ResultsBase implements Serializable {
     private String scanId;
-    private ScaSummaryBaseFormat summaryBaseFormat;
     private String webReportLink;
     private List<Finding> findings;
     private List<Package> packages;

@@ -73,15 +73,7 @@ public class ScaScanner extends AbstractScanner {
         
         SCAResults scaResults = (SCAResults)scanResults;
         validateNotNull(scaResults);
-
-        ScaSummaryBaseFormat summaryBaseFormat = scaResults.getSummaryBaseFormat();
-        ModelMapper mapper = new ModelMapper();
-        Summary summary = mapper.map(summaryBaseFormat, Summary.class);
-
-        Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summaryBaseFormat);
-        summary.setFindingCounts(findingCountsPerSeverity);
-        scaResults.setSummary(summary);
-
+        
         AstScaResults results = new AstScaResults();
         results.setScaResults(scaResults);
         return results;
@@ -192,7 +184,7 @@ public class ScaScanner extends AbstractScanner {
             throw new ScannerRuntimeException("SCA results are missing.");
         }
 
-        ScaSummaryBaseFormat summary = scaResults.getSummaryBaseFormat();
+        Summary summary = scaResults.getSummary();
         if (summary == null) {
             throw new ScannerRuntimeException("SCA results don't contain a summary.");
         }

@@ -64,13 +64,6 @@ public abstract class AbstractScanner  {
     protected abstract IScanClientHelper allocateClient(RestClientConfig restClientConfig);
 
 
-    protected Map<Filter.Severity, Integer> getFindingCountMap(ScaSummaryBaseFormat summary) {
-        EnumMap<Filter.Severity, Integer> result = new EnumMap<>(Filter.Severity.class);
-        result.put(Filter.Severity.HIGH, summary.getHighVulnerabilityCount());
-        result.put(Filter.Severity.MEDIUM, summary.getMediumVulnerabilityCount());
-        result.put(Filter.Severity.LOW, summary.getLowVulnerabilityCount());
-        return result;
-    }
 
     protected void validateNotEmpty(String parameter, String parameterDescr) {
         if (StringUtils.isEmpty(parameter)) {
