@@ -116,7 +116,7 @@ public class CxService implements CxClient {
     public static final String ERROR_WITH_XML_REPORT = "Error with XML report";
     public static final String ERROR_PROCESSING_SCAN_RESULTS = "Error while processing scan results";
     public static final String ERROR_GETTING_PROJECT = "Error occurred while retrieving project with id {}, http error {}";
-    public static final String ERROR_GETTING_PROJECT_REMOTE_SETTINGS = "Error occurred while retrieving project's remote settings, http error {}";
+    public static final String PROJECT_REMOTE_SETTINGS_NOT_FOUND = "Project's remote settings were not found, http message {}";
     public static final String FOUND_TEAM = "Found team {} with ID {}";
     public static final String ONLY_SUPPORTED_IN_90_PLUS = "Operation only supported in 9.0+";
     public static final String ERROR_GETTING_TEAMS = "Error occurred while retrieving Teams";
@@ -1188,8 +1188,7 @@ public class CxService implements CxClient {
             return response.getBody();
 
         } catch (HttpStatusCodeException e) {
-            log.error(ERROR_GETTING_PROJECT_REMOTE_SETTINGS, e.getStatusCode());
-            log.error(ExceptionUtils.getStackTrace(e));
+            log.info(PROJECT_REMOTE_SETTINGS_NOT_FOUND, e.getStatusCode());
         }
         return null;
     }
