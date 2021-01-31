@@ -22,7 +22,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+
 
 @Slf4j
 @RequiredArgsConstructor
@@ -36,9 +39,17 @@ public class ScaScanner extends AbstractScanner {
     protected void applyFilterToResults(AstScaResults combinedResults, ScanParams scanParams) {
         EngineFilterConfiguration filterConfig = extractFilterConfigFrom(scanParams);
 
+        List<Finding> findingsToRetain = new ArrayList<>();
+        
         combinedResults.getScaResults()
-                .getFindings()
-                .removeIf(finding -> !passesFilter(finding, filterConfig));
+                .getFindings().forEach(finding -> {
+                    if(passesFilter(finding, filterConfig)){
+                        findingsToRetain.add(finding);
+                    }
+        });
+
+        combinedResults.getScaResults().setFindings(findingsToRetain);
+                
     }
 
     private static EngineFilterConfiguration extractFilterConfigFrom(ScanParams scanParams) {
