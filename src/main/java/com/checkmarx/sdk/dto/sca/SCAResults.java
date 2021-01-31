@@ -3,11 +3,7 @@ package com.checkmarx.sdk.dto.sca;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
 import com.checkmarx.sdk.dto.ResultsBase;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serializable;
 import java.util.List;
