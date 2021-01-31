@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ScanResults {
+public class GoScanResults {
 
     @JsonProperty("sast")
     private List<SASTScanResult> sast;

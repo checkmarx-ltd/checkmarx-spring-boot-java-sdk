@@ -1,11 +1,8 @@
 package com.checkmarx.sdk.config;
 
-import com.checkmarx.sdk.dto.ast.AstConfig;
-import com.checkmarx.sdk.dto.sca.AstScaConfig;
+import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.dto.ScannerType;
 import com.checkmarx.sdk.dto.TokenLoginResponse;
-//import com.checkmarx.sdk.scanner.restclient.sast.dto.ReportType;
-//import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,7 +27,7 @@ public class RestClientConfig  {
     private File zipFile;
     
     private Integer progressInterval;
-    private AstScaConfig astScaConfig;
+    private ScaConfig scaConfig;
     private AstConfig astConfig;
 
     private final Set<ScannerType> scannerTypes = new HashSet<>();

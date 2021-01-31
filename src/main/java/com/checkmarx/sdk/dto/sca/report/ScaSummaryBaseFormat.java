@@ -3,7 +3,7 @@ package com.checkmarx.sdk.dto.sca.report;
 
 import java.io.Serializable;
 
-public class AstScaSummaryResults implements Serializable {
+public class ScaSummaryBaseFormat implements Serializable {
     private int totalPackages;
     private int directPackages;
     private String createdOn;
@@ -13,10 +13,10 @@ public class AstScaSummaryResults implements Serializable {
     private int mediumVulnerabilityCount = 0;
     private int lowVulnerabilityCount = 0;
 
-    public AstScaSummaryResults() {
+    public ScaSummaryBaseFormat() {
     }
 
-    public AstScaSummaryResults(int totalPackages, int directPackages, String createdOn, double riskScore, int totalOutdatedPackages, int highVulnerabilityCount, int mediumVulnerabilityCount, int lowVulnerabilityCount) {
+    public ScaSummaryBaseFormat(int totalPackages, int directPackages, String createdOn, double riskScore, int totalOutdatedPackages, int highVulnerabilityCount, int mediumVulnerabilityCount, int lowVulnerabilityCount) {
         this.totalPackages = totalPackages;
         this.directPackages = directPackages;
         this.createdOn = createdOn;

@@ -1,9 +1,9 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.dto.*;
-import com.checkmarx.sdk.exception.ASTRuntimeException;
-import com.checkmarx.sdk.dto.ast.AstConfig;
-import com.checkmarx.sdk.dto.ast.AstSastResults;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
+import com.checkmarx.sdk.config.AstConfig;
+import com.checkmarx.sdk.dto.ast.ASTResults;
 import com.checkmarx.sdk.dto.ast.SastScanConfigValue;
 import com.checkmarx.sdk.dto.ast.report.*;
 import com.checkmarx.sdk.dto.sca.ClientType;
@@ -75,7 +75,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
     @Override
     public ResultsBase init() {
         log.debug("Initializing {} client.", getScannerDisplayName());
-        AstSastResults astResults = new AstSastResults();
+        ASTResults astResults = new ASTResults();
         try {
             ClientType clientType = getClientType();
             LoginSettings settings = getLoginSettings(clientType);
@@ -132,7 +132,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         log.info("----------------------------------- Initiating {} Scan:------------------------------------",
                 getScannerDisplayName());
 
-        AstSastResults astResults = new AstSastResults();
+        ASTResults astResults = new ASTResults();
         scanId = null;
 
         AstConfig astConfig = config.getAstConfig();
@@ -150,7 +150,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         } catch (Exception e) {
             log.error(e.getMessage());
             setState(State.FAILED);
-            astResults.setException(new ASTRuntimeException("Error creating scan.", e));
+            astResults.setException(new ScannerRuntimeException("Error creating scan.", e));
         }
         return astResults;
     }
@@ -169,7 +169,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
     protected ScanConfig getScanConfig() {
         String presetName = config.getAstConfig().getPresetName();
         if (StringUtils.isEmpty(presetName)) {
-            throw new ASTRuntimeException("Scan preset must be specified.");
+            throw new ScannerRuntimeException("Scan preset must be specified.");
         }
 
         String isIncremental = Boolean.toString(config.getAstConfig().isIncremental());
@@ -195,24 +195,24 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
 
     @Override
     public ResultsBase waitForScanResults() {
-        AstSastResults result;
+        ASTResults result;
         try {
             waitForScanToFinish(scanId);
             result = retrieveScanResults();
-        } catch (ASTRuntimeException e) {
+        } catch (ScannerRuntimeException e) {
             log.error(e.getMessage());
-            result = new AstSastResults();
+            result = new ASTResults();
             result.setException(e);
         }
         return result;
     }
 
-    private AstSastResults retrieveScanResults() {
+    private ASTResults retrieveScanResults() {
         try {
-            AstSastResults result = new AstSastResults();
+            ASTResults result = new ASTResults();
             result.setScanId(scanId);
 
-            AstSastSummaryResults scanSummary = getSummary();
+            AstSummaryResults scanSummary = getSummary();
             result.setSummary(scanSummary);
 
             List<Finding> findings = getFindings();
@@ -224,7 +224,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             return result;
         } catch (IOException e) {
             String message = String.format("Error getting %s scan results.", getScannerDisplayName());
-            throw new ASTRuntimeException(message, e);
+            throw new ScannerRuntimeException(message, e);
         }
     }
 
@@ -234,8 +234,8 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
                 URLEncoder.encode(config.getProjectName(), ENCODING));
     }
 
-    private AstSastSummaryResults getSummary() {
-        AstSastSummaryResults result = new AstSastSummaryResults();
+    private AstSummaryResults getSummary() {
+        AstSummaryResults result = new AstSummaryResults();
 
         String summaryUrl = getRelativeSummaryUrl();
         SummaryResponse summaryResponse = getSummaryResponse(summaryUrl);
@@ -273,7 +273,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
 
         try {
             populateAdditionalFields(allFindings);
-        } catch (ASTRuntimeException e) {
+        } catch (ScannerRuntimeException e) {
             log.error(e.getMessage());
         }
 
@@ -338,7 +338,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
 
             return result;
         } catch (URISyntaxException e) {
-            throw new ASTRuntimeException(URL_PARSING_EXCEPTION, e);
+            throw new ScannerRuntimeException(URL_PARSING_EXCEPTION, e);
         }
     }
 
@@ -358,7 +358,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
 
             return result;
         } catch (URISyntaxException e) {
-            throw new ASTRuntimeException(URL_PARSING_EXCEPTION, e);
+            throw new ScannerRuntimeException(URL_PARSING_EXCEPTION, e);
         }
     }
 
@@ -406,7 +406,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             result = new SummaryResponse();
             result.getScansSummaries().add(new SingleScanSummary());
         } else {
-            throw new ASTRuntimeException("Error getting scan summary.", e);
+            throw new ScannerRuntimeException("Error getting scan summary.", e);
         }
         return result;
     }
@@ -451,11 +451,11 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
 
             return result;
         } catch (URISyntaxException e) {
-            throw new ASTRuntimeException(URL_PARSING_EXCEPTION, e);
+            throw new ScannerRuntimeException(URL_PARSING_EXCEPTION, e);
         }
     }
 
-    private static void setFindingCountsPerSeverity(List<SeverityCounter> nativeCounters, AstSastSummaryResults target) {
+    private static void setFindingCountsPerSeverity(List<SeverityCounter> nativeCounters, AstSummaryResults target) {
         if (nativeCounters == null) {
             return;
         }
@@ -480,14 +480,14 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
                 // We are sending a single scan ID in the request and therefore expect exactly 1 scan summary.
                 .filter(scanSummaries -> scanSummaries.size() == 1)
                 .map(scanSummaries -> scanSummaries.get(0))
-                .orElseThrow(() -> new ASTRuntimeException("Invalid summary response."));
+                .orElseThrow(() -> new ScannerRuntimeException("Invalid summary response."));
     }
 
     @Override
     public ResultsBase getLatestScanResults() {
         log.error("Unsupported Operation.");
-        AstSastResults result = new AstSastResults();
-        result.setException(new ASTRuntimeException(new UnsupportedOperationException()));
+        ASTResults result = new ASTResults();
+        result.setException(new ScannerRuntimeException(new UnsupportedOperationException()));
         return result;
     }
 
@@ -496,7 +496,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         Optional.ofNullable(httpClient).ifPresent(CxHttpClient::close);
     }
 
-    private void validate(ScaConfig astScaSastConfig) {
+    private void validate(ScanConfigBase astScaSastConfig) {
         log.debug("Validating config.");
         String error = null;
         if (astScaSastConfig == null) {
