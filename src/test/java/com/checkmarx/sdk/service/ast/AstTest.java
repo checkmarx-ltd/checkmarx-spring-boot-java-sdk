@@ -4,15 +4,15 @@ import com.checkmarx.sdk.GithubProperties;
 import com.checkmarx.sdk.config.AstProperties;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.SpringConfiguration;
-import com.checkmarx.sdk.dto.ast.ASTResults;
 import com.checkmarx.sdk.dto.AstScaResults;
+import com.checkmarx.sdk.dto.ast.ASTResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.service.CommonClientTest;
 import com.checkmarx.sdk.service.scanner.AstScanner;
 import com.checkmarx.sdk.dto.RemoteRepositoryInfo;
-import com.checkmarx.sdk.dto.ast.AstConfig;
-import com.checkmarx.sdk.dto.ast.report.AstSastSummaryResults;
+import com.checkmarx.sdk.config.AstConfig;
+import com.checkmarx.sdk.dto.ast.report.AstSummaryResults;
 import com.checkmarx.sdk.dto.ast.report.Finding;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.dto.SourceLocationType;
@@ -36,7 +36,7 @@ import java.util.*;
 @Import(SpringConfiguration.class)
 @SpringBootTest
 @Slf4j
-public class AstSastTest extends CommonClientTest {
+public class AstTest extends CommonClientTest {
 
     @Autowired
     AstProperties astProperties;
@@ -75,17 +75,17 @@ public class AstSastTest extends CommonClientTest {
     private void validateFinalResults(AstScaResults finalResults) {
         Assert.assertNotNull("Final scan results are null.", finalResults);
 
-        ASTResults astSastResults = finalResults.getAstResults();
-        Assert.assertNotNull("AST-SAST results are null.", astSastResults);
-        Assert.assertTrue("Scan ID is missing.", StringUtils.isNotEmpty(astSastResults.getResults().getScanId()));
-        Assert.assertTrue("Web report link is missing.", StringUtils.isNotEmpty(astSastResults.getResults().getWebReportLink()));
+        ASTResults ASTResults = finalResults.getAstResults();
+        Assert.assertNotNull("AST-SAST results are null.", ASTResults);
+        Assert.assertTrue("Scan ID is missing.", StringUtils.isNotEmpty(ASTResults.getScanId()));
+        Assert.assertTrue("Web report link is missing.", StringUtils.isNotEmpty(ASTResults.getWebReportLink()));
 
-        validateFindings(astSastResults);
-        validateSummary(astSastResults);
+        validateFindings(ASTResults);
+        validateSummary(ASTResults);
     }
 
-    private void validateSummary(ASTResults astSastResults) {
-        AstSastSummaryResults summary = astSastResults.getResults().getSummary();
+    private void validateSummary(ASTResults ASTResults) {
+        AstSummaryResults summary = ASTResults.getSummary();
         Assert.assertNotNull("Summary is null.", summary);
         Assert.assertTrue("No medium-severity vulnerabilities.",
                 summary.getMediumVulnerabilityCount() > 0);
@@ -95,12 +95,12 @@ public class AstSastTest extends CommonClientTest {
 
         Assert.assertTrue("Expected total counter to be a positive value.", summary.getTotalCounter() > 0);
 
-        int actualFindingCount = astSastResults.getResults().getFindings().size();
+        int actualFindingCount = ASTResults.getFindings().size();
         Assert.assertEquals("Total finding count from summary doesn't correspond to the actual count.",
                 actualFindingCount,
                 summary.getTotalCounter());
 
-        long actualFindingCountExceptInfo = astSastResults.getResults().getFindings()
+        long actualFindingCountExceptInfo = ASTResults.getFindings()
                 .stream()
                 .filter(finding -> !StringUtils.equalsIgnoreCase(finding.getSeverity(), "info"))
                 .count();
@@ -114,8 +114,8 @@ public class AstSastTest extends CommonClientTest {
                 countFromSummaryExceptInfo);
     }
 
-    private void validateFindings(ASTResults astSastResults) {
-        List<Finding> findings = astSastResults.getResults().getFindings();
+    private void validateFindings(ASTResults ASTResults) {
+        List<Finding> findings = ASTResults.getFindings();
         Assert.assertNotNull("Finding list is null.", findings);
         Assert.assertFalse("Finding list is empty.", findings.isEmpty());
 

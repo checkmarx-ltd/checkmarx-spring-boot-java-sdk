@@ -1,7 +1,7 @@
 package com.checkmarx.sdk.dto;
 
 import com.checkmarx.sdk.dto.ast.ASTResults;
-import com.checkmarx.sdk.dto.ast.SCAResults;
+import com.checkmarx.sdk.dto.sca.SCAResults;
 import lombok.*;
 
 @AllArgsConstructor

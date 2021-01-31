@@ -2,7 +2,7 @@ package com.checkmarx.sdk.service.sca;
 
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.config.SpringConfiguration;
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.service.CommonClientTest;
 import com.checkmarx.sdk.dto.sca.ClientType;
 import com.checkmarx.sdk.config.RestClientConfig;
@@ -55,7 +55,7 @@ public class ClientTypeResolverTest extends CommonClientTest {
             resolver.determineClientType(url);
             Assert.fail("Expected exception, but didn't get any.");
         } catch (Exception e) {
-            Assert.assertTrue("Unexpected exception type.", e instanceof ASTRuntimeException);
+            Assert.assertTrue("Unexpected exception type.", e instanceof ScannerRuntimeException);
             Assert.assertTrue("Exception message is empty.", StringUtils.isNotEmpty(e.getMessage()));
             log.info("Got an expected exception");
         }

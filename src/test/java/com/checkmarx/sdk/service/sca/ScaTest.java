@@ -4,12 +4,12 @@ import com.checkmarx.sdk.GithubProperties;
 import com.checkmarx.sdk.config.*;
 import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
-import com.checkmarx.sdk.exception.ASTRuntimeException;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.service.FilterInputFactory;
 import com.checkmarx.sdk.service.FilterValidator;
 import com.checkmarx.sdk.service.scanner.ScaScanner;
 import com.checkmarx.sdk.dto.RemoteRepositoryInfo;
-import com.checkmarx.sdk.dto.sca.AstScaConfig;
+import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.dto.SourceLocationType;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,7 @@ import static org.junit.Assert.fail;
 @Import(SpringConfiguration.class)
 @SpringBootTest
 @Slf4j
-public class AstScaTest extends ScaTestsBase {
+public class ScaTest extends ScaTestsBase {
 
 
     @Autowired
@@ -52,14 +52,14 @@ public class AstScaTest extends ScaTestsBase {
 
     protected RestClientConfig initScaConfig(String repoUrlProp, boolean useOnPremAuthentication) throws MalformedURLException {
         RestClientConfig config = initScaConfig(useOnPremAuthentication);
-        config.getAstScaConfig().setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
+        config.getScaConfig().setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
         RemoteRepositoryInfo repoInfo = new RemoteRepositoryInfo();
 
         URL repoUrl = new URL(repoUrlProp);
         repoInfo.setUrl(repoUrl);
         repoInfo.setUsername(githubProperties.getToken());
 
-        config.getAstScaConfig().setRemoteRepositoryInfo(repoInfo);
+        config.getScaConfig().setRemoteRepositoryInfo(repoInfo);
         return config;
     }
 
@@ -75,12 +75,12 @@ public class AstScaTest extends ScaTestsBase {
         RestClientConfig config = new RestClientConfig();
         config.setProjectName("sdkScaProject");
         config.setProgressInterval(5);
-        AstScaConfig sca = getScaConfig(useOnPremAuthentication);
-        config.setAstScaConfig(sca);
+        ScaConfig sca = getScaConfig(useOnPremAuthentication);
+        config.setScaConfig(sca);
 
         return config;
     }
-    protected AstScaConfig getScaConfig(boolean useOnPremiseAuthentication) {
+    protected ScaConfig getScaConfig(boolean useOnPremiseAuthentication) {
         String accessControlProp, usernameProp, passwordProp;
         if (useOnPremiseAuthentication) {
 //            accessControlProp = onPremiseControlUrl;
@@ -93,7 +93,7 @@ public class AstScaTest extends ScaTestsBase {
             passwordProp = scaProperties.getPassword();
         }
 
-        AstScaConfig result = new AstScaConfig();
+        ScaConfig result = new ScaConfig();
         result.setApiUrl(scaProperties.getApiUrl());
         result.setWebAppUrl(scaProperties.getAppUrl());
         result.setTenant(scaProperties.getTenant());
@@ -105,10 +105,10 @@ public class AstScaTest extends ScaTestsBase {
     }
     
     @Test
-    public void scan_localDirUpload() throws IOException, ASTRuntimeException {
+    public void scan_localDirUpload() throws IOException, ScannerRuntimeException {
         RestClientConfig config = initScaConfig(false);
 
-        config.getAstScaConfig().setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
+        config.getScaConfig().setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
 
         Path sourcesDir = null;
         try {
@@ -190,20 +190,20 @@ public class AstScaTest extends ScaTestsBase {
     }
 
     @Test
-    public void scan_localDirUploadIncludeSources() throws IOException, ASTRuntimeException {
+    public void scan_localDirUploadIncludeSources() throws IOException, ScannerRuntimeException {
         RestClientConfig config = initScaConfig(false);
         localDirScan(config);
     }
 
     @Test
-    public void scan_localDirZeroCodeScan() throws IOException, ASTRuntimeException {
+    public void scan_localDirZeroCodeScan() throws IOException, ScannerRuntimeException {
         RestClientConfig config = initScaConfig(false);
         localDirScan(config);
     }
 
     private void localDirScan(RestClientConfig config) throws MalformedURLException {
 
-        config.getAstScaConfig().setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
+        config.getScaConfig().setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
 
         Path sourcesDir = null;
         try {
@@ -224,7 +224,7 @@ public class AstScaTest extends ScaTestsBase {
     }
 
     private ScanParams getScanParams(RestClientConfig config) {
-        ScaConfig scaConfig = new ScaConfig();
+        com.checkmarx.sdk.config.ScaConfig scaConfig = new com.checkmarx.sdk.config.ScaConfig();
         scaConfig.setAccessControlUrl(scaProperties.getAccessControlUrl());
         scaConfig.setApiUrl(scaProperties.getApiUrl());
         scaConfig.setAppUrl(scaProperties.getAppUrl());
@@ -253,7 +253,7 @@ public class AstScaTest extends ScaTestsBase {
         } catch (MalformedURLException e) {
             log.error("Failed to parse repository URL: '{}'", githubProperties.getUrl());
             failOnException(e);
-            throw new ASTRuntimeException("Invalid repository URL.");
+            throw new ScannerRuntimeException("Invalid repository URL.");
         }
         return parsedUrl;
     }
@@ -310,7 +310,7 @@ public class AstScaTest extends ScaTestsBase {
     }
 
     private static InputStream getTestProjectStream() {
-        String srcResourceName = AstScaTest.PACKED_SOURCES_TO_SCAN;
+        String srcResourceName = ScaTest.PACKED_SOURCES_TO_SCAN;
         log.info("Getting resource stream from '{}'", srcResourceName);
         return Thread.currentThread()
                 .getContextClassLoader()

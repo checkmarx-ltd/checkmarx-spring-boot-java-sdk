@@ -5,8 +5,7 @@ import com.checkmarx.sdk.config.CxGoProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
-import com.checkmarx.sdk.dto.ast.SCAResults;
-import com.checkmarx.sdk.dto.ast.Summary;
+import com.checkmarx.sdk.dto.sca.Summary;
 import com.checkmarx.sdk.dto.cx.CxProject;
 import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.dto.cx.CxScanSettings;
@@ -14,6 +13,7 @@ import com.checkmarx.sdk.dto.cx.CxScanSummary;
 import com.checkmarx.sdk.dto.cxgo.*;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
+import com.checkmarx.sdk.dto.sca.SCAResults;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
 import com.checkmarx.sdk.dto.sca.report.Finding;
@@ -390,12 +390,12 @@ public class GoScanner implements ILegacyClient {
         Integer buId = scan.getBusinessUnitId();
         Integer appId = scan.getApplicationId();
 
-        com.checkmarx.sdk.dto.cxgo.ScanResults resultFromAllEngines = getScanResults(scanId);
+        GoScanResults resultFromAllEngines = getScanResults(scanId);
 
         List<ScanResults.XIssue> xIssues = new ArrayList<>();
         //SAST
         List<SASTScanResult> mainResultInfos = Optional.ofNullable(resultFromAllEngines)
-                .map(com.checkmarx.sdk.dto.cxgo.ScanResults::getSast)
+                .map(GoScanResults::getSast)
                 .orElse(null);
 
         if (mainResultInfos != null) {
@@ -416,7 +416,7 @@ public class GoScanner implements ILegacyClient {
 
         //SCA
         List<SCAScanResult> rawScanResults = Optional.ofNullable(resultFromAllEngines)
-                .map(com.checkmarx.sdk.dto.cxgo.ScanResults::getSca).orElse(null);
+                .map(GoScanResults::getSca).orElse(null);
         if (rawScanResults != null) {
             logRawScaScanResults(rawScanResults);
 
@@ -995,16 +995,16 @@ public class GoScanner implements ILegacyClient {
         }
     }
 
-    private com.checkmarx.sdk.dto.cxgo.ScanResults getScanResults(Integer scanId) throws CheckmarxException {
+    private GoScanResults getScanResults(Integer scanId) throws CheckmarxException {
         HttpEntity<?> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
 
         try {
             log.info("Retrieving Scan Results for Scan Id {} ", scanId);
-            ResponseEntity<com.checkmarx.sdk.dto.cxgo.ScanResults> response = restTemplate.exchange(
+            ResponseEntity<GoScanResults> response = restTemplate.exchange(
                     cxGoProperties.getUrl().concat(SCAN_RESULTS),
                     HttpMethod.GET,
                     httpEntity,
-                    com.checkmarx.sdk.dto.cxgo.ScanResults.class,
+                    GoScanResults.class,
                     scanId);
             return response.getBody();
         } catch(HttpStatusCodeException e) {

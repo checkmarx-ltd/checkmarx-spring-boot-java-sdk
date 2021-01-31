@@ -3,10 +3,10 @@ package com.checkmarx.sdk.service.scanner;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
-import com.checkmarx.sdk.dto.ScaConfig;
+import com.checkmarx.sdk.dto.ScanConfigBase;
 import com.checkmarx.sdk.dto.RemoteRepositoryInfo;
-import com.checkmarx.sdk.exception.ASTRuntimeException;
-import com.checkmarx.sdk.dto.sca.report.AstScaSummaryResults;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
+import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.utils.scanner.client.IScanClientHelper;
 import com.checkmarx.sdk.utils.State;
 import com.checkmarx.sdk.config.RestClientConfig;
@@ -64,22 +64,15 @@ public abstract class AbstractScanner  {
     protected abstract IScanClientHelper allocateClient(RestClientConfig restClientConfig);
 
 
-    protected Map<Filter.Severity, Integer> getFindingCountMap(AstScaSummaryResults summary) {
-        EnumMap<Filter.Severity, Integer> result = new EnumMap<>(Filter.Severity.class);
-        result.put(Filter.Severity.HIGH, summary.getHighVulnerabilityCount());
-        result.put(Filter.Severity.MEDIUM, summary.getMediumVulnerabilityCount());
-        result.put(Filter.Severity.LOW, summary.getLowVulnerabilityCount());
-        return result;
-    }
 
     protected void validateNotEmpty(String parameter, String parameterDescr) {
         if (StringUtils.isEmpty(parameter)) {
             String message = String.format("%s %s wasn't provided", ERROR_PREFIX, parameterDescr);
-            throw new ASTRuntimeException(message);
+            throw new ScannerRuntimeException(message);
         }
     }
 
-    protected static void setSourceLocation(ScanParams scanParams, RestClientConfig scanConfig, ScaConfig scaConfig) {
+    protected static void setSourceLocation(ScanParams scanParams, RestClientConfig scanConfig, ScanConfigBase scaConfig) {
         if (localSourcesAreSpecified(scanParams)) {
             scaConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
 
@@ -107,9 +100,9 @@ public abstract class AbstractScanner  {
 
     protected void validateResults(ResultsBase results) {
         if (results!= null && results.getException() != null){
-            throw new ASTRuntimeException(results.getException().getMessage() );
+            throw new ScannerRuntimeException(results.getException().getMessage() );
         }else if(client.getState() != State.SUCCESS) {
-            throw new ASTRuntimeException("Scanner State Failure");
+            throw new ScannerRuntimeException("Scanner State Failure");
         }
         
     }
