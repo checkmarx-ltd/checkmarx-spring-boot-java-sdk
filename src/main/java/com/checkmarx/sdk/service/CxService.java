@@ -1620,8 +1620,10 @@ public class CxService implements CxClient {
         }
 
         if(!useSsh) {
-
-            if((params.getSourceType()).equals(CxScanParams.Type.GIT)) {
+            if(cxProperties.isEnabledZipScan()){
+                
+            }
+            else if((params.getSourceType()).equals(CxScanParams.Type.GIT)) {
                 setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
             }
             else if((params.getSourceType()).equals(CxScanParams.Type.FILE)) {

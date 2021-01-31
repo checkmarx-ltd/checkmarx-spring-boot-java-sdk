@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.service;
 
+import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxGoProperties;
 import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.exception.CheckmarxException;
@@ -11,6 +12,7 @@ import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -24,6 +26,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -120,5 +123,21 @@ public class CxRepoFileService {
                 log.error("Error occurred while executing Post Clone Script {}", ExceptionUtils.getMessage(e), e);
             }
         }
+    }
+
+    public String getScaZipFolderPath(String repoUrlWithAuth, List<String> excludeFiles, String branch) throws CheckmarxException {
+        CxScanParams cxScanParams = prepareScanParamsToCloneRepo( repoUrlWithAuth,  excludeFiles,  branch);
+        return prepareRepoFile(cxScanParams);
+    }
+
+    private CxScanParams prepareScanParamsToCloneRepo(String repoUrlWithAuth, List<String> excludeFiles, String branch) {
+        CxScanParams cxScanParams = new CxScanParams();
+        cxScanParams.withGitUrl(repoUrlWithAuth);
+        cxScanParams.withFileExclude(excludeFiles);
+
+        if (StringUtils.isNotEmpty(branch)) {
+            cxScanParams.withBranch(Constants.CX_BRANCH_PREFIX.concat(branch));
+        }
+        return cxScanParams;
     }
 }
