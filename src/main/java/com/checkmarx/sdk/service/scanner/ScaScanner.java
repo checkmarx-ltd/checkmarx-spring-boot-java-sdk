@@ -87,7 +87,7 @@ public class ScaScanner extends AbstractScanner {
 
     @Override
     protected IScanClientHelper allocateClient(RestClientConfig restClientConfig) {
-        return new ScaClientHelper(restClientConfig, log);
+        return new ScaClientHelper(restClientConfig, log, scaProperties);
     }
     
     public AstScaResults getLatestScanResults(ScanParams scanParams) {
