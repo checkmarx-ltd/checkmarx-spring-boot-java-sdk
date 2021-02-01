@@ -602,7 +602,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     }
 
     private void determineProjectTeam(CreateProjectRequest request) {
-        String team = scaProperties.getTeam();
+        String team = scaProperties.getTeamForNewProjects();
         if (StringUtils.isNotEmpty(team)) {
             log.info("Assigning SCA project with team: {}", team);
             request.setAssignedTeams(Collections.singletonList(team));
