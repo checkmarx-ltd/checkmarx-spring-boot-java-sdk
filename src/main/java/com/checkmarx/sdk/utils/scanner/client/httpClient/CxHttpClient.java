@@ -454,6 +454,11 @@ public class CxHttpClient implements Closeable {
         request(patch, contentType, entity, null, expectStatus, failedMsg, false, true);
     }
 
+    public void deleteRequest(String relPath, int expectStatus, String failedMsg) throws IOException {
+        HttpDelete httpDelete = new HttpDelete(rootUri + relPath);
+        request(httpDelete, null, null, null, expectStatus, failedMsg, false, false);
+    }
+
     public void setTeamPathHeader(String teamPath) {
         this.teamPath = teamPath;
     }

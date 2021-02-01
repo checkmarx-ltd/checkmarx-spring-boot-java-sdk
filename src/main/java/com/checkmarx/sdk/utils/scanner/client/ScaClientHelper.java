@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
+import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.sca.Summary;
 import com.checkmarx.sdk.dto.sast.Filter;
@@ -63,6 +64,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     
     private static final String RISK_MANAGEMENT_API = "/risk-management/";
     private static final String PROJECTS = RISK_MANAGEMENT_API + "projects";
+    private static final String PROJECTS_BY_ID = PROJECTS + "/%s";
     private static final String SUMMARY_REPORT = RISK_MANAGEMENT_API + "riskReports/%s/summary";
     private static final String FINDINGS = RISK_MANAGEMENT_API + "riskReports/%s/vulnerabilities";
     private static final String PACKAGES = RISK_MANAGEMENT_API + "riskReports/%s/packages";
@@ -89,6 +91,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             // e.g. "High" (in JSON) -> Severity.HIGH (in Java).
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
     private final ScaConfig scaConfig;
+    private final ScaProperties scaProperties;
 
 
     private String projectId;
@@ -97,10 +100,11 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private CxSCAResolvingConfiguration resolvingConfiguration;
     private static final String FINGERPRINT_FILE_NAME = ".cxsca.sig";
 
-    public ScaClientHelper(RestClientConfig config, Logger log) {
+    public ScaClientHelper(RestClientConfig config, Logger log, ScaProperties scaProperties) {
         super(config, log);
 
         this.scaConfig = config.getScaConfig();
+        this.scaProperties = scaProperties;
         validate(scaConfig);
 
         httpClient = createHttpClient(scaConfig.getApiUrl());
@@ -265,6 +269,21 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             scaResults.setException(new ScannerRuntimeException("Error creating scan.", e));
         }
         return scaResults;
+    }
+
+    public void deleteProjectById(String projectId) throws IOException {
+        log.info("Deleting project with id: {}", projectId);
+        httpClient.deleteRequest(String.format(PROJECTS_BY_ID, projectId), HttpStatus.SC_NO_CONTENT, "delete a project");
+    }
+
+    public Project getProjectDetailsByProjectId(String projectId) throws IOException {
+        log.info("Getting project details by project id: {}", projectId);
+        return httpClient.getRequest(String.format(PROJECTS_BY_ID, projectId),
+                ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                Project.class,
+                HttpStatus.SC_OK,
+                "project details",
+                false);
     }
 
     protected HttpResponse submitAllSourcesFromLocalDir(String projectId, String zipFilePath) throws IOException {
@@ -565,10 +584,11 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 true);
     }
 
-    private String createRiskManagementProject(String name) throws IOException {
+    public String createRiskManagementProject(String name) throws IOException {
         CreateProjectRequest request = new CreateProjectRequest();
         request.setName(name);
 
+        determineProjectTeam(request);
         StringEntity entity = HttpClientHelper.convertToStringEntity(request);
 
         Project newProject = httpClient.postRequest(PROJECTS,
@@ -581,6 +601,16 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         return newProject.getId();
     }
 
+    private void determineProjectTeam(CreateProjectRequest request) {
+        String team = scaProperties.getTeam();
+        if (StringUtils.isNotEmpty(team)) {
+            log.info("Assigning SCA project with team: {}", team);
+            request.setAssignedTeams(Collections.singletonList(team));
+        } else {
+            request.setAssignedTeams(null);
+        }
+    }
+
     private SCAResults getScanResults() {
         SCAResults result;
         log.debug("Getting results for scan ID {}", scanId);
@@ -589,7 +619,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             result.setScanId(this.scanId);
 
             ScaSummaryBaseFormat summaryBaseFormat = getSummaryReport(scanId);
- 
+
             printSummary(summaryBaseFormat, this.scanId);
 
             ModelMapper mapper = new ModelMapper();
@@ -599,7 +629,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             summary.setFindingCounts(findingCountsPerSeverity);
 
             result.setSummary(summary);
-            
+
             List<Finding> findings = getFindings(scanId);
             result.setFindings(findings);
 
