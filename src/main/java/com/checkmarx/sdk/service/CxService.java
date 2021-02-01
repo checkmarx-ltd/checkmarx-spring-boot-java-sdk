@@ -26,6 +26,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -71,6 +72,8 @@ public class CxService implements CxClient {
     private static final Integer SCAN_STATUS_FAILED = 9;
     private static final Integer SCAN_STATUS_SOURCE_PULLING = 10;
     private static final Integer SCAN_STATUS_NONE = 1001;
+
+    
     /*
     report statuses - there are only 2:
     InProcess (1)
@@ -130,14 +133,18 @@ public class CxService implements CxClient {
 
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
-
+    private final CxRepoFileService cxRepoFileService;
+    
     public CxService(CxAuthService authClient,
                      CxProperties cxProperties,
                      CxLegacyService cxLegacyService,
                      @Qualifier("cxRestTemplate") RestTemplate restTemplate,
                      ScanSettingsClient scanSettingsClient,
                      FilterInputFactory filterInputFactory,
-                     FilterValidator filterValidator) {
+                     FilterValidator filterValidator,
+                     CxRepoFileService cxRepoFileService) {
+        
+        this.cxRepoFileService = cxRepoFileService;
         this.authClient = authClient;
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
@@ -1620,14 +1627,13 @@ public class CxService implements CxClient {
         }
 
         if(!useSsh) {
-            if(cxProperties.isEnabledZipScan()){
-                
-            }
-            else if((params.getSourceType()).equals(CxScanParams.Type.GIT)) {
+            if (cxProperties.isEnabledZipScan()) {
+                String clonedRepoPath = cxRepoFileService.prepareRepoFile(params, false);
+                uploadProjectSource(projectId, new File(clonedRepoPath));
+            } else if ((params.getSourceType()).equals(CxScanParams.Type.GIT)) {
                 setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
-            }
-            else if((params.getSourceType()).equals(CxScanParams.Type.FILE)) {
-                    uploadProjectSource(projectId, new File(params.getFilePath()));
+            } else if ((params.getSourceType()).equals(CxScanParams.Type.FILE)) {
+                uploadProjectSource(projectId, new File(params.getFilePath()));
             }
         }
         if(params.isIncremental() && projectExistedBeforeScan) {

@@ -39,6 +39,9 @@ public class CxRepoFileService {
     }
 
     public String prepareRepoFile(CxScanParams params) throws CheckmarxException {
+        return prepareRepoFile(params, true);
+    }
+    public String prepareRepoFile(CxScanParams params, boolean shouldZip) throws CheckmarxException {
         String gitURL = params.getGitUrl();
         String branch = params.getBranch();
         String srcPath;
@@ -47,64 +50,73 @@ public class CxRepoFileService {
         pathFile = new File(srcPath);
 
         try {
-            URI uri = new URI(gitURL);
-            CredentialsProvider credentialsProvider = null;
-            String token = uri.getUserInfo();
-            if(token == null){
-                token = "";
-                log.info("empty token");
-            }
-            if(token.startsWith("oauth2:")){
-                log.debug("Using gitlab clone");
-                token = token.replace("oauth2:","");
-                gitURL = gitURL.replace(uri.getUserInfo(), "gitlab-ci-token:".concat(token));
-                credentialsProvider = new UsernamePasswordCredentialsProvider("oauth2", token);
-            }
-            else if(token.contains(":")){
-                String[] userDetails = token.split(":");
-                if(userDetails.length == 2) {
-                    log.debug("Using clone with username/password");
-                    credentialsProvider = new UsernamePasswordCredentialsProvider(userDetails[0], userDetails[1]);
-                }
-                log.info("credentialsProvider is not allocated");
-            }
-            else if (gitURL.contains("@bitbucket.org")) {
-                credentialsProvider = new UsernamePasswordCredentialsProvider("x-token-auth", token);
-            }
-            else{
-                credentialsProvider = new UsernamePasswordCredentialsProvider(token, "");
-                log.info("credentialsProvider without password");
-            }
-            log.info("Cloning code locally to {}", pathFile);
-            Git.cloneRepository()
-                    .setURI(gitURL)
-                    .setBranch(branch)
-                    .setBranchesToClone(Collections.singleton(branch))
-                    .setDirectory(pathFile)
-                    .setCredentialsProvider(credentialsProvider)
-                    .call()
-                    .close();
-            
+            gitClone(gitURL, branch, pathFile);
+
             log.info("After Clone");
-            String cxZipFile = cxProperties.getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
             String exclusions = null;
             if(params.getFileExclude() != null && !params.getFileExclude().isEmpty()){
                 exclusions = String.join(",",params.getFileExclude());
             }
             runPostCloneScript(params, srcPath);
             
-            log.info("running zip file");
-            ZipUtils.zipFile(srcPath, cxZipFile, exclusions);
-            try {
-                FileUtils.deleteDirectory(pathFile);
-            } catch (IOException e){
-                log.warn("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
+            if(shouldZip){
+                String cxZipFile = cxProperties.getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
+
+                log.info("running zip file");
+                ZipUtils.zipFile(srcPath, cxZipFile, exclusions);
+                try {
+                    FileUtils.deleteDirectory(pathFile);
+                } catch (IOException e) {
+                    log.warn("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
+                }
+                return cxZipFile;
+            }else{
+                return pathFile.getAbsolutePath();
             }
-            return cxZipFile;
         } catch (GitAPIException | IOException | URISyntaxException e)  {
             log.error(ExceptionUtils.getRootCauseMessage(e));
             throw new CheckmarxException("Unable to clone Git Url.");
         }
+    }
+
+    private void gitClone(String gitURL, String branch, File pathFile) throws URISyntaxException, GitAPIException {
+        URI uri = new URI(gitURL);
+        CredentialsProvider credentialsProvider = null;
+        String token = uri.getUserInfo();
+        if(token == null){
+            token = "";
+            log.info("empty token");
+        }
+        if(token.startsWith("oauth2:")){
+            log.debug("Using gitlab clone");
+            token = token.replace("oauth2:","");
+            gitURL = gitURL.replace(uri.getUserInfo(), "gitlab-ci-token:".concat(token));
+            credentialsProvider = new UsernamePasswordCredentialsProvider("oauth2", token);
+        }
+        else if(token.contains(":")){
+            String[] userDetails = token.split(":");
+            if(userDetails.length == 2) {
+                log.debug("Using clone with username/password");
+                credentialsProvider = new UsernamePasswordCredentialsProvider(userDetails[0], userDetails[1]);
+            }
+            log.info("credentialsProvider is not allocated");
+        }
+        else if (gitURL.contains("@bitbucket.org")) {
+            credentialsProvider = new UsernamePasswordCredentialsProvider("x-token-auth", token);
+        }
+        else{
+            credentialsProvider = new UsernamePasswordCredentialsProvider(token, "");
+            log.info("credentialsProvider without password");
+        }
+        log.info("Cloning code locally to {}", pathFile);
+        Git.cloneRepository()
+                .setURI(gitURL)
+                .setBranch(branch)
+                .setBranchesToClone(Collections.singleton(branch))
+                .setDirectory(pathFile)
+                .setCredentialsProvider(credentialsProvider)
+                .call()
+                .close();
     }
 
     private void runPostCloneScript(CxScanParams params, String path) {
