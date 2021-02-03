@@ -25,6 +25,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.DosFileAttributeView;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -38,10 +42,8 @@ public class CxRepoFileService {
         this.cxProperties = cxProperties;
     }
 
+
     public String prepareRepoFile(CxScanParams params) throws CheckmarxException {
-        return prepareRepoFile(params, true);
-    }
-    public String prepareRepoFile(CxScanParams params, boolean shouldZip) throws CheckmarxException {
         String gitURL = params.getGitUrl();
         String branch = params.getBranch();
         String srcPath;
@@ -59,23 +61,42 @@ public class CxRepoFileService {
             }
             runPostCloneScript(params, srcPath);
             
-            if(shouldZip){
-                String cxZipFile = cxProperties.getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
-
-                log.info("running zip file");
-                ZipUtils.zipFile(srcPath, cxZipFile, exclusions);
-                try {
-                    FileUtils.deleteDirectory(pathFile);
-                } catch (IOException e) {
-                    log.warn("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
-                }
-                return cxZipFile;
-            }else{
-                return pathFile.getAbsolutePath();
+            String cxZipFile = cxProperties.getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
+            log.info("running zip file");
+            ZipUtils.zipFile(srcPath, cxZipFile, exclusions);
+            try {
+                makeWritableDirectory(pathFile);
+                FileUtils.deleteDirectory(pathFile);
+            } catch (IOException e) {
+                log.warn("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
             }
+            return cxZipFile;
+            
         } catch (GitAPIException | IOException | URISyntaxException e)  {
             log.error(ExceptionUtils.getRootCauseMessage(e));
             throw new CheckmarxException("Unable to clone Git Url.");
+        }
+    }
+
+    public void makeWritableDirectory(final File folder) {
+        for (final File fileEntry : folder.listFiles()) {
+            if (fileEntry.isDirectory() ) {
+                makeWritable(fileEntry);
+                makeWritableDirectory(fileEntry);
+            } else {
+                makeWritable(fileEntry);
+            }
+        }
+    }
+
+    private void makeWritable(File file) {
+        Path pathGit = Paths.get(file.getAbsolutePath());
+        DosFileAttributeView dos = Files.getFileAttributeView(pathGit, DosFileAttributeView.class);
+        try {
+            dos.setHidden(false);
+            dos.setReadOnly(false);
+        } catch (IOException e) {
+            log.warn("Error changing file {} attributes: {}", file.getAbsolutePath(), e.getMessage());
         }
     }
 
