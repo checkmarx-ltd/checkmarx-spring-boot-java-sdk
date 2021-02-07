@@ -10,7 +10,7 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 
 import com.checkmarx.sdk.service.CxGoAuthService;
-import com.checkmarx.sdk.service.CxRepoFileService;
+import com.checkmarx.sdk.utils.CxRepoFileHelper;
 
 import com.checkmarx.sdk.service.scanner.GoScanner;
 import org.apache.commons.lang3.StringUtils;
@@ -37,8 +37,9 @@ public class CxGoServiceIT {
     private CxGoProperties properties;
     @Autowired
     private GoScanner service;
-    @Autowired
-    private CxRepoFileService repoFileService;
+
+    CxRepoFileHelper repoFileService = new CxRepoFileHelper(properties);
+    
     @Autowired
     private CxGoAuthService authService;
     private HttpHeaders token;

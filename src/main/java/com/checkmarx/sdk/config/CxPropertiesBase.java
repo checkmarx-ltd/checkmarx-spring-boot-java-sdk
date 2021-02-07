@@ -31,6 +31,7 @@ public abstract class CxPropertiesBase {
     private String teamScript;
     private String projectScript;
     private Boolean enablePostActionMonitor = false;
+    private String postCloneScript;
     
     public abstract Boolean getEnableOsa();
     
@@ -93,16 +94,20 @@ public abstract class CxPropertiesBase {
 
     public String getGitClonePath(){
         if(this.gitClonePath == null){
-            if (System.getProperty("os.name").startsWith("Windows")) {
-                // includes: Windows 2000,  Windows 95, Windows 98, Windows NT, Windows Vista, Windows XP
-                return Constants.WINDOWS_PATH;
-            } else {
-                // everything else
-                return Constants.UNIX_PATH;
-            }
+            return getDefaultOsPath();
         }
         else {
             return this.gitClonePath;
+        }
+    }
+
+    public static String getDefaultOsPath() {
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            // includes: Windows 2000,  Windows 95, Windows 98, Windows NT, Windows Vista, Windows XP
+            return Constants.WINDOWS_PATH;
+        } else {
+            // everything else
+            return Constants.UNIX_PATH;
         }
     }
 
@@ -256,6 +261,14 @@ public abstract class CxPropertiesBase {
 
     public void setEnablePostActionMonitor(Boolean enablePostActionMonitor) {
         this.enablePostActionMonitor = enablePostActionMonitor;
+    }
+
+    public String getPostCloneScript() {
+        return postCloneScript;
+    }
+
+    public void setPostCloneScript(String postCloneScript) {
+        this.postCloneScript = postCloneScript;
     }
 }
 

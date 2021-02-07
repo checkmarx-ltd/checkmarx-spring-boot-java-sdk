@@ -13,6 +13,7 @@ import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.service.scanner.CxClient;
+import com.checkmarx.sdk.utils.CxRepoFileHelper;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.checkmarx.sdk.utils.scanner.client.ScanClientHelper;
 import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
@@ -130,10 +131,9 @@ public class CxService implements CxClient {
     private final CxAuthService authClient;
     private final RestTemplate restTemplate;
     private final ScanSettingsClient scanSettingsClient;
-
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
-    private final CxRepoFileService cxRepoFileService;
+    private final CxRepoFileHelper cxRepoFileHelper;
     
     public CxService(CxAuthService authClient,
                      CxProperties cxProperties,
@@ -141,10 +141,9 @@ public class CxService implements CxClient {
                      @Qualifier("cxRestTemplate") RestTemplate restTemplate,
                      ScanSettingsClient scanSettingsClient,
                      FilterInputFactory filterInputFactory,
-                     FilterValidator filterValidator,
-                     CxRepoFileService cxRepoFileService) {
+                     FilterValidator filterValidator) {
         
-        this.cxRepoFileService = cxRepoFileService;
+        this.cxRepoFileHelper = new CxRepoFileHelper(cxProperties);
         this.authClient = authClient;
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
@@ -1682,7 +1681,7 @@ public class CxService implements CxClient {
         }
         else if (params.isGitSource()) {
             if (cxProperties.getEnabledZipScan()) {
-                String clonedRepoPath = cxRepoFileService.prepareRepoFile(params);
+                String clonedRepoPath = cxRepoFileHelper.prepareRepoFile(params);
                 uploadProjectSource(projectId, new File(clonedRepoPath));
                 params.setFilePath(clonedRepoPath);
             }else {
