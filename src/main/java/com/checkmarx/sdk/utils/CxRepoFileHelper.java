@@ -1,16 +1,16 @@
-package com.checkmarx.sdk.service;
+package com.checkmarx.sdk.utils;
 
 import com.checkmarx.sdk.config.Constants;
-import com.checkmarx.sdk.config.CxGoProperties;
+import com.checkmarx.sdk.config.CxPropertiesBase;
 import com.checkmarx.sdk.dto.cx.CxScanParams;
 import com.checkmarx.sdk.exception.CheckmarxException;
-import com.checkmarx.sdk.utils.ScanUtils;
 import com.checkmarx.sdk.utils.zip.ZipUtils;
 import groovy.lang.Binding;
 import groovy.lang.GroovyRuntimeException;
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -19,7 +19,6 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.slf4j.Logger;
-import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,22 +32,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-@Service
-public class CxRepoFileService {
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxRepoFileService.class);
-    private final CxGoProperties cxProperties;
+@Slf4j
+public class CxRepoFileHelper {
+   private final CxPropertiesBase cxProperties;
 
-    public CxRepoFileService(CxGoProperties cxProperties) {
+    public CxRepoFileHelper(CxPropertiesBase cxProperties) {
         this.cxProperties = cxProperties;
     }
 
-
+    public CxRepoFileHelper() {
+        this.cxProperties = null;
+    }
+    
     public String prepareRepoFile(CxScanParams params) throws CheckmarxException {
         String gitURL = params.getGitUrl();
         String branch = params.getBranch();
         String srcPath;
         File pathFile = null;
-        srcPath = cxProperties.getGitClonePath().concat("/").concat(UUID.randomUUID().toString());
+        srcPath = getGitClonePath().concat("/").concat(UUID.randomUUID().toString());
         pathFile = new File(srcPath);
 
         try {
@@ -61,7 +62,7 @@ public class CxRepoFileService {
             }
             runPostCloneScript(params, srcPath);
             
-            String cxZipFile = cxProperties.getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
+            String cxZipFile = getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
             log.info("running zip file");
             ZipUtils.zipFile(srcPath, cxZipFile, exclusions);
             try {
@@ -76,6 +77,10 @@ public class CxRepoFileService {
             log.error(ExceptionUtils.getRootCauseMessage(e));
             throw new CheckmarxException("Unable to clone Git Url.");
         }
+    }
+
+    private String getGitClonePath() {
+        return cxProperties == null ? CxPropertiesBase.getDefaultOsPath() : cxProperties.getGitClonePath();
     }
 
     public void makeWritableDirectory(final File folder) {
@@ -141,12 +146,12 @@ public class CxRepoFileService {
     }
 
     private void runPostCloneScript(CxScanParams params, String path) {
-        if (!ScanUtils.empty(cxProperties.getPostCloneScript())) {
+        if (!ScanUtils.empty(getPostCloneScript())) {
             try {
                 Binding binding = new Binding();
                 binding.setProperty("params", params);
                 binding.setVariable("path", path);
-                File script = new File(cxProperties.getPostCloneScript());
+                File script = new File(getPostCloneScript());
                 String scriptName = script.getName();
                 String scriptDir = script.getParent();
                 String[] roots = new String[]{scriptDir};
@@ -156,6 +161,10 @@ public class CxRepoFileService {
                 log.error("Error occurred while executing Post Clone Script {}", ExceptionUtils.getMessage(e), e);
             }
         }
+    }
+
+    private String getPostCloneScript() {
+        return cxProperties==null ? null : cxProperties.getPostCloneScript();
     }
 
     public String getScaZipFolderPath(String repoUrlWithAuth, List<String> excludeFiles, String branch) throws CheckmarxException {

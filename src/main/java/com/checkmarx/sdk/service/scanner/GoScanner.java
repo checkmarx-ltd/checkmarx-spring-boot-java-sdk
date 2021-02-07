@@ -20,14 +20,13 @@ import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
 import com.checkmarx.sdk.dto.scansummary.Severity;
 import com.checkmarx.sdk.service.CxGoAuthService;
-import com.checkmarx.sdk.service.CxRepoFileService;
+import com.checkmarx.sdk.utils.CxRepoFileHelper;
 import com.checkmarx.sdk.service.FilterInputFactory;
 import com.checkmarx.sdk.service.FilterValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
@@ -107,7 +106,7 @@ public class GoScanner implements ILegacyClient {
     private final CxGoAuthService authClient;
     private final RestTemplate restTemplate;
     private final Map<String, Object> codeCache = new HashMap<>();
-    private CxRepoFileService cxRepoFileService;
+    private CxRepoFileHelper cxRepoFileHelper;
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
 
@@ -119,6 +118,7 @@ public class GoScanner implements ILegacyClient {
         this.restTemplate = restTemplate;
         this.filterInputFactory = filterInputFactory;
         this.filterValidator = filterValidator;
+        this.cxRepoFileHelper = new CxRepoFileHelper(cxGoProperties);
     }
 
     @Override
@@ -245,7 +245,7 @@ public class GoScanner implements ILegacyClient {
             if (params.getSourceType() == CxScanParams.Type.FILE) {
                 archive = new File(params.getFilePath());
             } else {
-                archive = new File(cxRepoFileService.prepareRepoFile(params));
+                archive = new File(cxRepoFileHelper.prepareRepoFile(params));
             }
 
             uploadScanFile(scanCreate.getStorage(), archive);
@@ -1061,11 +1061,6 @@ public class GoScanner implements ILegacyClient {
                         );
     }
     
-
-    @Autowired
-    public void setCxRepoFileService(CxRepoFileService cxRepoFileService) {
-        this.cxRepoFileService = cxRepoFileService;
-    }
 
     @Override
     public Integer getProjectPresetId(Integer projectId) {
