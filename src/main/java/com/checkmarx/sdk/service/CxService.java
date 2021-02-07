@@ -13,6 +13,7 @@ import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
 import com.checkmarx.sdk.service.scanner.CxClient;
+import com.checkmarx.sdk.utils.CxRepoFileHelper;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.checkmarx.sdk.utils.scanner.client.ScanClientHelper;
 import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
@@ -20,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONArray;
@@ -71,6 +73,8 @@ public class CxService implements CxClient {
     private static final Integer SCAN_STATUS_FAILED = 9;
     private static final Integer SCAN_STATUS_SOURCE_PULLING = 10;
     private static final Integer SCAN_STATUS_NONE = 1001;
+
+    
     /*
     report statuses - there are only 2:
     InProcess (1)
@@ -127,10 +131,10 @@ public class CxService implements CxClient {
     private final CxAuthService authClient;
     private final RestTemplate restTemplate;
     private final ScanSettingsClient scanSettingsClient;
-
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
-
+    private final CxRepoFileHelper cxRepoFileHelper;
+    
     public CxService(CxAuthService authClient,
                      CxProperties cxProperties,
                      CxLegacyService cxLegacyService,
@@ -138,6 +142,8 @@ public class CxService implements CxClient {
                      ScanSettingsClient scanSettingsClient,
                      FilterInputFactory filterInputFactory,
                      FilterValidator filterValidator) {
+        
+        this.cxRepoFileHelper = new CxRepoFileHelper(cxProperties);
         this.authClient = authClient;
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
@@ -1620,13 +1626,7 @@ public class CxService implements CxClient {
         }
 
         if(!useSsh) {
-
-            if((params.getSourceType()).equals(CxScanParams.Type.GIT)) {
-                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
-            }
-            else if((params.getSourceType()).equals(CxScanParams.Type.FILE)) {
-                    uploadProjectSource(projectId, new File(params.getFilePath()));
-            }
+            prepareSources(params, projectId);
         }
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
@@ -1666,9 +1666,28 @@ public class CxService implements CxClient {
         } catch (HttpStatusCodeException e) {
             log.error(SCAN_CREATION_ERROR, projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
+        }finally {
+            if (params.isGitSource() && cxProperties.getEnabledZipScan() || params.isFileSource()){
+                FileUtils.deleteQuietly(new File(params.getFilePath()));
+            }
         }
         log.info("...Finished creating scan");
         return UNKNOWN_INT;
+    }
+
+    private void prepareSources(CxScanParams params, Integer projectId) throws CheckmarxException {
+        if (params.isFileSource()) {
+            uploadProjectSource(projectId, new File(params.getFilePath()));
+        }
+        else if (params.isGitSource()) {
+            if (cxProperties.getEnabledZipScan()) {
+                String clonedRepoPath = cxRepoFileHelper.prepareRepoFile(params);
+                uploadProjectSource(projectId, new File(clonedRepoPath));
+                params.setFilePath(clonedRepoPath);
+            }else {
+                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
+            }
+        }
     }
 
     private Integer determineProjectId(CxScanParams params, String teamId) {
@@ -2194,12 +2213,12 @@ public class CxService implements CxClient {
             }
             params.setScanConfiguration(cxProperties.getConfiguration());
         }
-        if(params.getSourceType().equals(CxScanParams.Type.GIT)){
+        if(params.isGitSource()){
             if(ScanUtils.empty(params.getGitUrl()) || ScanUtils.empty(params.getBranch())){
                 throw new CheckmarxException("No git url or branch was was missing for the scan");
             }
         }
-        else if(params.getSourceType().equals(CxScanParams.Type.FILE)){
+        else if(params.isFileSource()){
             if(ScanUtils.empty(params.getFilePath())){
                 throw new CheckmarxException("No file path was provided for the scan");
             }

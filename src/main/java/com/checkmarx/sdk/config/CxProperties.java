@@ -43,6 +43,16 @@ public class CxProperties extends CxPropertiesBase{
 
     private String htmlStrip = "<style>.cxtaghighlight{color: rgb(101, 170, 235);font-weight:bold;}</style>";
 
+    private Boolean enabledZipScan = false;
+
+    public void setEnabledZipScan(Boolean enabledZipScan){
+        this.enabledZipScan = enabledZipScan;
+    }
+    
+    public Boolean getEnabledZipScan() {
+        return enabledZipScan;
+    }
+    
     public String getUsername() {
         return this.username;
     }
