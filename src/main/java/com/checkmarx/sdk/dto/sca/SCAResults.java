@@ -23,6 +23,7 @@ public class SCAResults extends ResultsBase implements Serializable {
     private int vulnerableAndOutdated;
     private Summary summary;
     private boolean isPolicyViolated;
+    private List<String> violatedPolicies;
     
     public void calculateVulnerableAndOutdatedPackages() {
         int sum;

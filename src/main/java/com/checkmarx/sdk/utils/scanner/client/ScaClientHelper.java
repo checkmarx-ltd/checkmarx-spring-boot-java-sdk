@@ -641,8 +641,9 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
             String riskReportId = getRiskReportByProjectId(this.projectId);
             List<PolicyEvaluation> policyEvaluationsByReportId = getPolicyEvaluationByReportId(riskReportId);
-            boolean isScanPolicyViolated = isScanPolicyViolated(policyEvaluationsByReportId);
-            result.setPolicyViolated(isScanPolicyViolated);
+            List<String> scanViolatedPolicies = getScanViolatedPolicies(policyEvaluationsByReportId);
+            result.setPolicyViolated(!scanViolatedPolicies.isEmpty());
+            result.setViolatedPolicies(scanViolatedPolicies);
 
             log.info("Retrieved SCA results successfully.");
         } catch (IOException e) {
@@ -736,9 +737,16 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         httpClient.deleteRequest(path, HttpStatus.SC_OK, "delete a policy");
     }
 
-    private boolean isScanPolicyViolated(List<PolicyEvaluation> policyEvaluationList) {
-        return policyEvaluationList.stream()
-                .anyMatch(policy -> policy.isViolated() && policy.getActions().isBreakBuild());
+    private List<String> getScanViolatedPolicies(List<PolicyEvaluation> policyEvaluationList) {
+        List<String> violatedPolicies = new ArrayList<>();
+
+        policyEvaluationList.forEach(policy -> {
+            if (policy.isViolated() && policy.getActions().isBreakBuild()) {
+                violatedPolicies.add(policy.getName());
+            }
+        });
+
+        return violatedPolicies;
     }
 
     private List<Finding> getFindings(String scanId) throws IOException {
