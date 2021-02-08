@@ -1,34 +1,27 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
+import com.checkmarx.sdk.config.ContentType;
+import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.*;
-import com.checkmarx.sdk.dto.sca.Summary;
 import com.checkmarx.sdk.dto.sast.Filter;
-import com.checkmarx.sdk.dto.sca.ScaConfig;
-import com.checkmarx.sdk.dto.sca.SCAResults;
-import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.dto.sca.*;
-import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
-
+import com.checkmarx.sdk.dto.sca.report.PolicyEvaluation;
+import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
+import com.checkmarx.sdk.exception.CxHTTPClientException;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.State;
 import com.checkmarx.sdk.utils.UrlUtils;
-import com.checkmarx.sdk.utils.zip.CxZipUtils;
-import com.checkmarx.sdk.utils.zip.NewCxZipFile;
-import com.checkmarx.sdk.utils.zip.Zipper;
-import com.checkmarx.sdk.config.RestClientConfig;
-
-
-import com.checkmarx.sdk.exception.CxHTTPClientException;
-import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
-import com.checkmarx.sdk.config.ContentType;
-import com.checkmarx.sdk.utils.scanner.client.httpClient.HttpClientHelper;
-
-import com.checkmarx.sdk.dto.sca.CxSCAResolvingConfiguration;
 import com.checkmarx.sdk.utils.sca.CxSCAFileSystemUtils;
 import com.checkmarx.sdk.utils.sca.fingerprints.CxSCAScanFingerprints;
 import com.checkmarx.sdk.utils.sca.fingerprints.FingerprintCollector;
+import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
+import com.checkmarx.sdk.utils.scanner.client.httpClient.HttpClientHelper;
+import com.checkmarx.sdk.utils.zip.CxZipUtils;
+import com.checkmarx.sdk.utils.zip.NewCxZipFile;
+import com.checkmarx.sdk.utils.zip.Zipper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -63,6 +56,11 @@ import static com.checkmarx.sdk.config.Constants.ENCODING;
 public class ScaClientHelper extends ScanClientHelper implements IScanClientHelper {
     
     private static final String RISK_MANAGEMENT_API = "/risk-management/";
+    private static final String POLICY_MANAGEMENT_API = "/policy-management/";
+    private static final String POLICIES_API = POLICY_MANAGEMENT_API + "policies";
+    private static final String POLICIES_API_BY_ID = POLICIES_API + "/%s";
+    private static final String RISK_REPORT_URL = RISK_MANAGEMENT_API + "risk-reports?projectId=%s&size=1";
+    private static final String POLICY_EVALUATION_URL = POLICY_MANAGEMENT_API + "policy-evaluation?reportId=%s";
     private static final String PROJECTS = RISK_MANAGEMENT_API + "projects";
     private static final String PROJECTS_BY_ID = PROJECTS + "/%s";
     private static final String SUMMARY_REPORT = RISK_MANAGEMENT_API + "riskReports/%s/summary";
@@ -640,6 +638,13 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             result.setWebReportLink(reportLink);
             printWebReportLink(result);
             result.setScaResultReady(true);
+
+            String riskReportId = getRiskReportByProjectId(this.projectId);
+            List<PolicyEvaluation> policyEvaluationsByReportId = getPolicyEvaluationByReportId(riskReportId);
+            List<String> scanViolatedPolicies = getScanViolatedPolicies(policyEvaluationsByReportId);
+            result.setPolicyViolated(!scanViolatedPolicies.isEmpty());
+            result.setViolatedPolicies(scanViolatedPolicies);
+
             log.info("Retrieved SCA results successfully.");
         } catch (IOException e) {
             throw new ScannerRuntimeException("Error retrieving CxSCA scan results.", e);
@@ -673,6 +678,75 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 HttpStatus.SC_OK,
                 "CxSCA report summary",
                 false);
+    }
+
+    private String getRiskReportByProjectId(String projectId) throws IOException {
+        log.debug("Getting risk report by project-id: {}", projectId);
+
+        String path = String.format(RISK_REPORT_URL, projectId);
+        JsonNode response = httpClient.getRequest(path,
+                null,
+                ArrayNode.class,
+                HttpStatus.SC_OK,
+                "getting risk report by project-id",
+                false);
+
+        return Optional.ofNullable(response)
+                .map(report -> report.at("/0/riskReportId").textValue())
+                .orElse(null);
+    }
+
+    private List<PolicyEvaluation> getPolicyEvaluationByReportId(String reportId) throws IOException {
+        log.debug("Getting policy evaluation by report-id: {}", reportId);
+
+        String path = String.format(POLICY_EVALUATION_URL, reportId);
+        ArrayNode responseJson = httpClient.getRequest(path,
+                ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                ArrayNode.class,
+                HttpStatus.SC_OK,
+                "getting policy evaluation be report-id",
+                false);
+
+        PolicyEvaluation[] policyEvaluations = caseInsensitiveObjectMapper.treeToValue(responseJson, PolicyEvaluation[].class);
+
+        return Arrays.asList(policyEvaluations);
+    }
+
+    public String createNewPolicy(Policy policyToCreate) throws IOException {
+        log.debug("Creating new policy with name: {} to project-ids: {}", policyToCreate.getName(), policyToCreate.getProjectIds());
+        StringEntity policyEntity = HttpClientHelper.convertToStringEntity(policyToCreate);
+
+        String policyId =  httpClient.postRequest(POLICIES_API,
+                ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                policyEntity,
+                String.class,
+                HttpStatus.SC_OK,
+                "creating a policy");
+
+        /*
+            SCA returns the policy-id as a string while declaring the response type as application/json instead of text
+            this causes the return type to be like this "policy-id" and when assigning this value
+            to a local String it gets like: ""policy-id"" - so here we remove the double quotes manually until they will fix it
+         */
+        return policyId.replace("\"", "");
+    }
+
+    public void deletePolicy(String policyId) throws IOException {
+        log.info("Deleting policy with id: {}", policyId);
+        String path = String.format(POLICIES_API_BY_ID, policyId);
+        httpClient.deleteRequest(path, HttpStatus.SC_OK, "delete a policy");
+    }
+
+    private List<String> getScanViolatedPolicies(List<PolicyEvaluation> policyEvaluationList) {
+        List<String> violatedPolicies = new ArrayList<>();
+
+        policyEvaluationList.forEach(policy -> {
+            if (policy.isViolated() && policy.getActions().isBreakBuild()) {
+                violatedPolicies.add(policy.getName());
+            }
+        });
+
+        return violatedPolicies;
     }
 
     private List<Finding> getFindings(String scanId) throws IOException {
