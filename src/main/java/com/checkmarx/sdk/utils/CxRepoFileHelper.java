@@ -45,38 +45,52 @@ public class CxRepoFileHelper {
     }
     
     public String prepareRepoFile(CxScanParams params) throws CheckmarxException {
-        String gitURL = params.getGitUrl();
-        String branch = params.getBranch();
-        String srcPath;
-        File pathFile = null;
-        srcPath = getGitClonePath().concat("/").concat(UUID.randomUUID().toString());
-        pathFile = new File(srcPath);
 
         try {
-            gitClone(gitURL, branch, pathFile);
+            File pathFile = gitCloneAndRunPostCloneScript(params);
+            String zipFilePath = zipClonedRepo(pathFile, params.getFileExclude());
+            deleteCloneLocalDir(pathFile);
+            return zipFilePath;
 
-            log.info("After Clone");
-            String exclusions = null;
-            if(params.getFileExclude() != null && !params.getFileExclude().isEmpty()){
-                exclusions = String.join(",",params.getFileExclude());
-            }
-            runPostCloneScript(params, srcPath);
-            
-            String cxZipFile = getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
-            log.info("running zip file");
-            ZipUtils.zipFile(srcPath, cxZipFile, exclusions);
-            try {
-                makeWritableDirectory(pathFile);
-                FileUtils.deleteDirectory(pathFile);
-            } catch (IOException e) {
-                log.warn("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
-            }
-            return cxZipFile;
-            
         } catch (GitAPIException | IOException | URISyntaxException e)  {
             log.error(ExceptionUtils.getRootCauseMessage(e));
             throw new CheckmarxException("Unable to clone Git Url.");
         }
+    }
+
+    public void deleteCloneLocalDir(File pathFile) {
+        try {
+            makeWritableDirectory(pathFile);
+            FileUtils.deleteDirectory(pathFile);
+        } catch (IOException e) {
+            log.error("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
+        }
+    }
+
+    public String zipClonedRepo(File pathFile, List<String> fileExclude) throws IOException {
+        String cxZipFile = getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
+        String exclusions = null;
+        if(fileExclude != null && !fileExclude.isEmpty()){
+            exclusions = String.join(",",fileExclude);
+        }
+        log.info("running zip file");
+        ZipUtils.zipFile(pathFile.getAbsolutePath(), cxZipFile, exclusions);
+        return cxZipFile;
+    }
+
+    public File gitCloneAndRunPostCloneScript(
+            CxScanParams params) throws GitAPIException, URISyntaxException {
+        String gitURL = params.getGitUrl();
+        String branch = params.getBranch();
+        String srcPath;
+        srcPath = getGitClonePath().concat("/").concat(UUID.randomUUID().toString());
+        File pathFile = new File(srcPath);
+
+        gitClone(gitURL, branch, pathFile);
+        log.info("git: {}, Cloned successfully", gitURL);
+        runPostCloneScript(params, srcPath);
+
+        return pathFile;
     }
 
     private String getGitClonePath() {
@@ -167,9 +181,17 @@ public class CxRepoFileHelper {
         return cxProperties==null ? null : cxProperties.getPostCloneScript();
     }
 
-    public String getScaZipFolderPath(String repoUrlWithAuth, List<String> excludeFiles, String branch) throws CheckmarxException {
+    public String getScaClonedRepoFolderPath(String repoUrlWithAuth, List<String> excludeFiles,
+                                    String branch) throws CheckmarxException {
         CxScanParams cxScanParams = prepareScanParamsToCloneRepo( repoUrlWithAuth,  excludeFiles,  branch);
-        return prepareRepoFile(cxScanParams);
+        File pathFile = null;
+        try {
+            pathFile = gitCloneAndRunPostCloneScript(cxScanParams);
+        } catch (GitAPIException | URISyntaxException e) {
+            log.error(ExceptionUtils.getRootCauseMessage(e));
+            throw new CheckmarxException("Unable to clone Git Url.");
+        }
+        return pathFile.getAbsolutePath();
     }
 
     private CxScanParams prepareScanParamsToCloneRepo(String repoUrlWithAuth, List<String> excludeFiles, String branch) {

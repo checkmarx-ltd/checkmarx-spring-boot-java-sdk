@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,6 +27,8 @@ public class ScaConfig {
     private String apiUrl;
     private String accessControlUrl;
     private String tenant;
+    private boolean includeSources;
+    private List<String> excludeFiles;
 
     @Optional
     private Map<Severity, Integer> thresholdsSeverity;

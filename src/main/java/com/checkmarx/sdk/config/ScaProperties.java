@@ -30,4 +30,5 @@ public class ScaProperties {
     private String password;
     private boolean enabledZipScan;
     private String teamForNewProjects;
+    private boolean includeSources;
 }
