@@ -119,7 +119,9 @@ public class ScaScanner extends AbstractScanner {
 
         ScaConfig scaConfig = getScaSpecificConfig(scanParams);
         setSourceLocation(scanParams, restClientConfig, scaConfig);
-
+        if(scanParams.getRemoteRepoUrl() != null){
+            restClientConfig.setClonedRepo(true);
+        }
         restClientConfig.setScaConfig(scaConfig);
 
         return restClientConfig;
@@ -133,13 +135,14 @@ public class ScaScanner extends AbstractScanner {
             commonClientScaConfig.setApiUrl(sdkScaConfig.getApiUrl());
             commonClientScaConfig.setAccessControlUrl(sdkScaConfig.getAccessControlUrl());
             commonClientScaConfig.setTenant(sdkScaConfig.getTenant());
+            commonClientScaConfig.setIncludeSources(sdkScaConfig.isIncludeSources());
+            commonClientScaConfig.setExcludeFiles(sdkScaConfig.getExcludeFiles());
             commonClientScaConfig.setUsername(scaProperties.getUsername());
             commonClientScaConfig.setPassword(scaProperties.getPassword());
 
             String zipPath = scanParams.getZipPath();
             if (StringUtils.isNotEmpty(zipPath)) {
                 commonClientScaConfig.setZipFilePath(zipPath);
-                commonClientScaConfig.setIncludeSources(true);
             }
 
         } else {

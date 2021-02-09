@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Getter
 @Setter
@@ -21,6 +22,8 @@ public class ScaConfig extends ScanConfigBase implements Serializable {
      * code to be uploaded into the cloud.
      */
     private boolean includeSources;
+
+    private List<String> excludeFiles;
     
     private String fingerprintsIncludePattern;
     private String manifestsIncludePattern;

@@ -143,7 +143,8 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
                 response = submitSourcesFromRemoteRepo(astConfig, config.getProjectName());
             } else {
 
-                response = submitAllSourcesFromLocalDir(config.getProjectName(), astConfig.getZipFilePath());
+                response = submitAllSourcesFromLocalDir(config.getProjectName()
+                );
             }
             scanId = extractScanIdFrom(response);
             astResults.setScanId(scanId);
@@ -155,14 +156,14 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         return astResults;
     }
 
-    protected HttpResponse submitAllSourcesFromLocalDir(String projectId, String zipFilePath) throws IOException {
+    protected HttpResponse submitAllSourcesFromLocalDir(String projectId) throws IOException {
         log.info("Using local directory flow.");
 
         PathFilter filter = new PathFilter("", "", log);
         String sourceDir = config.getSourceDir();
         byte[] zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
 
-        return initiateScanForUpload(projectId, zipFile, zipFilePath);
+        return initiateScanForUpload(projectId, zipFile);
     }
 
     @Override
