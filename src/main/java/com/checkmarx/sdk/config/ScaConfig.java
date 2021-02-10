@@ -27,7 +27,9 @@ public class ScaConfig {
     private String apiUrl;
     private String accessControlUrl;
     private String tenant;
+    @Optional
     private boolean includeSources;
+    @Optional
     private List<String> excludeFiles;
 
     @Optional
