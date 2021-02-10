@@ -266,6 +266,11 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             log.error(e.getMessage());
             setState(State.FAILED);
             scaResults.setException(new ScannerRuntimeException("Error creating scan.", e));
+        } finally {
+            if (config.isClonedRepo() && config.getZipFile() != null) {
+                log.info("Deleting cloned repo zip file: {}", config.getZipFile());
+                FileUtils.deleteQuietly(config.getZipFile());
+            }
         }
         return scaResults;
     }
@@ -296,6 +301,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             File clonedLocalDir = new File(sourceDir);
             String zipFilePath = cxRepoFileHelper.zipClonedRepo(clonedLocalDir, config.getScaConfig().getExcludeFiles());
             cxRepoFileHelper.deleteCloneLocalDir(clonedLocalDir);
+            config.setZipFile(new File(zipFilePath));
             zipFile = FileUtils.readFileToByteArray(new File(zipFilePath));
         } else {
             // CLI Mode
@@ -343,6 +349,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         if (config.isClonedRepo()){
             CxRepoFileHelper cxRepoFileHelper = new CxRepoFileHelper();
             cxRepoFileHelper.deleteCloneLocalDir(new File(sourceDir));
+            config.setZipFile(zipFile);
         }
         return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile));
     }
