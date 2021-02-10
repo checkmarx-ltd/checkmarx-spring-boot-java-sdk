@@ -56,7 +56,7 @@ public abstract class ScanClientHelper {
 
     protected abstract HandlerRef getBranchToScan(RemoteRepositoryInfo repoInfo);
 
-    protected abstract HttpResponse submitAllSourcesFromLocalDir(String projectId, String zipFilePath) throws IOException;
+    protected abstract HttpResponse submitAllSourcesFromLocalDir(String projectId) throws IOException;
 
     protected abstract String getWebReportPath() throws UnsupportedEncodingException;
 
@@ -227,7 +227,7 @@ public abstract class ScanClientHelper {
         results.setException(new ScannerRuntimeException(message, e));
     }
 
-    protected HttpResponse initiateScanForUpload(String projectId, byte[] zipFile, String zipFilePath) throws IOException {
+    protected HttpResponse initiateScanForUpload(String projectId, byte[] zipFile) throws IOException {
         String uploadedArchiveUrl = getSourcesUploadUrl();
         String cleanPath = uploadedArchiveUrl.split("\\?")[0];
         log.info("Uploading to: {}", cleanPath);

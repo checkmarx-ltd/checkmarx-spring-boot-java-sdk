@@ -12,6 +12,7 @@ import com.checkmarx.sdk.dto.sca.report.PolicyEvaluation;
 import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.exception.CxHTTPClientException;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
+import com.checkmarx.sdk.utils.CxRepoFileHelper;
 import com.checkmarx.sdk.utils.State;
 import com.checkmarx.sdk.utils.UrlUtils;
 import com.checkmarx.sdk.utils.sca.CxSCAFileSystemUtils;
@@ -54,7 +55,7 @@ import static com.checkmarx.sdk.config.Constants.ENCODING;
  * SCA - Software Composition Analysis - is the successor of OSA.
  */
 public class ScaClientHelper extends ScanClientHelper implements IScanClientHelper {
-    
+
     private static final String RISK_MANAGEMENT_API = "/risk-management/";
     private static final String POLICY_MANAGEMENT_API = "/policy-management/";
     private static final String POLICIES_API = POLICY_MANAGEMENT_API + "policies";
@@ -229,7 +230,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         }
 
     }
-    
+
     @Override
     public ResultsBase initiateScan() {
         log.info("----------------------------------- Initiating {} Scan:------------------------------------",
@@ -254,7 +255,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 response = submitSourcesFromRemoteRepo(scaConfig, projectId);
             } else {
                 if (scaConfig.isIncludeSources()) {
-                    response = submitAllSourcesFromLocalDir(projectId, this.scaConfig.getZipFilePath());
+                    response = submitAllSourcesFromLocalDir(projectId);
                 } else {
                     response = submitManifestsAndFingerprintsFromLocalDir(projectId);
                 }
@@ -284,14 +285,25 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 false);
     }
 
-    protected HttpResponse submitAllSourcesFromLocalDir(String projectId, String zipFilePath) throws IOException {
+    protected HttpResponse submitAllSourcesFromLocalDir(String projectId) throws IOException {
         log.info("Using local directory flow.");
 
-        PathFilter filter = new PathFilter("", "", log);
-        String sourceDir = config.getSourceDir();
-        byte[] zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
 
-        return initiateScanForUpload(projectId, zipFile, zipFilePath);
+        String sourceDir = config.getSourceDir();
+        byte[] zipFile = null;
+        if (config.isClonedRepo()){
+            CxRepoFileHelper cxRepoFileHelper = new CxRepoFileHelper();
+            File clonedLocalDir = new File(sourceDir);
+            String zipFilePath = cxRepoFileHelper.zipClonedRepo(clonedLocalDir, config.getScaConfig().getExcludeFiles());
+            cxRepoFileHelper.deleteCloneLocalDir(clonedLocalDir);
+            zipFile = FileUtils.readFileToByteArray(new File(zipFilePath));
+        } else {
+            // CLI Mode
+            PathFilter filter = new PathFilter("", "", log);
+            zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
+        }
+
+        return initiateScanForUpload(projectId, zipFile);
     }
 
     private HttpResponse submitManifestsAndFingerprintsFromLocalDir(String projectId) throws IOException {
@@ -328,7 +340,11 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
         optionallyWriteFingerprintsToFile(fingerprints);
 
-        return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), scaConfig.getZipFilePath());
+        if (config.isClonedRepo()){
+            CxRepoFileHelper cxRepoFileHelper = new CxRepoFileHelper();
+            cxRepoFileHelper.deleteCloneLocalDir(new File(sourceDir));
+        }
+        return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile));
     }
 
 

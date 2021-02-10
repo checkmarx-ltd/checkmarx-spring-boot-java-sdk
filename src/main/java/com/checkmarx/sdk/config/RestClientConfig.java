@@ -25,7 +25,8 @@ public class RestClientConfig  {
     private String teamId;
     private TokenLoginResponse token;
     private File zipFile;
-    
+    private boolean clonedRepo = false;
+
     private Integer progressInterval;
     private ScaConfig scaConfig;
     private AstConfig astConfig;
