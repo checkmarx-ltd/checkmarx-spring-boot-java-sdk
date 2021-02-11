@@ -463,11 +463,12 @@ public class CxHttpClient implements Closeable {
         this.teamPath = teamPath;
     }
 
-    public void addCustomHeader(String name, String value) {
+    public void setCustomHeader(String name, String value) {
         log.debug(String.format("Adding a custom header: %s: %s", name, value));
         customHeaders.put(name, value);
     }
 
+    
     private <T> T request(HttpRequestBase httpMethod, String contentType, HttpEntity entity, Class<T> responseType, int expectStatus, String failedMsg, boolean isCollection, boolean retry) throws IOException {
         if (contentType != null) {
             httpMethod.addHeader("Content-type", contentType);
