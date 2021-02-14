@@ -145,10 +145,11 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         try {
             SourceLocationType locationType = astConfig.getSourceLocationType();
             HttpResponse response;
+            String projectId = determineProjectId(config.getProjectName());
             if (locationType == SourceLocationType.REMOTE_REPOSITORY) {
-                response = submitSourcesFromRemoteRepo(astConfig, config.getProjectName());
+                response = submitSourcesFromRemoteRepo(astConfig, projectId);
             } else {
-                response = submitAllSourcesFromLocalDir(config.getProjectName());
+                response = submitAllSourcesFromLocalDir(projectId);
             }
             scanId = extractScanIdFrom(response);
             astResults.setScanId(scanId);
@@ -166,7 +167,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         PathFilter filter = new PathFilter("", "", log);
         String sourceDir = config.getSourceDir();
         byte[] zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
-
+        
         return initiateScanForUpload(projectId, zipFile);
     }
 
@@ -523,7 +524,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             ProjectsList projectList = httpClient.getRequest(AST_GET_PROJECT_ID + projectName, ContentType.CONTENT_TYPE_APPLICATION_JSON,
                     ProjectsList.class, HttpStatus.SC_OK, failedMessage, false);
 
-            if(projectList.getTotalCount() == 0){
+            if(projectList.getProjects().size() == 0){
                 projectId = createProject(projectName);
             }else{
                 projectId = projectList.getProjects().get(0).getId();

@@ -79,10 +79,8 @@ public abstract class ScanClientHelper {
 
     protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
                                                 SourceLocationType sourceLocation,
-                                                String projectName) throws IOException {
+                                                String projectId) throws IOException {
         log.debug("Constructing the 'start scan' request");
-
-        String projectId = determineProjectId(projectName);
 
        ScanStartHandler handler = getScanStartHandler(repoInfo);
 

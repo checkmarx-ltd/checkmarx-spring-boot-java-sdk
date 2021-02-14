@@ -9,6 +9,5 @@ import java.util.List;
 @Setter
 public class ProjectsList {
     
-    Integer totalCount;
     List<ProjectId> projects;
 }
