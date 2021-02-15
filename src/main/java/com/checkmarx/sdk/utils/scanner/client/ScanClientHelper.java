@@ -43,7 +43,7 @@ public abstract class ScanClientHelper {
     public static final String CREATE_SCAN = "/api/scans";
     public static final String GET_UPLOAD_URL = "/api/uploads";
     public static final String CX_FLOW_SCAN_ORIGIN_NAME = "CxFlow";
-
+    
     public ScanClientHelper(RestClientConfig config, Logger log) {
         validate(config, log);
         this.config = config;
@@ -82,7 +82,7 @@ public abstract class ScanClientHelper {
                                                 String projectId) throws IOException {
         log.debug("Constructing the 'start scan' request");
 
-        ScanStartHandler handler = getScanStartHandler(repoInfo);
+       ScanStartHandler handler = getScanStartHandler(repoInfo);
 
         ProjectToScan project = ProjectToScan.builder()
                 .id(projectId)
@@ -102,6 +102,10 @@ public abstract class ScanClientHelper {
         log.info("Sending the 'start scan' request.");
         return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
                 HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
+    }
+
+    protected String determineProjectId(String projectName) {
+        return projectName;
     }
 
     protected HttpResponse submitSourcesFromRemoteRepo(ScanConfigBase config, String projectId) throws IOException {
