@@ -1,14 +1,15 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.dto.*;
+import com.checkmarx.sdk.dto.ast.*;
+import com.checkmarx.sdk.dto.ast.report.Finding;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.config.AstConfig;
-import com.checkmarx.sdk.dto.ast.ASTResults;
-import com.checkmarx.sdk.dto.ast.SastScanConfigValue;
 import com.checkmarx.sdk.dto.ast.report.*;
 import com.checkmarx.sdk.dto.sca.ClientType;
 import com.checkmarx.sdk.utils.State;
 import com.checkmarx.sdk.utils.UrlUtils;
+import com.checkmarx.sdk.utils.scanner.client.httpClient.HttpClientHelper;
 import com.checkmarx.sdk.utils.zip.CxZipUtils;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.dto.scansummary.Severity;
@@ -22,8 +23,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
+import org.springframework.web.client.RestClientException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -57,6 +60,9 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final String ID_PARAM_NAME = "ids";
     private static final int URL_MAX_CHAR_SIZE = 1490;
 
+    public static  final String AST_GET_PROJECT_ID = "/api/projects/?offset=0&limit=20&names=";
+    public static  final String AST_CREATE_PROJECT = "/api/projects/";
+
     private String scanId;
 
     public AstClientHelper(RestClientConfig config, Logger log) {
@@ -69,7 +75,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         String normalizedUrl = StringUtils.stripEnd(astConfig.getApiUrl(), "/");
 
         httpClient = createHttpClient(normalizedUrl);
-        httpClient.addCustomHeader(HttpHeaders.ACCEPT, API_VERSION);
+        httpClient.setCustomHeader(HttpHeaders.ACCEPT, API_VERSION);
     }
 
     @Override
@@ -139,12 +145,11 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         try {
             SourceLocationType locationType = astConfig.getSourceLocationType();
             HttpResponse response;
+            String projectId = determineProjectId(config.getProjectName());
             if (locationType == SourceLocationType.REMOTE_REPOSITORY) {
-                response = submitSourcesFromRemoteRepo(astConfig, config.getProjectName());
+                response = submitSourcesFromRemoteRepo(astConfig, projectId);
             } else {
-
-                response = submitAllSourcesFromLocalDir(config.getProjectName()
-                );
+                response = submitAllSourcesFromLocalDir(projectId);
             }
             scanId = extractScanIdFrom(response);
             astResults.setScanId(scanId);
@@ -162,7 +167,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         PathFilter filter = new PathFilter("", "", log);
         String sourceDir = config.getSourceDir();
         byte[] zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
-
+        
         return initiateScanForUpload(projectId, zipFile);
     }
 
@@ -509,5 +514,49 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         if (error != null) {
             throw new IllegalArgumentException(String.format(error, getScannerDisplayName()));
         }
+    }
+
+    protected String determineProjectId(String projectName) {
+        String projectId = "";
+
+        try {
+            String failedMessage = "Failed to get scan ID for scan " + projectName;
+            ProjectsList projectList = httpClient.getRequest(AST_GET_PROJECT_ID + projectName, ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                    ProjectsList.class, HttpStatus.SC_OK, failedMessage, false);
+
+            if(projectList.getProjects().size() == 0){
+                projectId = createProject(projectName);
+            }else{
+                projectId = projectList.getProjects().get(0).getId();
+            }
+
+        } catch (Exception e) {
+            throw new RestClientException(e.getMessage());
+        }
+
+        return projectId;
+    }
+
+    private synchronized String createProject(String projectName) {
+        String projectId;
+
+        Project project = new Project();
+        project.setName(projectName);
+        log.info("Sending the 'start scan' request.");
+        
+        try {
+            StringEntity entity = HttpClientHelper.convertToStringEntity(project);
+
+            httpClient.setCustomHeader(HttpHeaders.ACCEPT, "*/*; version=1.0");
+            ProjectId result  = httpClient.postRequest(AST_CREATE_PROJECT, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
+                    ProjectId.class, HttpStatus.SC_CREATED, "start the scan");
+            projectId = result.getId();
+            httpClient.setCustomHeader(HttpHeaders.ACCEPT, API_VERSION);
+            
+        } catch (IOException e) {
+            throw new RestClientException(e.getMessage());
+        }
+
+        return projectId;
     }
 }

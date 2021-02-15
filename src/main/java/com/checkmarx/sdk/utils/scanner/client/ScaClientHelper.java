@@ -111,8 +111,8 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         fingerprintCollector = new FingerprintCollector(log);
         // Pass tenant name in a custom header. This will allow to get token from on-premise access control server
         // and then use this token for SCA authentication in cloud.
-        httpClient.addCustomHeader(TENANT_HEADER_NAME, config.getScaConfig().getTenant());
-        httpClient.addCustomHeader(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
+        httpClient.setCustomHeader(TENANT_HEADER_NAME, config.getScaConfig().getTenant());
+        httpClient.setCustomHeader(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
     }
 
     @Override
