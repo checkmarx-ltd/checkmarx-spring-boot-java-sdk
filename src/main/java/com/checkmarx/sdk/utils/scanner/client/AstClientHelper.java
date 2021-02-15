@@ -537,7 +537,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         return projectId;
     }
 
-    private String createProject(String projectName) {
+    private synchronized String createProject(String projectName) {
         String projectId;
 
         Project project = new Project();
@@ -551,6 +551,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             ProjectId result  = httpClient.postRequest(AST_CREATE_PROJECT, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
                     ProjectId.class, HttpStatus.SC_CREATED, "start the scan");
             projectId = result.getId();
+            httpClient.setCustomHeader(HttpHeaders.ACCEPT, API_VERSION);
             
         } catch (IOException e) {
             throw new RestClientException(e.getMessage());
