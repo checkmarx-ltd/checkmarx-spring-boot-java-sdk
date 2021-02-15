@@ -20,7 +20,7 @@ public class ScanParams {
     private URL remoteRepoUrl;
     private String zipPath;
     private FilterConfiguration filterConfiguration;
-
+    private String branch;
     // SCA-specific parameters.
     private ScaConfig scaConfig;
 }

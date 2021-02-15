@@ -53,7 +53,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final int NO_FINDINGS_CODE = 4004;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final String API_VERSION = "*/*; version=0.1";
+    private static final String API_VERSION = "*/*; version=1.0";
     private static final String SCAN_ID_PARAM_NAME = "scan-id";
     private static final String OFFSET_PARAM_NAME = "offset";
     private static final String LIMIT_PARAM_NAME = "limit";
@@ -147,7 +147,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             HttpResponse response;
             String projectId = determineProjectId(config.getProjectName());
             if (locationType == SourceLocationType.REMOTE_REPOSITORY) {
-                response = submitSourcesFromRemoteRepo(astConfig, projectId);
+                response = submitSourcesFromRemoteRepo(projectId);
             } else {
                 response = submitAllSourcesFromLocalDir(projectId);
             }
@@ -165,8 +165,8 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         log.info("Using local directory flow.");
 
         PathFilter filter = new PathFilter("", "", log);
-        String sourceDir = config.getSourceDir();
-        byte[] zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
+        String sourceDir = this.config.getSourceDir();
+        byte[] zipFile = CxZipUtils.getZippedSources(this.config, filter, sourceDir, log);
         
         return initiateScanForUpload(projectId, zipFile);
     }
@@ -547,7 +547,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         try {
             StringEntity entity = HttpClientHelper.convertToStringEntity(project);
 
-            httpClient.setCustomHeader(HttpHeaders.ACCEPT, "*/*; version=1.0");
+            //httpClient.setCustomHeader(HttpHeaders.ACCEPT, "*/*; version=1.0");
             ProjectId result  = httpClient.postRequest(AST_CREATE_PROJECT, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
                     ProjectId.class, HttpStatus.SC_CREATED, "start the scan");
             projectId = result.getId();
@@ -558,5 +558,35 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         }
 
         return projectId;
+    }
+
+    protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
+                                                SourceLocationType sourceLocation,
+                                                String projectId) throws IOException {
+        log.debug("Constructing the 'start scan' request");
+
+        ScanStartHandler handler = getScanStartHandler(repoInfo);
+
+        ProjectToScan project = ProjectToScan.builder()
+                .id(projectId)
+                //a constant value after AST API version 1.0 
+                .type(SourceLocationType.REMOTE_REPOSITORY.name())
+                .handler(handler)
+                .build();
+
+        List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
+
+        AstStartScanRequest request = AstStartScanRequest.builder()
+                .uploadUrl(repoInfo.getUrl().getPath())
+                .branch(repoInfo.getBranch())
+                .project(project)
+                .config(apiScanConfig)
+                .build();
+
+        StringEntity entity = HttpClientHelper.convertToStringEntity(request);
+
+        log.info("Sending the 'start scan' request.");
+        return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
+                HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
     }
 }

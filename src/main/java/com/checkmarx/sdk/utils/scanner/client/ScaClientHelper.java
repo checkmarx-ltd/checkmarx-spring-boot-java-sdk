@@ -4,6 +4,7 @@ import com.checkmarx.sdk.config.ContentType;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.*;
+import com.checkmarx.sdk.dto.ast.AstStartScanRequest;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.sca.*;
 import com.checkmarx.sdk.dto.sca.report.Finding;
@@ -252,7 +253,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             }
 
             if (locationType == SourceLocationType.REMOTE_REPOSITORY) {
-                response = submitSourcesFromRemoteRepo(scaConfig, projectId);
+                response = submitSourcesFromRemoteRepo(projectId);
             } else {
                 if (scaConfig.isIncludeSources()) {
                     response = submitAllSourcesFromLocalDir(projectId);
@@ -290,7 +291,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 false);
     }
 
-    protected HttpResponse submitAllSourcesFromLocalDir(String projectId) throws IOException {
+    protected HttpResponse submitAllSourcesFromLocalDir (String projectId) throws IOException {
         log.info("Using local directory flow.");
 
 
@@ -866,5 +867,32 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         } catch (Exception ex) {
             log.warn("Failed to write OSA JSON report (" + name + ") to file: " + ex.getMessage());
         }
+    }
+
+    protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
+                                                SourceLocationType sourceLocation,
+                                                String projectId) throws IOException {
+        log.debug("Constructing the 'start scan' request");
+
+        ScanStartHandler handler = getScanStartHandler(repoInfo);
+
+        ProjectToScan project = ProjectToScan.builder()
+                .id(projectId)
+                .type(sourceLocation.name())
+                .handler(handler)
+                .build();
+
+        List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
+
+        ScaStartScanRequest request = ScaStartScanRequest.builder()
+                .project(project)
+                .config(apiScanConfig)
+                .build();
+
+        StringEntity entity = HttpClientHelper.convertToStringEntity(request);
+
+        log.info("Sending the 'start scan' request.");
+        return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
+                HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
     }
 }

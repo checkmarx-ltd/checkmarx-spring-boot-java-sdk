@@ -1,8 +1,8 @@
 package com.checkmarx.sdk.service.scanner;
 
 import com.checkmarx.sdk.config.ScaProperties;
+import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.sca.Summary;
-import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
@@ -16,7 +16,6 @@ import com.checkmarx.sdk.utils.scanner.client.ScaClientHelper;
 import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.config.RestClientConfig;
-import com.checkmarx.sdk.dto.ResultsBase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -127,6 +126,27 @@ public class ScaScanner extends AbstractScanner {
         return restClientConfig;
     }
 
+//    protected static void setSourceLocation(ScanParams scanParams, RestClientConfig scanConfig, ScanConfigBase scaConfig) {
+//        if (localSourcesAreSpecified(scanParams)) {
+//            scaConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
+//
+//            // If both zip file and source directory are specified, zip file has priority.
+//            // This is to conform to Common Client behavior.
+//            if (StringUtils.isNotEmpty(scanParams.getZipPath())) {
+//                log.debug("Using a local zip file for scanning.");
+//                scanConfig.setZipFile(new File(scanParams.getZipPath()));
+//            } else {
+//                log.debug("Using a local directory for scanning.");
+//                scanConfig.setSourceDir(scanParams.getSourceDir());
+//            }
+//        } else {
+//            scaConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
+//            RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
+//            remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
+//            scaConfig.setRemoteRepositoryInfo(remoteRepoInfo);
+//        }
+//    }
+    
     private ScaConfig getScaSpecificConfig(ScanParams scanParams) {
         ScaConfig commonClientScaConfig = new ScaConfig();
         com.checkmarx.sdk.config.ScaConfig sdkScaConfig = scanParams.getScaConfig();
@@ -199,4 +219,7 @@ public class ScaScanner extends AbstractScanner {
         }
     }
 
+    protected void setRemoteBranch(ScanParams scanParams, RemoteRepositoryInfo remoteRepoInfo) {
+       //branches are not supported for SCA
+    }
 }

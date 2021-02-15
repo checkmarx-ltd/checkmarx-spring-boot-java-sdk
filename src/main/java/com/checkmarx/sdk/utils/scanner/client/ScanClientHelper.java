@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.dto.*;
+import com.checkmarx.sdk.dto.ast.AstStartScanRequest;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.ScanWaiter;
 import com.checkmarx.sdk.utils.State;
@@ -55,9 +56,7 @@ public abstract class ScanClientHelper {
     protected abstract ScanConfig getScanConfig();
 
     protected abstract HandlerRef getBranchToScan(RemoteRepositoryInfo repoInfo);
-
-    protected abstract HttpResponse submitAllSourcesFromLocalDir(String projectId) throws IOException;
-
+    
     protected abstract String getWebReportPath() throws UnsupportedEncodingException;
 
     protected CxHttpClient createHttpClient(String baseUrl) {
@@ -77,40 +76,17 @@ public abstract class ScanClientHelper {
         }
     }
 
-    protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
+    protected abstract HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
                                                 SourceLocationType sourceLocation,
-                                                String projectId) throws IOException {
-        log.debug("Constructing the 'start scan' request");
-
-       ScanStartHandler handler = getScanStartHandler(repoInfo);
-
-        ProjectToScan project = ProjectToScan.builder()
-                .id(projectId)
-                .type(sourceLocation.getApiValue())
-                .handler(handler)
-                .build();
-
-        List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
-
-        StartScanRequest request = StartScanRequest.builder()
-                .project(project)
-                .config(apiScanConfig)
-                .build();
-
-        StringEntity entity = HttpClientHelper.convertToStringEntity(request);
-
-        log.info("Sending the 'start scan' request.");
-        return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
-                HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
-    }
+                                                String projectId)throws IOException ;
 
     protected String determineProjectId(String projectName) {
         return projectName;
     }
 
-    protected HttpResponse submitSourcesFromRemoteRepo(ScanConfigBase config, String projectId) throws IOException {
+    protected HttpResponse submitSourcesFromRemoteRepo(String projectId) throws IOException {
         log.info("Using remote repository flow.");
-        RemoteRepositoryInfo repoInfo = config.getRemoteRepositoryInfo();
+        RemoteRepositoryInfo repoInfo = config.getScaConfig().getRemoteRepositoryInfo();
         validateRepoInfo(repoInfo);
 
         URL sanitizedUrl = sanitize(repoInfo.getUrl());
@@ -131,7 +107,7 @@ public abstract class ScanClientHelper {
     /**
      * @param repoInfo may represent an actual git repo or a presigned URL of an uploaded archive.
      */
-    private ScanStartHandler getScanStartHandler(RemoteRepositoryInfo repoInfo) {
+    protected ScanStartHandler getScanStartHandler(RemoteRepositoryInfo repoInfo) {
         log.debug("Creating the handler object.");
 
         HandlerRef ref = getBranchToScan(repoInfo);
@@ -240,11 +216,10 @@ public abstract class ScanClientHelper {
         //delete only if path not specified in the config
         //If zipFilePath is specified in config, it means that the user has prepared the zip file themselves. The user obviously doesn't want this file to be deleted.
         //If zipFilePath is NOT specified, Common Client will create the zip itself. After uploading the zip, Common Client should clean after itself (delete the zip file that it created).
+        
+        config.getAstConfig().getRemoteRepositoryInfo().setUrl(new URL(uploadedArchiveUrl));
 
-        RemoteRepositoryInfo uploadedFileInfo = new RemoteRepositoryInfo();
-        uploadedFileInfo.setUrl(new URL(uploadedArchiveUrl));
-
-        return sendStartScanRequest(uploadedFileInfo, SourceLocationType.LOCAL_DIRECTORY, projectId);
+        return sendStartScanRequest(config.getAstConfig().getRemoteRepositoryInfo(), SourceLocationType.LOCAL_DIRECTORY, projectId);
     }
 
     private String getSourcesUploadUrl() throws IOException {
