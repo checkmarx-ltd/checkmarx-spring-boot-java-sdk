@@ -31,7 +31,7 @@ import java.util.Optional;
 public abstract class ScanClientHelper {
 
     private static final String LOCATION_HEADER = "Location";
-    private static final String CREDENTIAL_TYPE_PASSWORD = "password";
+
 
     protected final RestClientConfig config;
     protected final Logger log;
@@ -80,13 +80,9 @@ public abstract class ScanClientHelper {
                                                 SourceLocationType sourceLocation,
                                                 String projectId)throws IOException ;
 
-    protected String determineProjectId(String projectName) {
-        return projectName;
-    }
-
-    protected HttpResponse submitSourcesFromRemoteRepo(String projectId) throws IOException {
+    protected HttpResponse submitSourcesFromRemoteRepo(String projectId, ScanConfigBase baseConfig) throws IOException {
         log.info("Using remote repository flow.");
-        RemoteRepositoryInfo repoInfo = config.getScaConfig().getRemoteRepositoryInfo();
+        RemoteRepositoryInfo repoInfo = baseConfig.getRemoteRepositoryInfo();
         validateRepoInfo(repoInfo);
 
         URL sanitizedUrl = sanitize(repoInfo.getUrl());
@@ -117,7 +113,7 @@ public abstract class ScanClientHelper {
         String username = StringUtils.defaultString(repoInfo.getUsername());
 
         GitCredentials credentials = GitCredentials.builder()
-                .type(CREDENTIAL_TYPE_PASSWORD)
+                .type(getCredentailsType())
                 .value(password)
                 .build();
 
@@ -131,6 +127,8 @@ public abstract class ScanClientHelper {
                 .url(effectiveRepoUrl.toString())
                 .build();
     }
+
+    protected abstract String getCredentailsType();
 
     protected URL getEffectiveRepoUrl(RemoteRepositoryInfo repoInfo) {
         return repoInfo.getUrl();
@@ -207,7 +205,7 @@ public abstract class ScanClientHelper {
         results.setException(new ScannerRuntimeException(message, e));
     }
 
-    protected HttpResponse initiateScanForUpload(String projectId, byte[] zipFile) throws IOException {
+    protected HttpResponse initiateScanForUpload(String projectId, byte[] zipFile, ScanConfigBase configBase) throws IOException {
         String uploadedArchiveUrl = getSourcesUploadUrl();
         String cleanPath = uploadedArchiveUrl.split("\\?")[0];
         log.info("Uploading to: {}", cleanPath);
@@ -216,10 +214,10 @@ public abstract class ScanClientHelper {
         //delete only if path not specified in the config
         //If zipFilePath is specified in config, it means that the user has prepared the zip file themselves. The user obviously doesn't want this file to be deleted.
         //If zipFilePath is NOT specified, Common Client will create the zip itself. After uploading the zip, Common Client should clean after itself (delete the zip file that it created).
-        
-        config.getAstConfig().getRemoteRepositoryInfo().setUrl(new URL(uploadedArchiveUrl));
 
-        return sendStartScanRequest(config.getAstConfig().getRemoteRepositoryInfo(), SourceLocationType.LOCAL_DIRECTORY, projectId);
+        configBase.getRemoteRepositoryInfo().setUrl(new URL(uploadedArchiveUrl));
+
+        return sendStartScanRequest(configBase.getRemoteRepositoryInfo(), SourceLocationType.LOCAL_DIRECTORY, projectId);
     }
 
     private String getSourcesUploadUrl() throws IOException {

@@ -4,7 +4,6 @@ import com.checkmarx.sdk.config.ContentType;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.*;
-import com.checkmarx.sdk.dto.ast.AstStartScanRequest;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.sca.*;
 import com.checkmarx.sdk.dto.sca.report.Finding;
@@ -57,6 +56,7 @@ import static com.checkmarx.sdk.config.Constants.ENCODING;
  */
 public class ScaClientHelper extends ScanClientHelper implements IScanClientHelper {
 
+    private static final String CREDENTIALS_TYPE = "password";
     private static final String RISK_MANAGEMENT_API = "/risk-management/";
     private static final String POLICY_MANAGEMENT_API = "/policy-management/";
     private static final String POLICIES_API = POLICY_MANAGEMENT_API + "policies";
@@ -253,12 +253,12 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             }
 
             if (locationType == SourceLocationType.REMOTE_REPOSITORY) {
-                response = submitSourcesFromRemoteRepo(projectId);
+                response = submitSourcesFromRemoteRepo(projectId, scaConfig);
             } else {
                 if (scaConfig.isIncludeSources()) {
-                    response = submitAllSourcesFromLocalDir(projectId);
+                    response = submitAllSourcesFromLocalDir(projectId, scaConfig);
                 } else {
-                    response = submitManifestsAndFingerprintsFromLocalDir(projectId);
+                    response = submitManifestsAndFingerprintsFromLocalDir(projectId, scaConfig);
                 }
             }
             this.scanId = extractScanIdFrom(response);
@@ -291,7 +291,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 false);
     }
 
-    protected HttpResponse submitAllSourcesFromLocalDir (String projectId) throws IOException {
+    protected HttpResponse submitAllSourcesFromLocalDir(String projectId, ScanConfigBase scaConfig) throws IOException {
         log.info("Using local directory flow.");
 
 
@@ -310,10 +310,10 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
         }
 
-        return initiateScanForUpload(projectId, zipFile);
+        return initiateScanForUpload(projectId, zipFile, scaConfig);
     }
 
-    private HttpResponse submitManifestsAndFingerprintsFromLocalDir(String projectId) throws IOException {
+    private HttpResponse submitManifestsAndFingerprintsFromLocalDir(String projectId, ScanConfigBase configBase) throws IOException {
         log.info("Using manifest only and fingerprint flow");
 
         String sourceDir = config.getSourceDir();
@@ -352,7 +352,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             cxRepoFileHelper.deleteCloneLocalDir(new File(sourceDir));
             config.setZipFile(zipFile);
         }
-        return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile));
+        return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), configBase);
     }
 
 
@@ -878,7 +878,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
         ProjectToScan project = ProjectToScan.builder()
                 .id(projectId)
-                .type(sourceLocation.name())
+                .type(sourceLocation.getApiValue())
                 .handler(handler)
                 .build();
 
@@ -894,5 +894,9 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         log.info("Sending the 'start scan' request.");
         return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
                 HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
+    }
+
+    protected String getCredentailsType(){
+        return CREDENTIALS_TYPE;
     }
 }

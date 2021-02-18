@@ -1,14 +1,11 @@
 package com.checkmarx.sdk.service.scanner;
 
-import com.checkmarx.sdk.dto.AstScaResults;
+import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.ast.ScanParams;
-import com.checkmarx.sdk.dto.ScanConfigBase;
-import com.checkmarx.sdk.dto.RemoteRepositoryInfo;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.scanner.client.IScanClientHelper;
 import com.checkmarx.sdk.utils.State;
 import com.checkmarx.sdk.config.RestClientConfig;
-import com.checkmarx.sdk.dto.ResultsBase;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -72,7 +69,7 @@ public abstract class AbstractScanner  {
         setRemoteBranch(scanParams, remoteRepoInfo);
 
         if (localSourcesAreSpecified(scanParams)) {
-
+            configBase.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
             // If both zip file and source directory are specified, zip file has priority.
             // This is to conform to Common Client behavior.
             if (StringUtils.isNotEmpty(scanParams.getZipPath())) {
@@ -83,6 +80,7 @@ public abstract class AbstractScanner  {
                 scanConfig.setSourceDir(scanParams.getSourceDir());
             }
         } else {
+            configBase.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
             remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
         }
         configBase.setRemoteRepositoryInfo(remoteRepoInfo);

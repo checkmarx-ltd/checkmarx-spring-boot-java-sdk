@@ -40,6 +40,7 @@ import static com.checkmarx.sdk.config.Constants.ENCODING;
 
 public class AstClientHelper extends ScanClientHelper implements IScanClientHelper {
     
+    private static final String CREDENTAILS_TYPE = "apiKey";
     private static final String ENGINE_TYPE_FOR_API = "sast";
     private static final String REF_TYPE_BRANCH = "branch";
     private static final String SUMMARY_PATH = "/api/scan-summary";
@@ -147,9 +148,9 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             HttpResponse response;
             String projectId = determineProjectId(config.getProjectName());
             if (locationType == SourceLocationType.REMOTE_REPOSITORY) {
-                response = submitSourcesFromRemoteRepo(projectId);
+                response = submitSourcesFromRemoteRepo(projectId, astConfig);
             } else {
-                response = submitAllSourcesFromLocalDir(projectId);
+                response = submitAllSourcesFromLocalDir(projectId, astConfig);
             }
             scanId = extractScanIdFrom(response);
             astResults.setScanId(scanId);
@@ -161,14 +162,14 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         return astResults;
     }
 
-    protected HttpResponse submitAllSourcesFromLocalDir(String projectId) throws IOException {
+    protected HttpResponse submitAllSourcesFromLocalDir(String projectId,  ScanConfigBase configBase) throws IOException {
         log.info("Using local directory flow.");
 
         PathFilter filter = new PathFilter("", "", log);
         String sourceDir = this.config.getSourceDir();
         byte[] zipFile = CxZipUtils.getZippedSources(this.config, filter, sourceDir, log);
         
-        return initiateScanForUpload(projectId, zipFile);
+        return initiateScanForUpload(projectId, zipFile , configBase);
     }
 
     @Override
@@ -570,7 +571,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         ProjectToScan project = ProjectToScan.builder()
                 .id(projectId)
                 //a constant value after AST API version 1.0 
-                .type(SourceLocationType.REMOTE_REPOSITORY.name())
+                .type(SourceLocationType.REMOTE_REPOSITORY.getApiValue())
                 .handler(handler)
                 .build();
 
@@ -588,5 +589,9 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         log.info("Sending the 'start scan' request.");
         return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
                 HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
+    }
+
+    protected String getCredentailsType(){
+        return CREDENTAILS_TYPE;
     }
 }
