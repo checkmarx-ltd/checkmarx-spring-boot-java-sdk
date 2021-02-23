@@ -1,29 +1,22 @@
 package com.checkmarx.sdk.service.scanner;
 
-import com.checkmarx.sdk.dto.sast.Filter;
-import com.checkmarx.sdk.dto.AstScaResults;
+import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.ast.ScanParams;
-import com.checkmarx.sdk.dto.ScanConfigBase;
-import com.checkmarx.sdk.dto.RemoteRepositoryInfo;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
-import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.utils.scanner.client.IScanClientHelper;
 import com.checkmarx.sdk.utils.State;
 import com.checkmarx.sdk.config.RestClientConfig;
-import com.checkmarx.sdk.dto.ResultsBase;
-import com.checkmarx.sdk.dto.SourceLocationType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.util.EnumMap;
-import java.util.Map;
 
 @Slf4j
 public abstract class AbstractScanner  {
     
     private static final int SCA_SCAN_INTERVAL_IN_SECONDS = 5;
     protected static final String ERROR_PREFIX = "Scan cannot be initiated.";
+
     private IScanClientHelper client;
     
     public AstScaResults scan(ScanParams scanParams) {
@@ -72,10 +65,12 @@ public abstract class AbstractScanner  {
         }
     }
 
-    protected static void setSourceLocation(ScanParams scanParams, RestClientConfig scanConfig, ScanConfigBase scaConfig) {
-        if (localSourcesAreSpecified(scanParams)) {
-            scaConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
+    protected void setSourceLocation(ScanParams scanParams, RestClientConfig scanConfig, ScanConfigBase configBase) {
+        RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
+        setRemoteBranch(scanParams, remoteRepoInfo);
 
+        if (localSourcesAreSpecified(scanParams)) {
+            configBase.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
             // If both zip file and source directory are specified, zip file has priority.
             // This is to conform to Common Client behavior.
             if (StringUtils.isNotEmpty(scanParams.getZipPath())) {
@@ -86,12 +81,14 @@ public abstract class AbstractScanner  {
                 scanConfig.setSourceDir(scanParams.getSourceDir());
             }
         } else {
-            scaConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
-            RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
+            configBase.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
             remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
-            scaConfig.setRemoteRepositoryInfo(remoteRepoInfo);
         }
+        configBase.setRemoteRepositoryInfo(remoteRepoInfo);
     }
+
+    protected abstract void setRemoteBranch(ScanParams scanParams, RemoteRepositoryInfo remoteRepoInfo) ;
+
 
     protected static boolean localSourcesAreSpecified(ScanParams scanParams) {
         return !StringUtils.isAllEmpty(scanParams.getZipPath(), scanParams.getSourceDir());

@@ -56,6 +56,7 @@ import static com.checkmarx.sdk.config.Constants.ENCODING;
  */
 public class ScaClientHelper extends ScanClientHelper implements IScanClientHelper {
 
+    private static final String CREDENTIALS_TYPE = "password";
     private static final String RISK_MANAGEMENT_API = "/risk-management/";
     private static final String POLICY_MANAGEMENT_API = "/policy-management/";
     private static final String POLICIES_API = POLICY_MANAGEMENT_API + "policies";
@@ -143,7 +144,6 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     /**
      * Transforms the repo URL if credentials are specified in repoInfo.
      */
-    @Override
     protected URL getEffectiveRepoUrl(RemoteRepositoryInfo repoInfo) {
         URL result;
         URL initialUrl = repoInfo.getUrl();
@@ -252,12 +252,12 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             }
 
             if (locationType == SourceLocationType.REMOTE_REPOSITORY) {
-                response = submitSourcesFromRemoteRepo(scaConfig, projectId);
+                response = submitSourcesFromRemoteRepo(projectId, scaConfig);
             } else {
                 if (scaConfig.isIncludeSources()) {
-                    response = submitAllSourcesFromLocalDir(projectId);
+                    response = submitAllSourcesFromLocalDir(projectId, scaConfig);
                 } else {
-                    response = submitManifestsAndFingerprintsFromLocalDir(projectId);
+                    response = submitManifestsAndFingerprintsFromLocalDir(projectId, scaConfig);
                 }
             }
             this.scanId = extractScanIdFrom(response);
@@ -290,7 +290,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 false);
     }
 
-    protected HttpResponse submitAllSourcesFromLocalDir(String projectId) throws IOException {
+    protected HttpResponse submitAllSourcesFromLocalDir(String projectId, ScanConfigBase scaConfig) throws IOException {
         log.info("Using local directory flow.");
 
 
@@ -309,10 +309,10 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
         }
 
-        return initiateScanForUpload(projectId, zipFile);
+        return initiateScanForUpload(projectId, zipFile, scaConfig);
     }
 
-    private HttpResponse submitManifestsAndFingerprintsFromLocalDir(String projectId) throws IOException {
+    private HttpResponse submitManifestsAndFingerprintsFromLocalDir(String projectId, ScanConfigBase configBase) throws IOException {
         log.info("Using manifest only and fingerprint flow");
 
         String sourceDir = config.getSourceDir();
@@ -351,7 +351,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             cxRepoFileHelper.deleteCloneLocalDir(new File(sourceDir));
             config.setZipFile(zipFile);
         }
-        return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile));
+        return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), configBase);
     }
 
 
@@ -866,5 +866,60 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         } catch (Exception ex) {
             log.warn("Failed to write OSA JSON report (" + name + ") to file: " + ex.getMessage());
         }
+    }
+
+    protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
+                                                SourceLocationType sourceLocation,
+                                                String projectId) throws IOException {
+        log.debug("Constructing the 'start scan' request");
+
+        ScaScanStartHandler handler = getScanStartHandler(repoInfo);
+
+        ScaProjectToScan project = ScaProjectToScan.builder()
+                .id(projectId)
+                .type(sourceLocation.getApiValue())
+                .handler(handler)
+                .build();
+
+        List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
+
+        ScaStartScanRequest request = ScaStartScanRequest.builder()
+                .project(project)
+                .config(apiScanConfig)
+                .build();
+
+        StringEntity entity = HttpClientHelper.convertToStringEntity(request);
+
+        log.info("Sending the 'start scan' request.");
+        return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
+                HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
+    }
+    
+
+    /**
+     * @param repoInfo may represent an actual git repo or a presigned URL of an uploaded archive.
+     */
+    protected ScaScanStartHandler getScanStartHandler(RemoteRepositoryInfo repoInfo) {
+        log.debug("Creating the handler object.");
+
+        HandlerRef ref = getBranchToScan(repoInfo);
+        
+        String password = StringUtils.defaultString(repoInfo.getPassword());
+        String username = StringUtils.defaultString(repoInfo.getUsername());
+
+        GitCredentials credentials = GitCredentials.builder()
+                .type(CREDENTIALS_TYPE)
+                .value(password)
+                .build();
+
+        URL effectiveRepoUrl = getEffectiveRepoUrl(repoInfo);
+
+        // The ref/username/credentials properties are mandatory even if not specified in repoInfo.
+        return ScaScanStartHandler.builder()
+                .ref(ref)
+                .username(username)
+                .credentials(credentials)
+                .url(effectiveRepoUrl.toString())
+                .build();
     }
 }

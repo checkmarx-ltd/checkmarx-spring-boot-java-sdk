@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,7 +40,11 @@ import java.util.stream.Collectors;
 import static com.checkmarx.sdk.config.Constants.ENCODING;
 
 public class AstClientHelper extends ScanClientHelper implements IScanClientHelper {
-    
+
+    private final String AST_SCAN_TYPE = "git";
+    public static final String OAUTH2 = "oauth2:";
+    private static final String TOKEN_SCM_SEPARATOR = "@";    
+    private static final String CREDENTIALS_TYPE = "apiKey";
     private static final String ENGINE_TYPE_FOR_API = "sast";
     private static final String REF_TYPE_BRANCH = "branch";
     private static final String SUMMARY_PATH = "/api/scan-summary";
@@ -53,7 +58,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final int NO_FINDINGS_CODE = 4004;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final String API_VERSION = "*/*; version=0.1";
+    private static final String API_VERSION = "*/*; version=1.0";
     private static final String SCAN_ID_PARAM_NAME = "scan-id";
     private static final String OFFSET_PARAM_NAME = "offset";
     private static final String LIMIT_PARAM_NAME = "limit";
@@ -147,9 +152,9 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             HttpResponse response;
             String projectId = determineProjectId(config.getProjectName());
             if (locationType == SourceLocationType.REMOTE_REPOSITORY) {
-                response = submitSourcesFromRemoteRepo(astConfig, projectId);
+                response = submitSourcesFromRemoteRepo(projectId, astConfig);
             } else {
-                response = submitAllSourcesFromLocalDir(projectId);
+                response = submitAllSourcesFromLocalDir(projectId, astConfig);
             }
             scanId = extractScanIdFrom(response);
             astResults.setScanId(scanId);
@@ -161,14 +166,14 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         return astResults;
     }
 
-    protected HttpResponse submitAllSourcesFromLocalDir(String projectId) throws IOException {
+    private HttpResponse submitAllSourcesFromLocalDir(String projectId,  ScanConfigBase configBase) throws IOException {
         log.info("Using local directory flow.");
 
         PathFilter filter = new PathFilter("", "", log);
-        String sourceDir = config.getSourceDir();
-        byte[] zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
+        String sourceDir = this.config.getSourceDir();
+        byte[] zipFile = CxZipUtils.getZippedSources(this.config, filter, sourceDir, log);
         
-        return initiateScanForUpload(projectId, zipFile);
+        return initiateScanForUpload(projectId, zipFile , configBase);
     }
 
     @Override
@@ -546,8 +551,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         
         try {
             StringEntity entity = HttpClientHelper.convertToStringEntity(project);
-
-            httpClient.setCustomHeader(HttpHeaders.ACCEPT, "*/*; version=1.0");
+            
             ProjectId result  = httpClient.postRequest(AST_CREATE_PROJECT, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
                     ProjectId.class, HttpStatus.SC_CREATED, "start the scan");
             projectId = result.getId();
@@ -559,4 +563,97 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
 
         return projectId;
     }
+    
+    /**
+     * @param repoInfo may represent an actual git repo or a presigned URL of an uploaded archive.
+     * @param sourceLocation
+     */
+    protected AstScanStartHandler getScanStartHandler(RemoteRepositoryInfo repoInfo, SourceLocationType sourceLocation) {
+        log.debug("Creating the handler object.");
+
+        try {
+            HandlerRef ref = getBranchToScan(repoInfo);
+            URL effectiveUrl = repoInfo.getUrl();
+            
+            String username = "";
+
+            GitCredentials credentials = calculateGitCredentials(repoInfo, sourceLocation);
+
+            if (sourceLocation.REMOTE_REPOSITORY.equals(sourceLocation)) {
+                effectiveUrl = sanitize(repoInfo.getUrl());
+            }
+            
+            // The ref/username/credentials properties are mandatory even if not specified in repoInfo.
+            return AstScanStartHandler.builder()
+                    .ref(ref)
+                    .username(username)
+                    .credentials(credentials)
+                    .repoUrl(effectiveUrl.toString())
+                    .build();
+        
+        } catch (MalformedURLException e) {
+            throw new ScannerRuntimeException(e.getMessage());
+        }
+    }
+
+    private GitCredentials calculateGitCredentials(RemoteRepositoryInfo repoInfo, SourceLocationType sourceLocation) {
+        String credentialsType = "";
+        String token = "";
+        
+        if (sourceLocation.REMOTE_REPOSITORY.equals(sourceLocation)) {
+            
+            String authority = repoInfo.getUrl().getAuthority();
+            //If token is supplied  authority field contains token@scm.com
+            if (StringUtils.isNotEmpty(authority) && authority.contains(TOKEN_SCM_SEPARATOR)){
+                token = authority.substring(0, authority.indexOf(TOKEN_SCM_SEPARATOR));
+                //Gitlab use case. Authority field will be like oauth2:token@gitlab.com
+                if(token.contains(OAUTH2)){
+                    //remove the OAUTH2 header
+                    token = token.split(OAUTH2)[1];
+                }
+                credentialsType = CREDENTIALS_TYPE;
+            }
+            
+        }
+
+        return GitCredentials.builder()
+                .type(credentialsType)
+                .value(token)
+                .build();
+    }
+
+    protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
+                                                SourceLocationType sourceLocation,
+                                                String projectId) throws IOException {
+        log.debug("Constructing the 'start scan' request");
+
+        AstScanStartHandler handler = getScanStartHandler(repoInfo, sourceLocation);
+
+        AstProjectToScan project = AstProjectToScan.builder()
+                .id(projectId)
+                //a constant value after AST API version 1.0 
+                .type(AST_SCAN_TYPE)
+                .handler(handler)
+                .build();
+
+        List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
+
+        AstStartScanRequest request = AstStartScanRequest.builder()
+                .branch(repoInfo.getBranch())
+                .project(project)
+                .config(apiScanConfig)
+                .build();
+
+        if (sourceLocation.LOCAL_DIRECTORY.equals(sourceLocation)){
+            request.setUploadUrl(repoInfo.getUrl().getPath());
+        }
+        
+        StringEntity entity = HttpClientHelper.convertToStringEntity(request);
+
+        log.info("Sending the 'start scan' request.");
+        return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
+                HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
+    }
+
+
 }

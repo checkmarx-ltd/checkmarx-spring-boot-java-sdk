@@ -1,20 +1,21 @@
 package com.checkmarx.sdk.service.scanner;
 
 import com.checkmarx.sdk.config.AstProperties;
-import com.checkmarx.sdk.dto.AstScaResults;
+import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.sca.SCAResults;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.scanner.client.AstClientHelper;
-import com.checkmarx.sdk.dto.SummaryResults;
 import com.checkmarx.sdk.config.AstConfig;
 import com.checkmarx.sdk.dto.ast.ASTResults;
 import com.checkmarx.sdk.config.RestClientConfig;
-import com.checkmarx.sdk.dto.ResultsBase;
 import com.checkmarx.sdk.utils.scanner.client.IScanClientHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+
+import java.io.File;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -71,7 +72,7 @@ public class AstScanner extends AbstractScanner {
 
         return restClientConfig;
     }
-
+    
     private AstConfig getAstSpecificConfig() {
         return AstConfig.builder()
                 .apiUrl(astProperties.getApiUrl())
@@ -99,5 +100,9 @@ public class AstScanner extends AbstractScanner {
     public AstScaResults getLatestScanResults(ScanParams scanParams) {
         log.warn("Getting latest AST scan results is not implemented yet.");
         return new AstScaResults();
+    }
+    
+    protected void setRemoteBranch(ScanParams scanParams, RemoteRepositoryInfo remoteRepoInfo) {
+        remoteRepoInfo.setBranch(scanParams.getBranch());
     }
 }
