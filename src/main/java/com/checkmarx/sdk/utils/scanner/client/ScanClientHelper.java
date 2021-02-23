@@ -174,7 +174,7 @@ public abstract class ScanClientHelper {
 
         //delete only if path not specified in the config
         //If zipFilePath is specified in config, it means that the user has prepared the zip file themselves. The user obviously doesn't want this file to be deleted.
-        //If zipFilePath is NOT specified, Common Client will create the zip itself. After uploading the zip, Common Client should clean after itself (delete the zip file that it created).
+        //If zipFilePath is NOT specified, we will create the zip itself. After uploading the zip, the code should clean after itself (delete the zip file that it created).
 
         configBase.getRemoteRepositoryInfo().setUrl(new URL(uploadedArchiveUrl));
 

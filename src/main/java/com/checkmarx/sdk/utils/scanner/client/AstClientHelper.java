@@ -43,7 +43,7 @@ import static com.checkmarx.sdk.config.Constants.ENCODING;
 public class AstClientHelper extends ScanClientHelper implements IScanClientHelper {
 
     private final String AST_SCAN_TYPE = "git";
-    
+    public static final String OAUTH2 = "oauth2:";
     private static final String TOKEN_SCM_SEPARATOR = "@";    
     private static final String CREDENTAILS_TYPE = "apiKey";
     private static final String ENGINE_TYPE_FOR_API = "sast";
@@ -167,7 +167,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         return astResults;
     }
 
-    protected HttpResponse submitAllSourcesFromLocalDir(String projectId,  ScanConfigBase configBase) throws IOException {
+    private HttpResponse submitAllSourcesFromLocalDir(String projectId,  ScanConfigBase configBase) throws IOException {
         log.info("Using local directory flow.");
 
         PathFilter filter = new PathFilter("", "", log);
@@ -552,8 +552,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         
         try {
             StringEntity entity = HttpClientHelper.convertToStringEntity(project);
-
-            //httpClient.setCustomHeader(HttpHeaders.ACCEPT, "*/*; version=1.0");
+            
             ProjectId result  = httpClient.postRequest(AST_CREATE_PROJECT, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
                     ProjectId.class, HttpStatus.SC_CREATED, "start the scan");
             projectId = result.getId();
@@ -579,20 +578,27 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             
             String username = StringUtils.defaultString(repoInfo.getUsername());
             String password =  StringUtils.defaultString(repoInfo.getPassword());;
-            String credentailsType = "";
+            String credentialsType = "";
             
             if (sourceLocation.REMOTE_REPOSITORY.equals(sourceLocation)) {
+                
                 String token = repoInfo.getUrl().getAuthority();
+                //If token is supplied  authority field contains token@scm.com
                 if (StringUtils.isNotEmpty(token) && token.contains(TOKEN_SCM_SEPARATOR)){
                     password = token.substring(0, token.indexOf(TOKEN_SCM_SEPARATOR));
-                    credentailsType = CREDENTAILS_TYPE;
+                    //Gitlab use case. Authority field will be like oauth2:token@gitlab.com
+                    if(password.contains(OAUTH2)){
+                        //remove the OAUTH2 header
+                        password = password.split(OAUTH2)[1];
+                    }
+                    credentialsType = CREDENTAILS_TYPE;
                 } 
-
+                
                 effectiveUrl = sanitize(repoInfo.getUrl());
             } 
             
             GitCredentials credentials = GitCredentials.builder()
-                    .type(credentailsType)
+                    .type(credentialsType)
                     .value(password)
                     .build();
             

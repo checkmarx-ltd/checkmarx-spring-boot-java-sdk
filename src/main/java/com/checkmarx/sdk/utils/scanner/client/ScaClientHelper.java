@@ -903,8 +903,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         log.debug("Creating the handler object.");
 
         HandlerRef ref = getBranchToScan(repoInfo);
-
-        // AST-SAST doesn't allow nulls here.
+        
         String password = StringUtils.defaultString(repoInfo.getPassword());
         String username = StringUtils.defaultString(repoInfo.getUsername());
 
