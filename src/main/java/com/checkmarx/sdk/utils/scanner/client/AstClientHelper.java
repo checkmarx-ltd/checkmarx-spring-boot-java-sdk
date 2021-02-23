@@ -3,6 +3,7 @@ package com.checkmarx.sdk.utils.scanner.client;
 import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.ast.*;
 import com.checkmarx.sdk.dto.ast.report.Finding;
+import com.checkmarx.sdk.dto.sca.ScaProjectToScan;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.config.AstConfig;
 import com.checkmarx.sdk.dto.ast.report.*;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,7 +41,10 @@ import java.util.stream.Collectors;
 import static com.checkmarx.sdk.config.Constants.ENCODING;
 
 public class AstClientHelper extends ScanClientHelper implements IScanClientHelper {
+
+    private final String AST_SCAN_TYPE = "git";
     
+    private static final String TOKEN_SCM_SEPARATOR = "@";    
     private static final String CREDENTAILS_TYPE = "apiKey";
     private static final String ENGINE_TYPE_FOR_API = "sast";
     private static final String REF_TYPE_BRANCH = "branch";
@@ -560,30 +565,76 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
 
         return projectId;
     }
+    
+    /**
+     * @param repoInfo may represent an actual git repo or a presigned URL of an uploaded archive.
+     * @param sourceLocation
+     */
+    protected AstScanStartHandler getScanStartHandler(RemoteRepositoryInfo repoInfo, SourceLocationType sourceLocation) {
+        log.debug("Creating the handler object.");
 
+        try {
+            HandlerRef ref = getBranchToScan(repoInfo);
+            URL effectiveUrl = repoInfo.getUrl();
+            
+            String username = StringUtils.defaultString(repoInfo.getUsername());
+            String password =  StringUtils.defaultString(repoInfo.getPassword());;
+            String credentailsType = "";
+            
+            if (sourceLocation.REMOTE_REPOSITORY.equals(sourceLocation)) {
+                String token = repoInfo.getUrl().getAuthority();
+                if (StringUtils.isNotEmpty(token) && token.contains(TOKEN_SCM_SEPARATOR)){
+                    password = token.substring(0, token.indexOf(TOKEN_SCM_SEPARATOR));
+                    credentailsType = CREDENTAILS_TYPE;
+                } 
+
+                effectiveUrl = sanitize(repoInfo.getUrl());
+            } 
+            
+            GitCredentials credentials = GitCredentials.builder()
+                    .type(credentailsType)
+                    .value(password)
+                    .build();
+            
+            // The ref/username/credentials properties are mandatory even if not specified in repoInfo.
+            return AstScanStartHandler.builder()
+                    .ref(ref)
+                    .username(username)
+                    .credentials(credentials)
+                    .repoUrl(effectiveUrl.toString())
+                    .build();
+        
+        } catch (MalformedURLException e) {
+            throw new ScannerRuntimeException(e.getMessage());
+        }
+    }
+    
     protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
                                                 SourceLocationType sourceLocation,
                                                 String projectId) throws IOException {
         log.debug("Constructing the 'start scan' request");
 
-        ScanStartHandler handler = getScanStartHandler(repoInfo);
+        AstScanStartHandler handler = getScanStartHandler(repoInfo, sourceLocation);
 
-        ProjectToScan project = ProjectToScan.builder()
+        AstProjectToScan project = AstProjectToScan.builder()
                 .id(projectId)
                 //a constant value after AST API version 1.0 
-                .type(SourceLocationType.REMOTE_REPOSITORY.getApiValue())
+                .type(AST_SCAN_TYPE)
                 .handler(handler)
                 .build();
 
         List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
 
         AstStartScanRequest request = AstStartScanRequest.builder()
-                .uploadUrl(repoInfo.getUrl().getPath())
                 .branch(repoInfo.getBranch())
                 .project(project)
                 .config(apiScanConfig)
                 .build();
 
+        if (sourceLocation.LOCAL_DIRECTORY.equals(sourceLocation)){
+            request.setUploadUrl(repoInfo.getUrl().getPath());
+        }
+        
         StringEntity entity = HttpClientHelper.convertToStringEntity(request);
 
         log.info("Sending the 'start scan' request.");
@@ -591,7 +642,5 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
                 HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
     }
 
-    protected String getCredentailsType(){
-        return CREDENTAILS_TYPE;
-    }
+
 }

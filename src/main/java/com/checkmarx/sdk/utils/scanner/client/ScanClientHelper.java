@@ -1,7 +1,6 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.dto.*;
-import com.checkmarx.sdk.dto.ast.AstStartScanRequest;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.ScanWaiter;
 import com.checkmarx.sdk.utils.State;
@@ -10,22 +9,17 @@ import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.dto.ResultsBase;
 import com.checkmarx.sdk.dto.SourceLocationType;
 import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
-import com.checkmarx.sdk.config.ContentType;
-import com.checkmarx.sdk.utils.scanner.client.httpClient.HttpClientHelper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 public abstract class ScanClientHelper {
@@ -58,7 +52,7 @@ public abstract class ScanClientHelper {
     protected abstract HandlerRef getBranchToScan(RemoteRepositoryInfo repoInfo);
     
     protected abstract String getWebReportPath() throws UnsupportedEncodingException;
-
+    
     protected CxHttpClient createHttpClient(String baseUrl) {
         log.debug("Creating HTTP client.");
         CxHttpClient client = new CxHttpClient(baseUrl,
@@ -99,40 +93,7 @@ public abstract class ScanClientHelper {
         waiter.waitForScanToFinish(scanId);
         log.info("{} scan finished successfully. Retrieving {} scan results.", getScannerDisplayName(), getScannerDisplayName());
     }
-
-    /**
-     * @param repoInfo may represent an actual git repo or a presigned URL of an uploaded archive.
-     */
-    protected ScanStartHandler getScanStartHandler(RemoteRepositoryInfo repoInfo) {
-        log.debug("Creating the handler object.");
-
-        HandlerRef ref = getBranchToScan(repoInfo);
-
-        // AST-SAST doesn't allow nulls here.
-        String password = StringUtils.defaultString(repoInfo.getPassword());
-        String username = StringUtils.defaultString(repoInfo.getUsername());
-
-        GitCredentials credentials = GitCredentials.builder()
-                .type(getCredentailsType())
-                .value(password)
-                .build();
-
-        URL effectiveRepoUrl = getEffectiveRepoUrl(repoInfo);
-
-        // The ref/username/credentials properties are mandatory even if not specified in repoInfo.
-        return ScanStartHandler.builder()
-                .ref(ref)
-                .username(username)
-                .credentials(credentials)
-                .url(effectiveRepoUrl.toString())
-                .build();
-    }
-
-    protected abstract String getCredentailsType();
-
-    protected URL getEffectiveRepoUrl(RemoteRepositoryInfo repoInfo) {
-        return repoInfo.getUrl();
-    }
+    
 
     protected String getWebReportLink(String baseUrl) {
         String result = null;
@@ -160,7 +121,7 @@ public abstract class ScanClientHelper {
      * Removes the userinfo part of the input URL (if present), so that the URL may be logged safely.
      * The URL may contain userinfo when a private repo is scanned.
      */
-    private static URL sanitize(URL url) throws MalformedURLException {
+    protected URL sanitize(URL url) throws MalformedURLException {
         return new URL(url.getProtocol(), url.getHost(), url.getFile());
     }
 

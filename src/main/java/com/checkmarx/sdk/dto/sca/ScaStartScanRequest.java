@@ -1,6 +1,5 @@
 package com.checkmarx.sdk.dto.sca;
 
-import com.checkmarx.sdk.dto.ProjectToScan;
 import com.checkmarx.sdk.dto.ScanConfig;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +14,7 @@ public class ScaStartScanRequest {
      * 
      * What to scan.
      */
-    private ProjectToScan project;
+    private ScaProjectToScan project;
 
     /**
      * How to scan.

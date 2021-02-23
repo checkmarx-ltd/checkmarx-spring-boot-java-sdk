@@ -16,6 +16,7 @@ public abstract class AbstractScanner  {
     
     private static final int SCA_SCAN_INTERVAL_IN_SECONDS = 5;
     protected static final String ERROR_PREFIX = "Scan cannot be initiated.";
+
     private IScanClientHelper client;
     
     public AstScaResults scan(ScanParams scanParams) {

@@ -1,14 +1,16 @@
 package com.checkmarx.sdk.dto.ast;
 
-import com.checkmarx.sdk.dto.ProjectToScan;
+import com.checkmarx.sdk.dto.sca.ScaProjectToScan;
 import com.checkmarx.sdk.dto.ScanConfig;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 @Builder
 @Getter
+@Setter
 public class AstStartScanRequest {
 
     private String branch;
@@ -18,7 +20,7 @@ public class AstStartScanRequest {
     /**
      * What to scan.
      */
-    private ProjectToScan project;
+    private AstProjectToScan project;
 
     /**
      * How to scan.

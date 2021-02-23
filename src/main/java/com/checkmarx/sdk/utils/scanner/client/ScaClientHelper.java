@@ -144,7 +144,6 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     /**
      * Transforms the repo URL if credentials are specified in repoInfo.
      */
-    @Override
     protected URL getEffectiveRepoUrl(RemoteRepositoryInfo repoInfo) {
         URL result;
         URL initialUrl = repoInfo.getUrl();
@@ -874,9 +873,9 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                                                 String projectId) throws IOException {
         log.debug("Constructing the 'start scan' request");
 
-        ScanStartHandler handler = getScanStartHandler(repoInfo);
+        ScaScanStartHandler handler = getScanStartHandler(repoInfo);
 
-        ProjectToScan project = ProjectToScan.builder()
+        ScaProjectToScan project = ScaProjectToScan.builder()
                 .id(projectId)
                 .type(sourceLocation.getApiValue())
                 .handler(handler)
@@ -895,8 +894,33 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
                 HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
     }
+    
 
-    protected String getCredentailsType(){
-        return CREDENTIALS_TYPE;
+    /**
+     * @param repoInfo may represent an actual git repo or a presigned URL of an uploaded archive.
+     */
+    protected ScaScanStartHandler getScanStartHandler(RemoteRepositoryInfo repoInfo) {
+        log.debug("Creating the handler object.");
+
+        HandlerRef ref = getBranchToScan(repoInfo);
+
+        // AST-SAST doesn't allow nulls here.
+        String password = StringUtils.defaultString(repoInfo.getPassword());
+        String username = StringUtils.defaultString(repoInfo.getUsername());
+
+        GitCredentials credentials = GitCredentials.builder()
+                .type(CREDENTIALS_TYPE)
+                .value(password)
+                .build();
+
+        URL effectiveRepoUrl = getEffectiveRepoUrl(repoInfo);
+
+        // The ref/username/credentials properties are mandatory even if not specified in repoInfo.
+        return ScaScanStartHandler.builder()
+                .ref(ref)
+                .username(username)
+                .credentials(credentials)
+                .url(effectiveRepoUrl.toString())
+                .build();
     }
 }
