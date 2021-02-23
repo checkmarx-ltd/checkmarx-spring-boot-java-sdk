@@ -125,27 +125,6 @@ public class ScaScanner extends AbstractScanner {
 
         return restClientConfig;
     }
-
-//    protected static void setSourceLocation(ScanParams scanParams, RestClientConfig scanConfig, ScanConfigBase scaConfig) {
-//        if (localSourcesAreSpecified(scanParams)) {
-//            scaConfig.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
-//
-//            // If both zip file and source directory are specified, zip file has priority.
-//            // This is to conform to Common Client behavior.
-//            if (StringUtils.isNotEmpty(scanParams.getZipPath())) {
-//                log.debug("Using a local zip file for scanning.");
-//                scanConfig.setZipFile(new File(scanParams.getZipPath()));
-//            } else {
-//                log.debug("Using a local directory for scanning.");
-//                scanConfig.setSourceDir(scanParams.getSourceDir());
-//            }
-//        } else {
-//            scaConfig.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
-//            RemoteRepositoryInfo remoteRepoInfo = new RemoteRepositoryInfo();
-//            remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
-//            scaConfig.setRemoteRepositoryInfo(remoteRepoInfo);
-//        }
-//    }
     
     private ScaConfig getScaSpecificConfig(ScanParams scanParams) {
         ScaConfig commonClientScaConfig = new ScaConfig();
