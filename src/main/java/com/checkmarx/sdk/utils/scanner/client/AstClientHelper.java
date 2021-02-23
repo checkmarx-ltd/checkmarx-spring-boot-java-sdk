@@ -3,7 +3,6 @@ package com.checkmarx.sdk.utils.scanner.client;
 import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.ast.*;
 import com.checkmarx.sdk.dto.ast.report.Finding;
-import com.checkmarx.sdk.dto.sca.ScaProjectToScan;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.config.AstConfig;
 import com.checkmarx.sdk.dto.ast.report.*;
@@ -576,31 +575,13 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             HandlerRef ref = getBranchToScan(repoInfo);
             URL effectiveUrl = repoInfo.getUrl();
             
-            String username = StringUtils.defaultString(repoInfo.getUsername());
-            String password =  StringUtils.defaultString(repoInfo.getPassword());;
-            String credentialsType = "";
-            
+            String username = "";
+            String password =  "";
+            GitCredentials credentials = calculateGitCredentials(repoInfo, sourceLocation, password);
+
             if (sourceLocation.REMOTE_REPOSITORY.equals(sourceLocation)) {
-                
-                String token = repoInfo.getUrl().getAuthority();
-                //If token is supplied  authority field contains token@scm.com
-                if (StringUtils.isNotEmpty(token) && token.contains(TOKEN_SCM_SEPARATOR)){
-                    password = token.substring(0, token.indexOf(TOKEN_SCM_SEPARATOR));
-                    //Gitlab use case. Authority field will be like oauth2:token@gitlab.com
-                    if(password.contains(OAUTH2)){
-                        //remove the OAUTH2 header
-                        password = password.split(OAUTH2)[1];
-                    }
-                    credentialsType = CREDENTAILS_TYPE;
-                } 
-                
                 effectiveUrl = sanitize(repoInfo.getUrl());
-            } 
-            
-            GitCredentials credentials = GitCredentials.builder()
-                    .type(credentialsType)
-                    .value(password)
-                    .build();
+            }
             
             // The ref/username/credentials properties are mandatory even if not specified in repoInfo.
             return AstScanStartHandler.builder()
@@ -614,7 +595,32 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             throw new ScannerRuntimeException(e.getMessage());
         }
     }
-    
+
+    private GitCredentials calculateGitCredentials(RemoteRepositoryInfo repoInfo, SourceLocationType sourceLocation, String password) {
+        String credentialsType = "";
+
+        if (sourceLocation.REMOTE_REPOSITORY.equals(sourceLocation)) {
+            
+            String token = repoInfo.getUrl().getAuthority();
+            //If token is supplied  authority field contains token@scm.com
+            if (StringUtils.isNotEmpty(token) && token.contains(TOKEN_SCM_SEPARATOR)){
+                password = token.substring(0, token.indexOf(TOKEN_SCM_SEPARATOR));
+                //Gitlab use case. Authority field will be like oauth2:token@gitlab.com
+                if(password.contains(OAUTH2)){
+                    //remove the OAUTH2 header
+                    password = password.split(OAUTH2)[1];
+                }
+                credentialsType = CREDENTAILS_TYPE;
+            }
+            
+        }
+
+        return GitCredentials.builder()
+                .type(credentialsType)
+                .value(password)
+                .build();
+    }
+
     protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
                                                 SourceLocationType sourceLocation,
                                                 String projectId) throws IOException {
