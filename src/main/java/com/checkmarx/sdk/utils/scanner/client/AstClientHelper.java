@@ -44,7 +44,7 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
     private final String AST_SCAN_TYPE = "git";
     public static final String OAUTH2 = "oauth2:";
     private static final String TOKEN_SCM_SEPARATOR = "@";    
-    private static final String CREDENTAILS_TYPE = "apiKey";
+    private static final String CREDENTIALS_TYPE = "apiKey";
     private static final String ENGINE_TYPE_FOR_API = "sast";
     private static final String REF_TYPE_BRANCH = "branch";
     private static final String SUMMARY_PATH = "/api/scan-summary";
@@ -576,8 +576,8 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             URL effectiveUrl = repoInfo.getUrl();
             
             String username = "";
-            String password =  "";
-            GitCredentials credentials = calculateGitCredentials(repoInfo, sourceLocation, password);
+
+            GitCredentials credentials = calculateGitCredentials(repoInfo, sourceLocation);
 
             if (sourceLocation.REMOTE_REPOSITORY.equals(sourceLocation)) {
                 effectiveUrl = sanitize(repoInfo.getUrl());
@@ -596,28 +596,29 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         }
     }
 
-    private GitCredentials calculateGitCredentials(RemoteRepositoryInfo repoInfo, SourceLocationType sourceLocation, String password) {
+    private GitCredentials calculateGitCredentials(RemoteRepositoryInfo repoInfo, SourceLocationType sourceLocation) {
         String credentialsType = "";
-
+        String token = "";
+        
         if (sourceLocation.REMOTE_REPOSITORY.equals(sourceLocation)) {
             
-            String token = repoInfo.getUrl().getAuthority();
+            String authority = repoInfo.getUrl().getAuthority();
             //If token is supplied  authority field contains token@scm.com
-            if (StringUtils.isNotEmpty(token) && token.contains(TOKEN_SCM_SEPARATOR)){
-                password = token.substring(0, token.indexOf(TOKEN_SCM_SEPARATOR));
+            if (StringUtils.isNotEmpty(authority) && authority.contains(TOKEN_SCM_SEPARATOR)){
+                token = authority.substring(0, authority.indexOf(TOKEN_SCM_SEPARATOR));
                 //Gitlab use case. Authority field will be like oauth2:token@gitlab.com
-                if(password.contains(OAUTH2)){
+                if(token.contains(OAUTH2)){
                     //remove the OAUTH2 header
-                    password = password.split(OAUTH2)[1];
+                    token = token.split(OAUTH2)[1];
                 }
-                credentialsType = CREDENTAILS_TYPE;
+                credentialsType = CREDENTIALS_TYPE;
             }
             
         }
 
         return GitCredentials.builder()
                 .type(credentialsType)
-                .value(password)
+                .value(token)
                 .build();
     }
 
