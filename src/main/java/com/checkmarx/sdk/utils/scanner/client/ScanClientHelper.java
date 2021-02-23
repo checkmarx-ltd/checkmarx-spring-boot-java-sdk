@@ -9,28 +9,23 @@ import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.dto.ResultsBase;
 import com.checkmarx.sdk.dto.SourceLocationType;
 import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
-import com.checkmarx.sdk.config.ContentType;
-import com.checkmarx.sdk.utils.scanner.client.httpClient.HttpClientHelper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 public abstract class ScanClientHelper {
 
     private static final String LOCATION_HEADER = "Location";
-    private static final String CREDENTIAL_TYPE_PASSWORD = "password";
+
 
     protected final RestClientConfig config;
     protected final Logger log;
@@ -55,11 +50,9 @@ public abstract class ScanClientHelper {
     protected abstract ScanConfig getScanConfig();
 
     protected abstract HandlerRef getBranchToScan(RemoteRepositoryInfo repoInfo);
-
-    protected abstract HttpResponse submitAllSourcesFromLocalDir(String projectId) throws IOException;
-
+    
     protected abstract String getWebReportPath() throws UnsupportedEncodingException;
-
+    
     protected CxHttpClient createHttpClient(String baseUrl) {
         log.debug("Creating HTTP client.");
         CxHttpClient client = new CxHttpClient(baseUrl,
@@ -77,40 +70,13 @@ public abstract class ScanClientHelper {
         }
     }
 
-    protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
+    protected abstract HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
                                                 SourceLocationType sourceLocation,
-                                                String projectId) throws IOException {
-        log.debug("Constructing the 'start scan' request");
+                                                String projectId)throws IOException ;
 
-       ScanStartHandler handler = getScanStartHandler(repoInfo);
-
-        ProjectToScan project = ProjectToScan.builder()
-                .id(projectId)
-                .type(sourceLocation.getApiValue())
-                .handler(handler)
-                .build();
-
-        List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
-
-        StartScanRequest request = StartScanRequest.builder()
-                .project(project)
-                .config(apiScanConfig)
-                .build();
-
-        StringEntity entity = HttpClientHelper.convertToStringEntity(request);
-
-        log.info("Sending the 'start scan' request.");
-        return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
-                HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
-    }
-
-    protected String determineProjectId(String projectName) {
-        return projectName;
-    }
-
-    protected HttpResponse submitSourcesFromRemoteRepo(ScanConfigBase config, String projectId) throws IOException {
+    protected HttpResponse submitSourcesFromRemoteRepo(String projectId, ScanConfigBase baseConfig) throws IOException {
         log.info("Using remote repository flow.");
-        RemoteRepositoryInfo repoInfo = config.getRemoteRepositoryInfo();
+        RemoteRepositoryInfo repoInfo = baseConfig.getRemoteRepositoryInfo();
         validateRepoInfo(repoInfo);
 
         URL sanitizedUrl = sanitize(repoInfo.getUrl());
@@ -127,38 +93,7 @@ public abstract class ScanClientHelper {
         waiter.waitForScanToFinish(scanId);
         log.info("{} scan finished successfully. Retrieving {} scan results.", getScannerDisplayName(), getScannerDisplayName());
     }
-
-    /**
-     * @param repoInfo may represent an actual git repo or a presigned URL of an uploaded archive.
-     */
-    private ScanStartHandler getScanStartHandler(RemoteRepositoryInfo repoInfo) {
-        log.debug("Creating the handler object.");
-
-        HandlerRef ref = getBranchToScan(repoInfo);
-
-        // AST-SAST doesn't allow nulls here.
-        String password = StringUtils.defaultString(repoInfo.getPassword());
-        String username = StringUtils.defaultString(repoInfo.getUsername());
-
-        GitCredentials credentials = GitCredentials.builder()
-                .type(CREDENTIAL_TYPE_PASSWORD)
-                .value(password)
-                .build();
-
-        URL effectiveRepoUrl = getEffectiveRepoUrl(repoInfo);
-
-        // The ref/username/credentials properties are mandatory even if not specified in repoInfo.
-        return ScanStartHandler.builder()
-                .ref(ref)
-                .username(username)
-                .credentials(credentials)
-                .url(effectiveRepoUrl.toString())
-                .build();
-    }
-
-    protected URL getEffectiveRepoUrl(RemoteRepositoryInfo repoInfo) {
-        return repoInfo.getUrl();
-    }
+    
 
     protected String getWebReportLink(String baseUrl) {
         String result = null;
@@ -186,7 +121,7 @@ public abstract class ScanClientHelper {
      * Removes the userinfo part of the input URL (if present), so that the URL may be logged safely.
      * The URL may contain userinfo when a private repo is scanned.
      */
-    private static URL sanitize(URL url) throws MalformedURLException {
+    protected URL sanitize(URL url) throws MalformedURLException {
         return new URL(url.getProtocol(), url.getHost(), url.getFile());
     }
 
@@ -231,7 +166,7 @@ public abstract class ScanClientHelper {
         results.setException(new ScannerRuntimeException(message, e));
     }
 
-    protected HttpResponse initiateScanForUpload(String projectId, byte[] zipFile) throws IOException {
+    protected HttpResponse initiateScanForUpload(String projectId, byte[] zipFile, ScanConfigBase configBase) throws IOException {
         String uploadedArchiveUrl = getSourcesUploadUrl();
         String cleanPath = uploadedArchiveUrl.split("\\?")[0];
         log.info("Uploading to: {}", cleanPath);
@@ -239,12 +174,11 @@ public abstract class ScanClientHelper {
 
         //delete only if path not specified in the config
         //If zipFilePath is specified in config, it means that the user has prepared the zip file themselves. The user obviously doesn't want this file to be deleted.
-        //If zipFilePath is NOT specified, Common Client will create the zip itself. After uploading the zip, Common Client should clean after itself (delete the zip file that it created).
+        //If zipFilePath is NOT specified, we will create the zip itself. After uploading the zip, the code should clean after itself (delete the zip file that it created).
 
-        RemoteRepositoryInfo uploadedFileInfo = new RemoteRepositoryInfo();
-        uploadedFileInfo.setUrl(new URL(uploadedArchiveUrl));
+        configBase.getRemoteRepositoryInfo().setUrl(new URL(uploadedArchiveUrl));
 
-        return sendStartScanRequest(uploadedFileInfo, SourceLocationType.LOCAL_DIRECTORY, projectId);
+        return sendStartScanRequest(configBase.getRemoteRepositoryInfo(), SourceLocationType.LOCAL_DIRECTORY, projectId);
     }
 
     private String getSourcesUploadUrl() throws IOException {

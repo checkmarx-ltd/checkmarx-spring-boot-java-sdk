@@ -1,8 +1,8 @@
 package com.checkmarx.sdk.service.scanner;
 
 import com.checkmarx.sdk.config.ScaProperties;
+import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.sca.Summary;
-import com.checkmarx.sdk.dto.AstScaResults;
 import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
@@ -16,7 +16,6 @@ import com.checkmarx.sdk.utils.scanner.client.ScaClientHelper;
 import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.config.RestClientConfig;
-import com.checkmarx.sdk.dto.ResultsBase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -126,7 +125,7 @@ public class ScaScanner extends AbstractScanner {
 
         return restClientConfig;
     }
-
+    
     private ScaConfig getScaSpecificConfig(ScanParams scanParams) {
         ScaConfig commonClientScaConfig = new ScaConfig();
         com.checkmarx.sdk.config.ScaConfig sdkScaConfig = scanParams.getScaConfig();
@@ -199,4 +198,7 @@ public class ScaScanner extends AbstractScanner {
         }
     }
 
+    protected void setRemoteBranch(ScanParams scanParams, RemoteRepositoryInfo remoteRepoInfo) {
+       //branches are not supported for SCA
+    }
 }
