@@ -20,8 +20,10 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.slf4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -58,13 +60,38 @@ public class CxRepoFileHelper {
         }
     }
 
-    public void deleteCloneLocalDir(File pathFile) {
+    public void deleteCloneLocalDirWin(File pathFile) {
         try {
             makeWritableDirectory(pathFile);
             FileUtils.deleteDirectory(pathFile);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
         }
+    }
+
+
+    public void deleteCloneLocalDir(File pathFile){
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            deleteCloneLocalDirWin(pathFile);
+        }else{
+            deleteCloneLocalDirLinux(pathFile);
+        }
+    }
+
+    private void deleteCloneLocalDirLinux(File pathFile) {
+
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        processBuilder.command("bash", "-c", "rm -rf " + pathFile);
+        
+        try {
+            Process process = processBuilder.start();
+            int exitVal = process.waitFor();
+            if (exitVal != 0) {
+                log.error("Error deleting file {} - {}", pathFile, "\nCommand `rm -rf` output code: " + exitVal);
+            }
+        } catch (Exception e) {
+            log.error("Error deleting file {} - {}", pathFile, "\nCommand `rm -rf` exception " + e.getMessage());
+        } 
     }
 
     public String zipClonedRepo(File pathFile, List<String> fileExclude) throws IOException {
