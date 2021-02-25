@@ -623,13 +623,22 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     }
 
     private void determineProjectTeam(CreateProjectRequest request) {
-        String team = scaProperties.getTeamForNewProjects();
+        String team = StringUtils.firstNonEmpty(config.getScaConfig().getTeam(), scaProperties.getTeam());
         if (StringUtils.isNotEmpty(team)) {
-            log.info("Assigning SCA project with team: {}", team);
-            request.setAssignedTeams(Collections.singletonList(team));
+            setTeam(request, team);
         } else {
+            log.info("SCA project team was not defined. Assigning with default 'All Users' value");
             request.setAssignedTeams(null);
         }
+    }
+
+    /*
+        SCA team setter is relevant for project creation stage only.
+        After a project is getting created, team cannot be modified or changed.
+     */
+    private void setTeam(CreateProjectRequest request, String team) {
+        log.info("Assigning SCA project with team: {}", team);
+        request.setAssignedTeams(Collections.singletonList(team));
     }
 
     private SCAResults getScanResults() {
