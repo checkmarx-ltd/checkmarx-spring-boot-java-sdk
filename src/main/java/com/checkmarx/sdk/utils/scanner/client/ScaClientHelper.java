@@ -623,17 +623,12 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     }
 
     private void determineProjectTeam(CreateProjectRequest request) {
-        String team = config.getScaConfig().getTeam();
-
+        String team = StringUtils.firstNonEmpty(config.getScaConfig().getTeam(), scaProperties.getTeam());
         if (StringUtils.isNotEmpty(team)) {
             setTeam(request, team);
         } else {
-            team = scaProperties.getTeam();
-            if (StringUtils.isNotEmpty(team)) {
-                setTeam(request, team);
-            } else {
-                request.setAssignedTeams(null);
-            }
+            log.info("SCA project team was not defined. Assigning with default 'All Users' value");
+            request.setAssignedTeams(null);
         }
     }
 

@@ -127,28 +127,28 @@ public class ScaScanner extends AbstractScanner {
     }
     
     private ScaConfig getScaSpecificConfig(ScanParams scanParams) {
-        ScaConfig commonClientScaConfig = new ScaConfig();
+        ScaConfig scaConfig = new ScaConfig();
         com.checkmarx.sdk.config.ScaConfig sdkScaConfig = scanParams.getScaConfig();
         if (sdkScaConfig != null) {
-            commonClientScaConfig.setWebAppUrl(sdkScaConfig.getAppUrl());
-            commonClientScaConfig.setApiUrl(sdkScaConfig.getApiUrl());
-            commonClientScaConfig.setAccessControlUrl(sdkScaConfig.getAccessControlUrl());
-            commonClientScaConfig.setTenant(sdkScaConfig.getTenant());
-            commonClientScaConfig.setIncludeSources(sdkScaConfig.isIncludeSources());
-            commonClientScaConfig.setExcludeFiles(sdkScaConfig.getExcludeFiles());
-            commonClientScaConfig.setUsername(scaProperties.getUsername());
-            commonClientScaConfig.setPassword(scaProperties.getPassword());
-            commonClientScaConfig.setTeam(sdkScaConfig.getTeam());
+            scaConfig.setWebAppUrl(sdkScaConfig.getAppUrl());
+            scaConfig.setApiUrl(sdkScaConfig.getApiUrl());
+            scaConfig.setAccessControlUrl(sdkScaConfig.getAccessControlUrl());
+            scaConfig.setTenant(sdkScaConfig.getTenant());
+            scaConfig.setIncludeSources(sdkScaConfig.isIncludeSources());
+            scaConfig.setExcludeFiles(sdkScaConfig.getExcludeFiles());
+            scaConfig.setUsername(scaProperties.getUsername());
+            scaConfig.setPassword(scaProperties.getPassword());
+            scaConfig.setTeam(sdkScaConfig.getTeam());
 
             String zipPath = scanParams.getZipPath();
             if (StringUtils.isNotEmpty(zipPath)) {
-                commonClientScaConfig.setZipFilePath(zipPath);
+                scaConfig.setZipFilePath(zipPath);
             }
 
         } else {
             log.warn("Unable to map SCA configuration to an internal object.");
         }
-        return commonClientScaConfig;
+        return scaConfig;
     }
 
     @Override
