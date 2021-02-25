@@ -632,6 +632,10 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         }
     }
 
+    /*
+        SCA team setter is relevant for project creation stage only.
+        After a project is getting created, team cannot be modified or changed.
+     */
     private void setTeam(CreateProjectRequest request, String team) {
         log.info("Assigning SCA project with team: {}", team);
         request.setAssignedTeams(Collections.singletonList(team));
