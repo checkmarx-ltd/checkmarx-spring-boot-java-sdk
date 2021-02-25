@@ -36,6 +36,8 @@ public class ScaConfig {
     private Map<Severity, Integer> thresholdsSeverity;
     @Optional
     private Double thresholdsScore;
+    @Optional
+    private String team;
 
     /**
      * This setter allows to avoid ConfigProvider error: Map&lt;Severity,Integer&gt; is not supported.

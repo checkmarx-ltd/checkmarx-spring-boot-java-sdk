@@ -28,4 +28,5 @@ public class ScaConfig extends ScanConfigBase implements Serializable {
     private String fingerprintsIncludePattern;
     private String manifestsIncludePattern;
     private String fingerprintFilePath;
+    private String team;
 }
