@@ -623,13 +623,23 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     }
 
     private void determineProjectTeam(CreateProjectRequest request) {
-        String team = scaProperties.getTeamForNewProjects();
+        String team = config.getScaConfig().getTeam();
+
         if (StringUtils.isNotEmpty(team)) {
-            log.info("Assigning SCA project with team: {}", team);
-            request.setAssignedTeams(Collections.singletonList(team));
+            setTeam(request, team);
         } else {
-            request.setAssignedTeams(null);
+            team = scaProperties.getTeam();
+            if (StringUtils.isNotEmpty(team)) {
+                setTeam(request, team);
+            } else {
+                request.setAssignedTeams(null);
+            }
         }
+    }
+
+    private void setTeam(CreateProjectRequest request, String team) {
+        log.info("Assigning SCA project with team: {}", team);
+        request.setAssignedTeams(Collections.singletonList(team));
     }
 
     private SCAResults getScanResults() {

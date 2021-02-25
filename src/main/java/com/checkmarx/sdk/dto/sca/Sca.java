@@ -36,5 +36,7 @@ public class Sca implements Serializable {
     protected Double filterScore;
     @JsonProperty
     protected boolean includeSources;
+    @JsonProperty
+    protected String team;
 
 }
