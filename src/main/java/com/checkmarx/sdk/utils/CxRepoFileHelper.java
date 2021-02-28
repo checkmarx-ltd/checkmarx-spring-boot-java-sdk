@@ -30,9 +30,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.DosFileAttributeView;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.*;
 
 @Slf4j
 public class CxRepoFileHelper {
@@ -60,7 +59,7 @@ public class CxRepoFileHelper {
         }
     }
 
-    public void deleteCloneLocalDirWin(File pathFile) {
+    public void deleteCloneLocalDir(File pathFile) {
         try {
             makeWritableDirectory(pathFile);
             FileUtils.deleteDirectory(pathFile);
@@ -68,31 +67,7 @@ public class CxRepoFileHelper {
             log.error("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
         }
     }
-
-
-    public void deleteCloneLocalDir(File pathFile){
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            deleteCloneLocalDirWin(pathFile);
-        }else{
-            deleteCloneLocalDirLinux(pathFile);
-        }
-    }
-
-    private void deleteCloneLocalDirLinux(File pathFile) {
-
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("bash", "-c", "rm -rf " + pathFile);
-        
-        try {
-            Process process = processBuilder.start();
-            int exitVal = process.waitFor();
-            if (exitVal != 0) {
-                log.error("Error deleting file {} - {}", pathFile, "\nCommand `rm -rf` output code: " + exitVal);
-            }
-        } catch (Exception e) {
-            log.error("Error deleting file {} - {}", pathFile, "\nCommand `rm -rf` exception " + e.getMessage());
-        } 
-    }
+    
 
     public String zipClonedRepo(File pathFile, List<String> fileExclude) throws IOException {
         String cxZipFile = getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
@@ -136,12 +111,41 @@ public class CxRepoFileHelper {
     }
 
     private void makeWritable(File file) {
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            makeWritableWin(file);
+        }else{
+            makeWritableLinux(file);
+        }
+    }
+
+    private void makeWritableLinux(File file) {
+        Set<PosixFilePermission> perms = new HashSet<>();
+        perms.add(PosixFilePermission.OWNER_READ);
+        perms.add(PosixFilePermission.OWNER_WRITE);
+        perms.add(PosixFilePermission.OWNER_EXECUTE);
+
+        perms.add(PosixFilePermission.OTHERS_READ);
+        perms.add(PosixFilePermission.OTHERS_WRITE);
+        perms.add(PosixFilePermission.OTHERS_EXECUTE);
+
+        perms.add(PosixFilePermission.GROUP_READ);
+        perms.add(PosixFilePermission.GROUP_WRITE);
+        perms.add(PosixFilePermission.GROUP_EXECUTE);
+
+        try {
+            Files.setPosixFilePermissions(file.toPath(), perms);
+        } catch (Exception e) {
+            log.warn("Error changing file {} attributes: {}", file.getAbsolutePath(), e.getMessage());
+        }
+    }
+    
+    private void makeWritableWin(File file) {
         Path pathGit = Paths.get(file.getAbsolutePath());
         DosFileAttributeView dos = Files.getFileAttributeView(pathGit, DosFileAttributeView.class);
         try {
             dos.setHidden(false);
             dos.setReadOnly(false);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.warn("Error changing file {} attributes: {}", file.getAbsolutePath(), e.getMessage());
         }
     }
