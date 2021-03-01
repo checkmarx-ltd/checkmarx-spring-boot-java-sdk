@@ -99,21 +99,19 @@ public class CxRepoFileHelper {
 
     public void makeWritableDirectory(final File folder, boolean isWin) {
         for (final File fileEntry : folder.listFiles()) {
+            makeWritable(fileEntry, isWin);
             if (fileEntry.isDirectory() ) {
-                makeWritable(fileEntry, isWin);
                 makeWritableDirectory(fileEntry, isWin);
-            } else {
-                makeWritable(fileEntry, isWin);
-            }
+            } 
         }
     }
 
     private void makeWritable(File file, boolean isWin) {
-        if (isWin) {
-            makeWritableWin(file);
-        }else{
-            makeWritableLinux(file);
-        }
+            if (isWin) {
+                makeWritableWin(file);
+            }else{
+                makeWritableLinux(file);
+            }
     }
 
     private void makeWritableLinux(File file) {
