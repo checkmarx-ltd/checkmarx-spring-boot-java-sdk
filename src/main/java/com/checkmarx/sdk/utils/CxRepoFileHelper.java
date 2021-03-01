@@ -18,12 +18,9 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.slf4j.Logger;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -61,7 +58,8 @@ public class CxRepoFileHelper {
 
     public void deleteCloneLocalDir(File pathFile) {
         try {
-            makeWritableDirectory(pathFile);
+            boolean isWin = System.getProperty("os.name").startsWith("Windows");
+            makeWritableDirectory(pathFile, isWin);
             FileUtils.deleteDirectory(pathFile);
         } catch (Exception e) {
             log.error("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
@@ -99,19 +97,19 @@ public class CxRepoFileHelper {
         return cxProperties == null ? CxPropertiesBase.getDefaultOsPath() : cxProperties.getGitClonePath();
     }
 
-    public void makeWritableDirectory(final File folder) {
+    public void makeWritableDirectory(final File folder, boolean isWin) {
         for (final File fileEntry : folder.listFiles()) {
             if (fileEntry.isDirectory() ) {
-                makeWritable(fileEntry);
-                makeWritableDirectory(fileEntry);
+                makeWritable(fileEntry, isWin);
+                makeWritableDirectory(fileEntry, isWin);
             } else {
-                makeWritable(fileEntry);
+                makeWritable(fileEntry, isWin);
             }
         }
     }
 
-    private void makeWritable(File file) {
-        if (System.getProperty("os.name").startsWith("Windows")) {
+    private void makeWritable(File file, boolean isWin) {
+        if (isWin) {
             makeWritableWin(file);
         }else{
             makeWritableLinux(file);
