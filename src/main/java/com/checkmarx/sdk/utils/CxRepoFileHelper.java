@@ -18,7 +18,6 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,9 +27,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.DosFileAttributeView;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.*;
 
 @Slf4j
 public class CxRepoFileHelper {
@@ -60,12 +58,14 @@ public class CxRepoFileHelper {
 
     public void deleteCloneLocalDir(File pathFile) {
         try {
-            makeWritableDirectory(pathFile);
+            boolean isWin = System.getProperty("os.name").startsWith("Windows");
+            makeWritableDirectory(pathFile, isWin);
             FileUtils.deleteDirectory(pathFile);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error deleting file {} - {}", pathFile, ExceptionUtils.getRootCauseMessage(e));
         }
     }
+    
 
     public String zipClonedRepo(File pathFile, List<String> fileExclude) throws IOException {
         String cxZipFile = getGitClonePath().concat("/").concat("cx.".concat(UUID.randomUUID().toString()).concat(".zip"));
@@ -97,24 +97,51 @@ public class CxRepoFileHelper {
         return cxProperties == null ? CxPropertiesBase.getDefaultOsPath() : cxProperties.getGitClonePath();
     }
 
-    public void makeWritableDirectory(final File folder) {
+    public void makeWritableDirectory(final File folder, boolean isWin) {
         for (final File fileEntry : folder.listFiles()) {
+            makeWritable(fileEntry, isWin);
             if (fileEntry.isDirectory() ) {
-                makeWritable(fileEntry);
-                makeWritableDirectory(fileEntry);
-            } else {
-                makeWritable(fileEntry);
-            }
+                makeWritableDirectory(fileEntry, isWin);
+            } 
         }
     }
 
-    private void makeWritable(File file) {
+    private void makeWritable(File file, boolean isWin) {
+            if (isWin) {
+                makeWritableWin(file);
+            }else{
+                makeWritableLinux(file);
+            }
+    }
+
+    private void makeWritableLinux(File file) {
+        Set<PosixFilePermission> perms = new HashSet<>();
+        perms.add(PosixFilePermission.OWNER_READ);
+        perms.add(PosixFilePermission.OWNER_WRITE);
+        perms.add(PosixFilePermission.OWNER_EXECUTE);
+
+        perms.add(PosixFilePermission.OTHERS_READ);
+        perms.add(PosixFilePermission.OTHERS_WRITE);
+        perms.add(PosixFilePermission.OTHERS_EXECUTE);
+
+        perms.add(PosixFilePermission.GROUP_READ);
+        perms.add(PosixFilePermission.GROUP_WRITE);
+        perms.add(PosixFilePermission.GROUP_EXECUTE);
+
+        try {
+            Files.setPosixFilePermissions(file.toPath(), perms);
+        } catch (Exception e) {
+            log.warn("Error changing file {} attributes: {}", file.getAbsolutePath(), e.getMessage());
+        }
+    }
+    
+    private void makeWritableWin(File file) {
         Path pathGit = Paths.get(file.getAbsolutePath());
         DosFileAttributeView dos = Files.getFileAttributeView(pathGit, DosFileAttributeView.class);
         try {
             dos.setHidden(false);
             dos.setReadOnly(false);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.warn("Error changing file {} attributes: {}", file.getAbsolutePath(), e.getMessage());
         }
     }
