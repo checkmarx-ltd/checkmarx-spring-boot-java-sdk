@@ -44,7 +44,7 @@ public class FilterInputFactory {
                 .id(finding.getNodeId())
                 .category(findingGroup.getName().toUpperCase(Locale.ROOT))
                 .cwe(findingGroup.getCweId())
-                .severity(findingGroup.getSeverity().toUpperCase(Locale.ROOT))
+                .severity(finding.getSeverity().toUpperCase(Locale.ROOT))
                 .status(finding.getStatus().toUpperCase(Locale.ROOT))
                 .state(stateName)
                 .build();
