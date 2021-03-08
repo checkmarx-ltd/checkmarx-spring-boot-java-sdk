@@ -18,7 +18,20 @@ public abstract class AbstractScanner  {
     protected static final String ERROR_PREFIX = "Scan cannot be initiated.";
 
     private IScanClientHelper client;
-    
+
+    public void scanWithNoWaitingToResults(ScanParams scanParams) {
+        validateScanParams(scanParams);
+        RestClientConfig scanConfig = getScanConfig(scanParams);
+
+        try {
+            this.client = allocateClient(scanConfig);
+            client.init();
+            client.initiateScan();
+        } finally {
+            client.close();
+        }
+    }
+
     public AstScaResults scan(ScanParams scanParams) {
         validateScanParams(scanParams);
 
