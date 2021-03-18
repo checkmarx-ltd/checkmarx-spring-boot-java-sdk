@@ -1,17 +1,20 @@
 package com.checkmarx.sdk.utils.scanner.client.httpClient;
 
-import com.checkmarx.sdk.exception.ScannerRuntimeException;
-
-import com.checkmarx.sdk.dto.sca.ClientType;
 import com.checkmarx.sdk.dto.LoginSettings;
+import com.checkmarx.sdk.dto.ProxyConfig;
 import com.checkmarx.sdk.dto.TokenLoginResponse;
+import com.checkmarx.sdk.dto.sca.ClientType;
 import com.checkmarx.sdk.exception.CxHTTPClientException;
 import com.checkmarx.sdk.exception.CxTokenExpiredException;
+import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.google.gson.Gson;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.auth.AuthSchemeProvider;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CookieStore;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.CookieSpecs;
@@ -36,6 +39,7 @@ import org.apache.http.impl.auth.DigestSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
 import org.apache.http.impl.client.*;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
@@ -55,9 +59,13 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.checkmarx.sdk.config.ContentType.CONTENT_TYPE_APPLICATION_JSON;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 
 /**
@@ -65,37 +73,36 @@ import static com.checkmarx.sdk.config.ContentType.CONTENT_TYPE_APPLICATION_JSON
  */
 public class CxHttpClient implements Closeable {
 
-    private static final String HTTPS = "https";
-
-    private static final String LOGIN_FAILED_MSG = "Fail to login with windows authentication: ";
     public static final String CSRF_TOKEN_HEADER = "CXCSRFToken";
-    private static final String DEFAULT_GRANT_TYPE = "password";
-    private static final String LOCATION_HEADER = "Location";
-    private static final String AUTH_MESSAGE = "authenticate";
-    private static final String CLIENT_SECRET_PROP = "client_secret";
     public static final String REFRESH_TOKEN_PROP = "refresh_token";
-    private static final String PASSWORD_PROP = "password";
     public static final String CLIENT_ID_PROP = "client_id";
-    private static final String KEY_USER = "user";
-    private static final String KEY_DOMAIN = "domain";
     public static final String SSO_AUTHENTICATION = "auth/identity/externalLogin";
     public static final String REVOCATION = "auth/identity/connect/revocation";
     public static final String ORIGIN_HEADER = "cxOrigin";
     public static final String TEAM_PATH = "cxTeamPath";
+    private static final String HTTPS = "https";
+    private static final String LOGIN_FAILED_MSG = "Fail to login with windows authentication: ";
+    private static final String DEFAULT_GRANT_TYPE = "password";
+    private static final String LOCATION_HEADER = "Location";
+    private static final String AUTH_MESSAGE = "authenticate";
+    private static final String CLIENT_SECRET_PROP = "client_secret";
+    private static final String PASSWORD_PROP = "password";
+    private static final String KEY_USER = "user";
+    private static final String KEY_DOMAIN = "domain";
+    private final Map<String, String> customHeaders = new HashMap<>();
     private HttpClient apacheClient;
-
     private Logger log;
     private TokenLoginResponse token;
     private String rootUri;
     private LoginSettings lastLoginSettings;
     private String teamPath;
     private CookieStore cookieStore = new BasicCookieStore();
+    //    private HttpClientBuilder cb = HttpClientBuilder.create().useSystemProperties().build();
     private HttpClientBuilder cb = HttpClients.custom();
-    private final Map<String, String> customHeaders = new HashMap<>();
 
 
-    public CxHttpClient(String rootUri, boolean disableSSLValidation, 
-                         Logger log) throws ScannerRuntimeException {
+    public CxHttpClient(String rootUri, boolean disableSSLValidation,
+                        Logger log) throws ScannerRuntimeException {
         this.log = log;
         this.rootUri = rootUri;
         //create httpclient
@@ -124,52 +131,41 @@ public class CxHttpClient implements Closeable {
             cb.setConnectionManager(getHttpConnectionManager(false));
         }
         cb.setConnectionManagerShared(true);
-        
+
+        if (!setCustomProxy(cb, log)) {
+            cb.useSystemProperties();
+        }
+
         cb.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
         cb.setDefaultAuthSchemeRegistry(getAuthSchemeProviderRegistry());
         apacheClient = cb.build();
-}
-
-    public void setRootUri(String rootUri) {
-        this.rootUri = rootUri;
     }
 
-    public String getRootUri() {
-        return rootUri;
-    }
-    
+    private static boolean setCustomProxy(HttpClientBuilder cb, Logger log) {
 
-    private static HashMap<String,String> splitDomainAndTheUserName(String userName)
-    {
-        String domain="";
-        String user="";
-        // If the username has a backslash, then the domain is the first part and the username is the second part
-        if (userName.contains("\\")) {
-            String[] parts = userName.split("[\\\\]");
-            if (parts.length == 2) {
-                domain = parts[0];
-                user = parts[1];
-            }
-        } else if (userName.contains("/")) {
-            // If the username has a slash, then the domain is the first part and the username is the second part
-            String[] parts = userName.split("[/]");
-            if (parts.length == 2) {
-                domain = parts[0];
-                user = parts[1];
-            }
-        } else if (userName.contains("@")) {
-            // If the username has an asterisk, then the domain is the second part and the username is the first part
-            String[] parts = userName.split("[@]");
-            if (parts.length == 2) {
-                user = parts[0];
-                domain = parts[1];
-            }
+        ProxyConfig proxyConfig = generateProxyConfig(log);
+
+        if (proxyConfig == null ||
+                StringUtils.isEmpty(proxyConfig.getHost()) ||
+                proxyConfig.getPort() == 0) {
+            return false;
         }
 
-        HashMap<String,String> userDomain = new HashMap<String,String>();
-        userDomain.put(KEY_USER,user);
-        userDomain.put(KEY_DOMAIN, domain);
-        return userDomain;
+        String scheme = proxyConfig.isUseHttps() ? HTTPS : "http";
+        HttpHost proxy = new HttpHost(proxyConfig.getHost(), proxyConfig.getPort(), scheme);
+        if (StringUtils.isNotEmpty(proxyConfig.getUsername()) &&
+                StringUtils.isNotEmpty(proxyConfig.getPassword())) {
+            UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(proxyConfig.getUsername(), proxyConfig.getPassword());
+            CredentialsProvider credsProvider = new BasicCredentialsProvider();
+            credsProvider.setCredentials(new AuthScope(proxy), credentials);
+            cb.setDefaultCredentialsProvider(credsProvider);
+        }
+
+        log.info("Setting proxy for Checkmarx http client");
+        cb.setProxy(proxy);
+        cb.setRoutePlanner(new DefaultProxyRoutePlanner(proxy));
+        cb.setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy());
+        return true;
     }
 
     private static SSLConnectionSocketFactory getTrustAllSSLSocketFactory() {
@@ -207,6 +203,93 @@ public class CxHttpClient implements Closeable {
                 .register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(null))
                 .register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(null))
                 .build();
+    }
+
+    private static UrlEncodedFormEntity getRevocationRequest(ClientType clientType, String token) {
+        List<NameValuePair> parameters = new ArrayList<>();
+        parameters.add(new BasicNameValuePair("token_type_hint", REFRESH_TOKEN_PROP));
+        parameters.add(new BasicNameValuePair("token", token));
+        parameters.add(new BasicNameValuePair(CLIENT_ID_PROP, clientType.getClientId()));
+        parameters.add(new BasicNameValuePair(CLIENT_SECRET_PROP, clientType.getClientSecret()));
+
+        return new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+    }
+
+    private static UrlEncodedFormEntity getAuthRequest(LoginSettings settings) {
+        ClientType clientType = settings.getClientTypeForPasswordAuth();
+        String grantType = StringUtils.defaultString(clientType.getGrantType(), DEFAULT_GRANT_TYPE);
+        List<BasicNameValuePair> parameters = new ArrayList<>();
+        parameters.add(new BasicNameValuePair("username", settings.getUsername()));
+        parameters.add(new BasicNameValuePair(PASSWORD_PROP, settings.getPassword()));
+        parameters.add(new BasicNameValuePair("grant_type", grantType));
+        parameters.add(new BasicNameValuePair("scope", clientType.getScopes()));
+        parameters.add(new BasicNameValuePair(CLIENT_ID_PROP, clientType.getClientId()));
+        parameters.add(new BasicNameValuePair(CLIENT_SECRET_PROP, clientType.getClientSecret()));
+
+        if (!StringUtils.isEmpty(settings.getTenant())) {
+            String authContext = String.format("Tenant:%s", settings.getTenant());
+            parameters.add(new BasicNameValuePair("acr_values", authContext));
+        }
+
+        return new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+    }
+
+    private static UrlEncodedFormEntity getTokenRefreshingRequest(LoginSettings settings) throws UnsupportedEncodingException {
+        ClientType clientType = settings.getClientTypeForRefreshToken();
+        List<BasicNameValuePair> parameters = new ArrayList<>();
+        parameters.add(new BasicNameValuePair("grant_type", REFRESH_TOKEN_PROP));
+        parameters.add(new BasicNameValuePair(CLIENT_ID_PROP, clientType.getClientId()));
+        parameters.add(new BasicNameValuePair(CLIENT_SECRET_PROP, clientType.getClientSecret()));
+        parameters.add(new BasicNameValuePair(REFRESH_TOKEN_PROP, settings.getRefreshToken()));
+
+        return new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8.name());
+    }
+
+    private static ProxyConfig generateProxyConfig(Logger log) {
+        final String HTTP_HOST = System.getProperty("http.proxyHost");
+        final String HTTP_PORT = System.getProperty("http.proxyPort");
+        final String HTTP_USERNAME = System.getProperty("http.proxyUser");
+        final String HTTP_PASSWORD = System.getProperty("http.proxyPassword");
+
+        final String HTTPS_HOST = System.getProperty("https.proxyHost");
+        final String HTTPS_PORT = System.getProperty("https.proxyPort");
+        final String HTTPS_USERNAME = System.getProperty("https.proxyUser");
+        final String HTTPS_PASSWORD = System.getProperty("https.proxyPassword");
+
+        ProxyConfig proxyConfig = null;
+        try {
+            if (isNotEmpty(HTTP_HOST) && isNotEmpty(HTTP_PORT)) {
+                proxyConfig = new ProxyConfig();
+                proxyConfig.setUseHttps(false);
+                proxyConfig.setHost(HTTP_HOST);
+                proxyConfig.setPort(Integer.parseInt(HTTP_PORT));
+                if (isNotEmpty(HTTP_USERNAME) && isNotEmpty(HTTP_PASSWORD)) {
+                    proxyConfig.setUsername(HTTP_USERNAME);
+                    proxyConfig.setPassword(HTTP_PASSWORD);
+                }
+            } else if (isNotEmpty(HTTPS_HOST) && isNotEmpty(HTTPS_PORT)) {
+                proxyConfig = new ProxyConfig();
+                proxyConfig.setUseHttps(true);
+                proxyConfig.setHost(HTTPS_HOST);
+                proxyConfig.setPort(Integer.parseInt(HTTPS_PORT));
+                if (isNotEmpty(HTTPS_USERNAME) && isNotEmpty(HTTPS_PASSWORD)) {
+                    proxyConfig.setUsername(HTTPS_USERNAME);
+                    proxyConfig.setPassword(HTTPS_PASSWORD);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to set custom proxy.", e);
+        }
+
+        return proxyConfig;
+    }
+
+    public String getRootUri() {
+        return rootUri;
+    }
+
+    public void setRootUri(String rootUri) {
+        this.rootUri = rootUri;
     }
 
     public void login(LoginSettings settings) throws IOException {
@@ -385,46 +468,6 @@ public class CxHttpClient implements Closeable {
         }
     }
 
-    private static UrlEncodedFormEntity getRevocationRequest(ClientType clientType, String token) {
-        List<NameValuePair> parameters = new ArrayList<>();
-        parameters.add(new BasicNameValuePair("token_type_hint", REFRESH_TOKEN_PROP));
-        parameters.add(new BasicNameValuePair("token", token));
-        parameters.add(new BasicNameValuePair(CLIENT_ID_PROP, clientType.getClientId()));
-        parameters.add(new BasicNameValuePair(CLIENT_SECRET_PROP, clientType.getClientSecret()));
-
-        return new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-    }
-
-    private static UrlEncodedFormEntity getAuthRequest(LoginSettings settings) {
-        ClientType clientType = settings.getClientTypeForPasswordAuth();
-        String grantType = StringUtils.defaultString(clientType.getGrantType(), DEFAULT_GRANT_TYPE);
-        List<BasicNameValuePair> parameters = new ArrayList<>();
-        parameters.add(new BasicNameValuePair("username", settings.getUsername()));
-        parameters.add(new BasicNameValuePair(PASSWORD_PROP, settings.getPassword()));
-        parameters.add(new BasicNameValuePair("grant_type", grantType));
-        parameters.add(new BasicNameValuePair("scope", clientType.getScopes()));
-        parameters.add(new BasicNameValuePair(CLIENT_ID_PROP, clientType.getClientId()));
-        parameters.add(new BasicNameValuePair(CLIENT_SECRET_PROP, clientType.getClientSecret()));
-
-        if (!StringUtils.isEmpty(settings.getTenant())) {
-            String authContext = String.format("Tenant:%s", settings.getTenant());
-            parameters.add(new BasicNameValuePair("acr_values", authContext));
-        }
-
-        return new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-    }
-
-    private static UrlEncodedFormEntity getTokenRefreshingRequest(LoginSettings settings) throws UnsupportedEncodingException {
-        ClientType clientType = settings.getClientTypeForRefreshToken();
-        List<BasicNameValuePair> parameters = new ArrayList<>();
-        parameters.add(new BasicNameValuePair("grant_type", REFRESH_TOKEN_PROP));
-        parameters.add(new BasicNameValuePair(CLIENT_ID_PROP, clientType.getClientId()));
-        parameters.add(new BasicNameValuePair(CLIENT_SECRET_PROP, clientType.getClientSecret()));
-        parameters.add(new BasicNameValuePair(REFRESH_TOKEN_PROP, settings.getRefreshToken()));
-
-        return new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8.name());
-    }
-
     //GET REQUEST
     public <T> T getRequest(String relPath, String contentType, Class<T> responseType, int expectStatus, String failedMsg, boolean isCollection) throws IOException {
         return getRequest(rootUri, relPath, CONTENT_TYPE_APPLICATION_JSON, contentType, responseType, expectStatus, failedMsg, isCollection);
@@ -468,7 +511,7 @@ public class CxHttpClient implements Closeable {
         customHeaders.put(name, value);
     }
 
-    
+
     private <T> T request(HttpRequestBase httpMethod, String contentType, HttpEntity entity, Class<T> responseType, int expectStatus, String failedMsg, boolean isCollection, boolean retry) throws IOException {
         if (contentType != null) {
             httpMethod.addHeader("Content-type", contentType);
