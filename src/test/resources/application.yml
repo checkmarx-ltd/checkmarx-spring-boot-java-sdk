@@ -1,6 +1,6 @@
 checkmarx:
-#  version: 9.0
-#  scope: access_control_api sast_rest_api
+  #  version: 9.0
+  #  scope: access_control_api sast_rest_api
   username: xxxxx
   password: xxxxx
   client-secret: 014DF517-39D1-4453-B7B3-9930C563627C
@@ -12,6 +12,59 @@ checkmarx:
   url: ${checkmarx.base-url}/cxrestapi
   #preserve-xml: true
   #incremental: true
-#WSDL Config
+  #WSDL Config
   portal-url: ${checkmarx.base-url}/cxwebinterface/Portal/CxWebService.asmx
 
+ast:
+  apiUrl: http://example.com
+  webAppUrl: ${ast.apiUrl}
+  clientId: CxFlow
+  clientSecret: xxx
+  preset: Checkmarx Default
+  incremental: false
+
+cxgo:
+  client-secret: xxx
+  base-url: https://example.net
+  portal-url: https://example.net
+  # CxOD Business unit that will contain the project/application/scan
+  team: \Demo\CxFlow\SDK
+  url: ${cxgo.base-url}
+  multi-tenant: false
+  configuration: Default Configuration
+  #
+  ## Available Scan defaults
+  #
+  #   - CXOD_MOBILE_NATIVE = 1;
+  #   - CXOD_MOBILE_WEB_BASED = 2;
+  #   - CXOD_DESKTOP_NATIVE = 3;
+  #   - CXOD_DESKTOP_WEB = 4;
+  #   - CXOD_API = 5;
+  #   - CXOD_FRONTEND = 6;
+  #   - CXOD_BACKEND = 7;
+  #   - CXOD_LAMBDA = 8;
+  #   - CXOD_CLI = 9;
+  #   - CXOD_SERVICE = 10;
+  #   - CXOD_SMART_DEVICE = 11;
+  #   - CXOD_OTHER = 12;
+  scan-preset: 52,53
+  sca:
+    filter-severity:
+      - High
+    #      - Medium
+    filter-score: 5.0
+  filter-severity:
+    - High
+    - Medium
+    - Low
+sca:
+  appUrl: https://example.com
+  apiUrl: https://example.com
+  accessControlUrl: https://example.net
+  tenant: cxflow
+  username: xxx
+  password: xxx
+
+github:
+  token: xxx
+  url: https://github.com/myrepo

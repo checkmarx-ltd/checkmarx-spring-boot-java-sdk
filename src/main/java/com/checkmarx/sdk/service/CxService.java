@@ -3,7 +3,7 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
 import com.checkmarx.sdk.dto.cx.xml.*;
@@ -12,11 +12,16 @@ import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
+import com.checkmarx.sdk.service.scanner.CxClient;
+import com.checkmarx.sdk.utils.CxRepoFileHelper;
 import com.checkmarx.sdk.utils.ScanUtils;
+import com.checkmarx.sdk.utils.scanner.client.ScanClientHelper;
+import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONArray;
@@ -54,7 +59,7 @@ import java.util.*;
  * Class used to orchestrate submitting scans and retrieving results
  */
 @Service
-public class CxService implements CxClient{
+public class CxService implements CxClient {
 
     private static final String UNKNOWN = "-1";
     private static final Integer UNKNOWN_INT = -1;
@@ -68,6 +73,8 @@ public class CxService implements CxClient{
     private static final Integer SCAN_STATUS_FAILED = 9;
     private static final Integer SCAN_STATUS_SOURCE_PULLING = 10;
     private static final Integer SCAN_STATUS_NONE = 1001;
+
+    
     /*
     report statuses - there are only 2:
     InProcess (1)
@@ -113,6 +120,7 @@ public class CxService implements CxClient{
     public static final String ERROR_WITH_XML_REPORT = "Error with XML report";
     public static final String ERROR_PROCESSING_SCAN_RESULTS = "Error while processing scan results";
     public static final String ERROR_GETTING_PROJECT = "Error occurred while retrieving project with id {}, http error {}";
+    public static final String PROJECT_REMOTE_SETTINGS_NOT_FOUND = "Project's remote settings were not found, http message {}";
     public static final String FOUND_TEAM = "Found team {} with ID {}";
     public static final String ONLY_SUPPORTED_IN_90_PLUS = "Operation only supported in 9.0+";
     public static final String ERROR_GETTING_TEAMS = "Error occurred while retrieving Teams";
@@ -123,10 +131,10 @@ public class CxService implements CxClient{
     private final CxAuthService authClient;
     private final RestTemplate restTemplate;
     private final ScanSettingsClient scanSettingsClient;
-
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
-
+    private final CxRepoFileHelper cxRepoFileHelper;
+    
     public CxService(CxAuthService authClient,
                      CxProperties cxProperties,
                      CxLegacyService cxLegacyService,
@@ -134,6 +142,8 @@ public class CxService implements CxClient{
                      ScanSettingsClient scanSettingsClient,
                      FilterInputFactory filterInputFactory,
                      FilterValidator filterValidator) {
+        
+        this.cxRepoFileHelper = new CxRepoFileHelper(cxProperties);
         this.authClient = authClient;
         this.cxProperties = cxProperties;
         this.cxLegacyService = cxLegacyService;
@@ -1176,6 +1186,18 @@ public class CxService implements CxClient{
         return scanSettingsClient.getPresetName(presetId);
     }
 
+    public CxProjectSource checkProjectRemoteSettings(Integer projectId) throws CheckmarxException {
+
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            ResponseEntity<CxProjectSource> response = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_SOURCE), HttpMethod.GET, httpEntity, CxProjectSource.class, projectId);
+            return response.getBody();
+
+        } catch (HttpStatusCodeException e) {
+            log.info(PROJECT_REMOTE_SETTINGS_NOT_FOUND, e.getStatusCode());
+        }
+        return null;
+    }
     /**
      * Set Repository details for a project
      */
@@ -1592,13 +1614,19 @@ public class CxService implements CxClient{
             createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
         }
-        switch (params.getSourceType()) {
-            case GIT:
-                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
-                break;
-            case FILE:
-                uploadProjectSource(projectId, new File(params.getFilePath()));
-                break;
+
+        boolean useSsh = false;
+        if(projectExistedBeforeScan)
+        {
+            CxProjectSource projectSource = checkProjectRemoteSettings(projectId);
+            if(projectSource !=null)
+            {
+                useSsh = projectSource.getUseSsh();
+            }
+        }
+
+        if(!useSsh) {
+            prepareSources(params, projectId);
         }
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
@@ -1625,7 +1653,7 @@ public class CxService implements CxClient{
                 .build();
 
         HttpHeaders headers = authClient.createAuthHeaders();
-        headers.add("cxOrigin","CxFlow");
+        headers.add(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
         HttpEntity<CxScan> requestEntity = new HttpEntity<>(scan, headers);
 
         log.info("Creating Scan for project Id {}", projectId);
@@ -1638,9 +1666,28 @@ public class CxService implements CxClient{
         } catch (HttpStatusCodeException e) {
             log.error(SCAN_CREATION_ERROR, projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
+        }finally {
+            if (params.isGitSource() && cxProperties.getEnabledZipScan() || params.isFileSource()){
+                FileUtils.deleteQuietly(new File(params.getFilePath()));
+            }
         }
         log.info("...Finished creating scan");
         return UNKNOWN_INT;
+    }
+
+    private void prepareSources(CxScanParams params, Integer projectId) throws CheckmarxException {
+        if (params.isFileSource()) {
+            uploadProjectSource(projectId, new File(params.getFilePath()));
+        }
+        else if (params.isGitSource()) {
+            if (cxProperties.getEnabledZipScan()) {
+                String clonedRepoPath = cxRepoFileHelper.prepareRepoFile(params);
+                uploadProjectSource(projectId, new File(clonedRepoPath));
+                params.setFilePath(clonedRepoPath);
+            }else {
+                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
+            }
+        }
     }
 
     private Integer determineProjectId(CxScanParams params, String teamId) {
@@ -2166,12 +2213,12 @@ public class CxService implements CxClient{
             }
             params.setScanConfiguration(cxProperties.getConfiguration());
         }
-        if(params.getSourceType().equals(CxScanParams.Type.GIT)){
+        if(params.isGitSource()){
             if(ScanUtils.empty(params.getGitUrl()) || ScanUtils.empty(params.getBranch())){
                 throw new CheckmarxException("No git url or branch was was missing for the scan");
             }
         }
-        else if(params.getSourceType().equals(CxScanParams.Type.FILE)){
+        else if(params.isFileSource()){
             if(ScanUtils.empty(params.getFilePath())){
                 throw new CheckmarxException("No file path was provided for the scan");
             }

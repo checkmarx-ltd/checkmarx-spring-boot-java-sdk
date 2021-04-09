@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.config;
 
-import com.cx.restclient.dto.scansummary.Severity;
+import com.checkmarx.sdk.dto.scansummary.Severity;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -28,4 +28,7 @@ public class ScaProperties {
     private String tenant;
     private String username;
     private String password;
+    private boolean enabledZipScan;
+    private String team;
+    private boolean includeSources;
 }

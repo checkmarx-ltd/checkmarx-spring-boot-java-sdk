@@ -1,9 +1,7 @@
 package com.checkmarx.sdk.service;
 
-import com.checkmarx.sdk.dto.CxUser;
+import com.checkmarx.sdk.dto.sast.CxUser;
 import com.checkmarx.sdk.exception.CheckmarxException;
-import com.checkmarx.sdk.exception.InvalidCredentialsException;
-import org.springframework.http.HttpHeaders;
 
 import java.util.List;
 

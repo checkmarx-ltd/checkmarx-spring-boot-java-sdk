@@ -286,6 +286,13 @@ public class CxScanParams {
         }
     }
 
+    public boolean isGitSource(){
+        return getSourceType().equals(Type.GIT);
+    }
+    public boolean isFileSource(){
+        return getSourceType().equals(Type.FILE);
+    }
+    
     @Override
     public String toString() {
         return "CxScanParams{" +

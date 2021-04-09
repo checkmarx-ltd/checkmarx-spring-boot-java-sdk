@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.service;
 
-import com.checkmarx.sdk.dto.Filter;
+import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxRuntimeException;
@@ -8,7 +8,7 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -60,8 +60,7 @@ public class FilterValidator {
         } else {
             result = passesSimpleFilter(finding, filterConfiguration);
         }
-
-        logFilteringResult(finding, result);
+        
         return result;
     }
 
@@ -174,15 +173,16 @@ public class FilterValidator {
     }
 
     private static boolean fieldMatches(String fieldValue, List<String> allowedValues) {
-        return allowedValues.isEmpty() ||
-                allowedValues.contains(fieldValue.toUpperCase(Locale.ROOT));
+        boolean isMatch = false;
+
+        if (allowedValues.isEmpty()) {
+            return true;
+        }
+
+        if (fieldValue != null) {
+            isMatch =  allowedValues.contains(fieldValue.toUpperCase(Locale.ROOT));
+        }
+        return isMatch;
     }
 
-    private static void logFilteringResult(FilterInput finding, boolean passes) {
-        if (log.isDebugEnabled()) {
-            String idForLog = StringUtils.isNotEmpty(finding.getId()) ? finding.getId() : "n/a";
-            String message = (passes ? "passes" : "does not pass");
-            log.debug("Finding (ID: {}) {} the filter.", idForLog, message);
-        }
-    }
 }

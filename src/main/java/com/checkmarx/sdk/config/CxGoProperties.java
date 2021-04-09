@@ -14,10 +14,9 @@ import java.util.List;
 public class CxGoProperties extends CxPropertiesBase {
 
     public static final String CONFIG_PREFIX = "cxgo";
-    
-    private String postCloneScript;
+
     private List<String> engineTypes = Arrays.asList(CxProperties.CONFIG_PREFIX.toUpperCase(),
-                                                     ScaProperties.CONFIG_PREFIX.toUpperCase());
+            ScaProperties.CONFIG_PREFIX.toUpperCase());
 
     public Boolean getEnableOsa() {
         return false;
@@ -29,14 +28,6 @@ public class CxGoProperties extends CxPropertiesBase {
 
     public void setEngineTypes(List<String> engineTypes) {
         this.engineTypes = engineTypes;
-    }
-    
-    public String getPostCloneScript() {
-        return postCloneScript;
-    }
-
-    public void setPostCloneScript(String postCloneScript) {
-        this.postCloneScript = postCloneScript;
     }
     
  

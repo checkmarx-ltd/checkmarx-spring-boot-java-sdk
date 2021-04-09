@@ -1,8 +1,11 @@
 package com.checkmarx.sdk.config;
 
+import java.nio.charset.StandardCharsets;
+
 public class Constants {
     private Constants() {
     }
+    public static final String ENCODING = StandardCharsets.UTF_8.name();
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";

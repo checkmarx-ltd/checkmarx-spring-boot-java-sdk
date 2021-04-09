@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.config;
 
-import com.cx.restclient.dto.scansummary.Severity;
+import com.checkmarx.sdk.dto.scansummary.Severity;
 import com.typesafe.config.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,11 +27,17 @@ public class ScaConfig {
     private String apiUrl;
     private String accessControlUrl;
     private String tenant;
+    @Optional
+    private boolean includeSources;
+    @Optional
+    private List<String> excludeFiles;
 
     @Optional
     private Map<Severity, Integer> thresholdsSeverity;
     @Optional
     private Double thresholdsScore;
+    @Optional
+    private String team;
 
     /**
      * This setter allows to avoid ConfigProvider error: Map&lt;Severity,Integer&gt; is not supported.

@@ -1,7 +1,7 @@
 package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.config.CxProperties;
-import com.checkmarx.sdk.dto.CxUser;
+import com.checkmarx.sdk.dto.sast.CxUser;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;

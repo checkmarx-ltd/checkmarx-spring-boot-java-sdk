@@ -1,14 +1,9 @@
 package com.checkmarx.sdk.ShardManager;
-
 import com.checkmarx.sdk.config.ShardProperties;
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.ws.client.core.WebServiceTemplate;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 @Component
@@ -26,33 +21,11 @@ public class ShardSessionTracker {
     }
 
     public ShardSession getShardSession() {
-        String scanID = getScanRequestID();
+        String scanID = MDC.get("cx");
         if (!shardTracker.containsKey(scanID)) {
             ShardSession session = new ShardSession(ws);
             this.shardTracker.put(scanID, session);
         }
         return shardTracker.get(scanID);
-    }
-
-    public String getScanRequestID() {
-        return captureScanRequestID(() -> {
-            this.log.info("Find Scan ID.");
-        });
-    }
-
-    private String captureScanRequestID(Runnable r) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream out = System.out;
-        try {
-            System.setOut(new PrintStream(baos, true, StandardCharsets.UTF_8.name()));
-            r.run();
-            String tokenStr = new String(baos.toByteArray());
-            int tokenPos = tokenStr.indexOf("ScanID") + 13;
-            return tokenStr.substring(tokenPos, (tokenPos+8));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("End of the world, Java doesn't recognise UTF-8");
-        } finally {
-            System.setOut(out);
-        }
     }
 }

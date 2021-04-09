@@ -14,15 +14,11 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.support.HttpRequestWrapper;
 import java.io.IOException;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ShardManagerHTTPInterceptor implements ClientHttpRequestInterceptor {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(ShardManagerHTTPInterceptor.class);
@@ -46,7 +42,7 @@ public class ShardManagerHTTPInterceptor implements ClientHttpRequestInterceptor
             ClientHttpRequestExecution execution) throws IOException {
         ShardSession shard = sessionTracker.getShardSession();
         if (!shard.getShardFound() && request.getURI().getPath().equals(authReq)) {
-            runShardManager(sessionTracker.getScanRequestID(), shard);
+            runShardManager(shard);
             body = overrideCredentials(request, body, shard);
             ClientHttpResponse clientResp = execution.execute(new ShardRequestWrapper(request, shard.getUrl()), body);
             return clientResp;
@@ -91,7 +87,7 @@ public class ShardManagerHTTPInterceptor implements ClientHttpRequestInterceptor
         }
     }
 
-    public void runShardManager(String scanID, ShardSession shard) {
+    public void runShardManager(ShardSession shard) {
         Binding bindings = new Binding();
         bindings.setProperty("shardProperties", shardProperties);
         bindings.setProperty("cxFlowLog", log);

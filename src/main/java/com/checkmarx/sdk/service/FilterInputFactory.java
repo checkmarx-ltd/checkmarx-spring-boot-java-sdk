@@ -6,7 +6,7 @@ import com.checkmarx.sdk.dto.cxgo.OdScanResultItem;
 import com.checkmarx.sdk.dto.cxgo.SASTScanResult;
 import com.checkmarx.sdk.dto.cxgo.SCAScanResult;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
-import com.cx.restclient.ast.dto.sca.report.Finding;
+import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,7 +44,7 @@ public class FilterInputFactory {
                 .id(finding.getNodeId())
                 .category(findingGroup.getName().toUpperCase(Locale.ROOT))
                 .cwe(findingGroup.getCweId())
-                .severity(findingGroup.getSeverity().toUpperCase(Locale.ROOT))
+                .severity(finding.getSeverity().toUpperCase(Locale.ROOT))
                 .status(finding.getStatus().toUpperCase(Locale.ROOT))
                 .state(stateName)
                 .build();
