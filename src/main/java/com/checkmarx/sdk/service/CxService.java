@@ -1239,6 +1239,46 @@ public class CxService implements CxClient {
     }
 
     /**
+     * Update a project's custom fields
+     *
+     * @param cxProject the Checkmarx project
+     * @throws CheckmarxException
+     */
+    public void updateProjectCustomFields(CxProject cxProject) throws CheckmarxException {
+        StringBuilder sb = new StringBuilder();
+        String strJSON = "{'name':'%s','owningTeam':%d,'customFields':[";
+        strJSON = String.format(strJSON, cxProject.getName(), Integer.parseInt(cxProject.getTeamId()));
+        sb.append(strJSON);
+
+        boolean first = true;
+        for (CxProject.CustomField customField : cxProject.customFields) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(',');
+            }
+            String fieldJSON = "{'id':%d,'value':'%s'}";
+            fieldJSON = String.format(fieldJSON, customField.id, customField.value);
+            sb.append(fieldJSON);
+        }
+        sb.append("]}");
+
+        String body = sb.toString();
+        log.debug("updateProjectCustomFields: request body: {}", body);
+
+        HttpEntity requestEntity = new HttpEntity<>(body, authClient.createAuthHeaders());
+
+        try {
+            log.info("Updating custom fields for project {} with id {}", cxProject.getName(), cxProject.getId());
+            restTemplate.exchange(cxProperties.getUrl().concat(PROJECT), HttpMethod.PUT, requestEntity, String.class, cxProject.getId());
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.error("Error occurred while updating custom fields for project {}.", cxProject.getName());
+            throw new CheckmarxException("Error occurred while updating custom fields for project: " + e.getLocalizedMessage());
+        }
+    }
+
+    /**
      * Upload file (zip of source) for a project
      */
     public void uploadProjectSource(Integer projectId, File file) throws CheckmarxException {
