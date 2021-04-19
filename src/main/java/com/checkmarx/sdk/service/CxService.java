@@ -88,6 +88,7 @@ public class CxService implements CxClient {
             "PROPOSED NOT EXPLOITABLE",4
     );
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
+    private static final String CUSTOM_FIELDS = "/customFields";
     private static final String TEAMS = "/auth/teams";
     private static final String TEAM = "/auth/teams/{id}";
     private static final String TEAM_LDAP_MAPPINGS_UPDATE = "/auth/LDAPServers/{id}/TeamMappings";
@@ -1235,6 +1236,27 @@ public class CxService implements CxClient {
             log.debug(ExceptionUtils.getStackTrace(e));
             log.error("Error occurred while updating details for project {}.", cxProject.getName());
             throw new CheckmarxException("Error occurred while updating project details: " + e.getLocalizedMessage());
+        }
+    }
+
+    /**
+     * Return a list of the custom fields that have been configured in CxSAST.
+     *
+     * @return a list of custom fields
+     * @throws CheckmarxException
+     */
+    public List<CxCustomField> getCustomFields() throws CheckmarxException {
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            ResponseEntity<CxCustomField[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(CUSTOM_FIELDS), HttpMethod.GET, httpEntity, CxCustomField[].class);
+            if(projects.getBody() != null){
+                return Arrays.asList(projects.getBody());
+            }
+            return Collections.emptyList();
+        } catch (HttpStatusCodeException e) {
+            log.warn("Error occurred while retrieving projects, http error {}", e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("Error retrieving Projects");
         }
     }
 
