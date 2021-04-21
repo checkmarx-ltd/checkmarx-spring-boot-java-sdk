@@ -115,6 +115,7 @@ public class ScaScanner extends AbstractScanner {
     protected RestClientConfig getScanConfig(ScanParams scanParams) {
         RestClientConfig restClientConfig = new RestClientConfig();
         restClientConfig.setProjectName(scanParams.getProjectName());
+        restClientConfig.setDisableCertificateValidation(scanParams.isDisableCertificateValidation());
 
         ScaConfig scaConfig = getScaSpecificConfig(scanParams);
         setSourceLocation(scanParams, restClientConfig, scaConfig);
