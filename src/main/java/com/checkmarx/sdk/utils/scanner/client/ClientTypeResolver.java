@@ -81,7 +81,7 @@ public class ClientTypeResolver {
             String res = getHttpClient(accessControlServerBaseUrl).getRequest(WELL_KNOWN_CONFIG_PATH, CONTENT_TYPE_APPLICATION_JSON_V1, String.class, 200, "Get openId configuration", false);
             return objectMapper.readTree(res);
         } catch (Exception e) {
-            throw new ScannerRuntimeException("Error getting OpenID config response.", e);
+            throw new ScannerRuntimeException(e.getMessage(),e);
         }
     }
 
