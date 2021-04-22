@@ -9,6 +9,7 @@ public class ProxyConfig implements Serializable {
     private String username;
     private String password;
     private boolean useHttps;
+    private String noProxyHosts;
 
     public ProxyConfig() {
     }
@@ -19,6 +20,15 @@ public class ProxyConfig implements Serializable {
         this.username = username;
         this.password = password;
         this.useHttps = useHttps;
+        this.noProxyHosts = "";
+    }
+
+    public ProxyConfig(String host, int port, String username, String password, boolean useHttps, String noProxyHosts){
+        this.port = port;
+        this.username = username;
+        this.password = password;
+        this.useHttps = useHttps;
+        this.noProxyHosts = noProxyHosts;
     }
 
     public String getHost() {
@@ -59,5 +69,13 @@ public class ProxyConfig implements Serializable {
 
     public void setUseHttps(boolean useHttps) {
         this.useHttps = useHttps;
+    }
+
+    public String getNoProxyHosts() {
+        return noProxyHosts;
+    }
+
+    public void setNoProxyHosts(String noProxyHosts) {
+        this.noProxyHosts = noProxyHosts;
     }
 }
