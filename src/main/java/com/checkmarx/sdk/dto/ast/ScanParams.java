@@ -23,4 +23,5 @@ public class ScanParams {
     private String branch;
     // SCA-specific parameters.
     private ScaConfig scaConfig;
+    private boolean disableCertificateValidation;
 }
