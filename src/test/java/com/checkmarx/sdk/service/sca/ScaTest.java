@@ -220,7 +220,7 @@ public class ScaTest extends ScaTestsBase {
 
 
     private ScaScanner getScanner() {
-        return new ScaScanner(scaProperties, new FilterInputFactory(), new FilterValidator());
+        return new ScaScanner(scaProperties, new FilterInputFactory(new CxProperties()), new FilterValidator());
     }
 
     private ScanParams getScanParams(RestClientConfig config) {

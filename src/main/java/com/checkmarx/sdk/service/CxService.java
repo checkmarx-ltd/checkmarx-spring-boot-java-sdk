@@ -81,12 +81,6 @@ public class CxService implements CxClient {
     Created (2)
     */
     public static final Integer REPORT_STATUS_CREATED = 2;
-    private static final Map<String, Integer> STATE_MAP = ImmutableMap.of(
-            "TO VERIFY", 0,
-            "CONFIRMED", 2,
-            "URGENT", 3,
-            "PROPOSED NOT EXPLOITABLE",4
-    );
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
     private static final String CUSTOM_FIELDS = "/customFields";
     private static final String TEAMS = "/auth/teams";
@@ -817,7 +811,7 @@ public class CxService implements CxClient {
     }
 
     public String getStateFullName(String key){
-        return ((Map<Integer, String>)MapUtils.invertMap(STATE_MAP)).get(Integer.parseInt(key));
+        return cxProperties.getStateFullName(key);
     }
     
     private Map<String, Object> getAdditionalIssueDetails(QueryType q, ResultType r) {
