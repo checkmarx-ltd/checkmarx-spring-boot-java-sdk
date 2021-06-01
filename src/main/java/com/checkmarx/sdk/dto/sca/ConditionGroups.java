@@ -9,8 +9,6 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class PolicyRule {
-
-    private String name;
-    private List<ConditionGroups> conditionGroups;
+public class ConditionGroups {
+    private List<RuleCondition> conditions;
 }
