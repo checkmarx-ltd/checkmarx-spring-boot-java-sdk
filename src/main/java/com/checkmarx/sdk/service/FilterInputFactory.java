@@ -9,6 +9,7 @@ import com.checkmarx.sdk.dto.cxgo.SCAScanResult;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.google.common.collect.ImmutableMap;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -23,13 +24,10 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FilterInputFactory {
 
     private final CxProperties cxProperties;
-
-    public FilterInputFactory(CxProperties cxProperties) {
-	this.cxProperties = cxProperties;
-    }
 
     private static final Map<Integer, SASTScanResult.State> CXGO_STATE_ID_TO_NAME =
             Arrays.stream(SASTScanResult.State.values())

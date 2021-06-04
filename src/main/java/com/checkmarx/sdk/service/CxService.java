@@ -763,7 +763,7 @@ public class CxService implements CxClient {
                         xIssueBuilder.file(resultType.getFileName());
                         xIssueBuilder.severity(resultType.getSeverity());
                         xIssueBuilder.link(resultType.getDeepLink());
-                        xIssueBuilder.vulnerabilityStatus(getStateFullName(resultType.getState()));
+                        xIssueBuilder.vulnerabilityStatus(cxProperties.getStateFullName(resultType.getState()));
                         xIssueBuilder.queryId(result.getId());
 
  
@@ -808,10 +808,6 @@ public class CxService implements CxClient {
                 }
         }
         return summary;
-    }
-
-    public String getStateFullName(String key){
-        return cxProperties.getStateFullName(key);
     }
     
     private Map<String, Object> getAdditionalIssueDetails(QueryType q, ResultType r) {
