@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.service;
 
+import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
 import com.checkmarx.sdk.dto.cxgo.OdScanResultItem;
@@ -8,6 +9,7 @@ import com.checkmarx.sdk.dto.cxgo.SCAScanResult;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.google.common.collect.ImmutableMap;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -22,23 +24,17 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FilterInputFactory {
-    /**
-     * Maps finding state ID (as returned in CxSAST report) to state name (as specified in filter configuration).
-     */
-    private static final Map<String, String> CXSAST_STATE_ID_TO_NAME = ImmutableMap.of(
-            "0", "TO VERIFY",
-            "2", "CONFIRMED",
-            "3", "URGENT",
-            "4", "PROPOSED NOT EXPLOITABLE"
-    );
+
+    private final CxProperties cxProperties;
 
     private static final Map<Integer, SASTScanResult.State> CXGO_STATE_ID_TO_NAME =
             Arrays.stream(SASTScanResult.State.values())
             .collect(Collectors.toMap(SASTScanResult.State::getValue, Function.identity()));
 
     public FilterInput createFilterInputForCxSast(QueryType findingGroup, ResultType finding) {
-        String stateName = CXSAST_STATE_ID_TO_NAME.get(finding.getState());
+        String stateName = cxProperties.getStateFullName(finding.getState());
 
         return FilterInput.builder()
                 .id(finding.getNodeId())

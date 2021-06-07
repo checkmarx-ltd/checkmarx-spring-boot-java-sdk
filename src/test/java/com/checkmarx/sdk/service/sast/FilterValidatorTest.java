@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.service.sast;
 
+import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.cx.xml.QueryType;
 import com.checkmarx.sdk.dto.cx.xml.ResultType;
@@ -141,7 +142,7 @@ public class FilterValidatorTest {
         FilterValidator validator = new FilterValidator();
 
         try {
-            FilterInputFactory filterInputFactory = new FilterInputFactory();
+            FilterInputFactory filterInputFactory = new FilterInputFactory(new CxProperties());
             FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
             validator.passesFilter(filterInput, filterConfiguration);
         } catch (Exception e) {
@@ -167,7 +168,7 @@ public class FilterValidatorTest {
         EngineFilterConfiguration filterConfiguration = createFilterConfiguration(script);
 
         FilterValidator validator = new FilterValidator();
-        FilterInputFactory filterInputFactory = new FilterInputFactory();
+        FilterInputFactory filterInputFactory = new FilterInputFactory(new CxProperties());
         FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
         boolean actualResult = validator.passesFilter(filterInput, filterConfiguration);
         assertEquals(expectedResult, actualResult, "Unexpected script filtering result.");
@@ -187,7 +188,7 @@ public class FilterValidatorTest {
                 .simpleFilters(filters)
                 .build();
 
-        FilterInputFactory filterInputFactory = new FilterInputFactory();
+        FilterInputFactory filterInputFactory = new FilterInputFactory(new CxProperties());
         FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(findingGroup, finding);
         boolean passes = filterValidator.passesFilter(filterInput, filterConfiguration);
         assertEquals(expectedResult, passes, "Unexpected simple filtering result.");
