@@ -1,9 +1,14 @@
 package com.checkmarx.sdk.config;
 
 import com.checkmarx.sdk.utils.ScanUtils;
+import com.google.common.collect.ImmutableMap;
+
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -44,6 +49,18 @@ public class CxProperties extends CxPropertiesBase{
     private String htmlStrip = "<style>.cxtaghighlight{color: rgb(101, 170, 235);font-weight:bold;}</style>";
 
     private Boolean enabledZipScan = false;
+
+    private Map<String, String> customStateMap;
+
+    /**
+     * Maps finding state ID (as returned in CxSAST report) to state name (as specified in filter configuration).
+     */
+    private static final Map<String, String> CXSAST_STATE_ID_TO_NAME = ImmutableMap.of(
+            "0", "TO VERIFY",
+            "2", "CONFIRMED",
+            "3", "URGENT",
+            "4", "PROPOSED NOT EXPLOITABLE"
+    );
 
     public void setEnabledZipScan(Boolean enabledZipScan){
         this.enabledZipScan = enabledZipScan;
@@ -229,6 +246,18 @@ public class CxProperties extends CxPropertiesBase{
 
     public void setSettingsOverride(Boolean settingsOverride) {
         this.settingsOverride = settingsOverride;
+    }
+
+    public void setCustomStateMap(Map<String, String> customStateMap) {
+	this.customStateMap = customStateMap;
+    }
+
+    public String getStateFullName(String key){
+	String stateFullName = CXSAST_STATE_ID_TO_NAME.get(key);
+	if (stateFullName == null && customStateMap != null) {
+	    stateFullName = customStateMap.get(key);
+	}
+	return stateFullName;
     }
 }
 
