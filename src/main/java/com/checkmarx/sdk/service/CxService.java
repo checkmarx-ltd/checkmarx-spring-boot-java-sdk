@@ -1347,7 +1347,7 @@ public class CxService implements CxClient {
                 throw new CheckmarxException("Error obtaining Team Id");
             }
             for (CxTeam team : teams) {
-                if (team.getFullName().equals(teamPath)) {
+                if (team.getFullName().equalsIgnoreCase(teamPath)) {
                     log.info(FOUND_TEAM, teamPath, team.getId());
                     return team.getId();
                 }
