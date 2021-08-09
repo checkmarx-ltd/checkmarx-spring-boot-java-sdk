@@ -755,6 +755,8 @@ public class CxService implements CxClient {
                         if(!resultType.getFalsePositive().equalsIgnoreCase("FALSE")){
                             falsePositive = true;
                         }
+                        log.debug("getIssues: id: {}, severity: {}, result type filename: {}, result type severity: {}",
+                        	result.getId(), result.getSeverity(), resultType.getFileName(), resultType.getSeverity());
                         /*Map issue details*/
                         xIssueBuilder.cwe(result.getCweId());
                         xIssueBuilder.language(result.getLanguage());
@@ -765,6 +767,7 @@ public class CxService implements CxClient {
                         xIssueBuilder.link(resultType.getDeepLink());
                         xIssueBuilder.vulnerabilityStatus(cxProperties.getStateFullName(resultType.getState()));
                         xIssueBuilder.queryId(result.getId());
+                        xIssueBuilder.groupBySeverity(cxProperties.getGroupBySeverity());
 
  
                         // Add additional details
