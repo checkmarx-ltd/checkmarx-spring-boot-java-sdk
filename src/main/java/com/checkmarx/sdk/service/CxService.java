@@ -1206,10 +1206,9 @@ public class CxService implements CxClient {
         String sshKey = "";
         if(cxProperties.getSshKey() != null) {
             // THe readString() method is much nicer but not introduced until Java 11
-            //Path fileName = Path.of(cxProperties.getSshKey());
+            // Path fileName = Path.of(cxProperties.getSshKey());
             // sshKey = Files.readString(fileName);
             sshKey = readKeyFile(cxProperties.getSshKey());
-            System.out.println(sshKey);
         }
         return sshKey;
     }
@@ -1710,22 +1709,8 @@ public class CxService implements CxClient {
             Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
             createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
-        }
-        
-        boolean useSsh = false;
-        if(projectExistedBeforeScan)
-        {
-            CxProjectSource projectSource = checkProjectRemoteSettings(projectId);
-            if(projectSource !=null)
-            {
-                useSsh = projectSource.getUseSsh();
-            }
-        }
-
-        if(!useSsh) {
-            prepareSources(params, projectId);
-        }
-        
+        }        
+        prepareSources(params, projectId);
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
             if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
