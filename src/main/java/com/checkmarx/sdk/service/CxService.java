@@ -38,6 +38,9 @@ import org.springframework.web.client.RestTemplate;
 import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -1188,15 +1191,25 @@ public class CxService implements CxClient {
         return null;
     }
 
+    private String readKeyFile(String fileName) {
+        StringBuilder contentBuilder = new StringBuilder();
+        try (Stream<String> stream = Files.lines(Paths.get(fileName), StandardCharsets.UTF_8)) {
+            stream.forEach(s -> contentBuilder.append(s).append("\n"));
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return contentBuilder.toString();
+    }
+
     private String getSshKey() {
         String sshKey = "";
-        try {
-            if(cxProperties.getSshKey() != null) {
-                Path fileName = Path.of(cxProperties.getSshKey());
-                sshKey = Files.readString(fileName);
-            }            
-        } catch (IOException e) {
-            log.error("SSH Key File Error!");
+        if(cxProperties.getSshKey() != null) {
+            // THe readString() method is much nicer but not introduced until Java 11
+            //Path fileName = Path.of(cxProperties.getSshKey());
+            // sshKey = Files.readString(fileName);
+            sshKey = readKeyFile(cxProperties.getSshKey());
+            System.out.println(sshKey);
         }
         return sshKey;
     }
