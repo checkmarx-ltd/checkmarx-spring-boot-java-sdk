@@ -8,6 +8,7 @@ import javax.validation.Valid;
 @JsonPropertyOrder({
         "url",
         "branch",
+        "privateKey",
         "useSsh",
         "link"
 })
@@ -16,16 +17,19 @@ public class CxProjectSource {
     public String url;
     @JsonProperty("branch")
     public String branch;
+    @JsonProperty("privateKey")
+    public String privateKey;
     @JsonProperty("useSsh")
     public Boolean useSsh;
     @JsonProperty("link")
     @Valid
     public Link link;
 
-    @java.beans.ConstructorProperties({"url", "branch", "useSsh", "link"})
-    CxProjectSource(String url, String branch, Boolean useSsh, Link link) {
+    @java.beans.ConstructorProperties({"url", "branch", "privateKey", "useSsh", "link"})
+    CxProjectSource(String url, String branch, String privateKey, Boolean useSsh, Link link) {
         this.url = url;
         this.branch = branch;
+        this.privateKey = privateKey;
         this.useSsh = useSsh;
         this.link = link;
     }
@@ -37,6 +41,10 @@ public class CxProjectSource {
     public String getUrl() {
         return this.url;
     }
+    
+    public String getPrivateKey() {
+        return this.privateKey;
+    }
 
     public String getBranch() {
         return this.branch;
@@ -44,6 +52,10 @@ public class CxProjectSource {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public void setPrivateKey(String privateKey) {
+        this.privateKey = privateKey;
     }
 
     public void setBranch(String branch) {
@@ -67,12 +79,13 @@ public class CxProjectSource {
     }
 
     public String toString() {
-        return "CxProjectSource(url=" + this.getUrl() + ", branch=" + this.getBranch() + ", useSsh=" + this.getUseSsh() + ")";
+        return "CxProjectSource(url=" + this.getUrl() + ", branch=" + this.getBranch() + ", privateKey=" + this.getPrivateKey() + ", useSsh=" + this.getUseSsh() + ")";
     }
 
     public static class CxProjectSourceBuilder {
         private String url;
         private String branch;
+        private String privateKey;
         private Boolean useSsh;
         private Link link;
 
@@ -94,8 +107,13 @@ public class CxProjectSource {
             return this;
         }
 
+        public CxProjectSource.CxProjectSourceBuilder privateKey(String privateKey) {
+            this.privateKey = privateKey;
+            return this;
+        }
+
         public CxProjectSource build() {
-            return new CxProjectSource(url, branch, useSsh, link);
+            return new CxProjectSource(url, branch, privateKey, useSsh, link);
         }
 
         public String toString() {
