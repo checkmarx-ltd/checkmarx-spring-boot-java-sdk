@@ -1191,10 +1191,12 @@ public class CxService implements CxClient {
     private String getSshKey() {
         String sshKey = "";
         try {
-            Path fileName = Path.of(cxProperties.getSshKey());
-            sshKey = Files.readString(fileName);
+            if(cxProperties.getSshKey() != null) {
+                Path fileName = Path.of(cxProperties.getSshKey());
+                sshKey = Files.readString(fileName);
+            }            
         } catch (IOException e) {
-            System.out.println("GOT FILE ERROR!");
+            log.error("SSH Key File Error!");
         }
         return sshKey;
     }
@@ -1696,15 +1698,13 @@ public class CxService implements CxClient {
             createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
         }
-
+        
         boolean useSsh = false;
         if(projectExistedBeforeScan)
         {
             CxProjectSource projectSource = checkProjectRemoteSettings(projectId);
             if(projectSource !=null)
             {
-                System.out.println("Trying to check source");
-                System.out.println(projectSource.getUrl());
                 useSsh = projectSource.getUseSsh();
             }
         }
@@ -1712,7 +1712,7 @@ public class CxService implements CxClient {
         if(!useSsh) {
             prepareSources(params, projectId);
         }
-
+        
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
             if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
