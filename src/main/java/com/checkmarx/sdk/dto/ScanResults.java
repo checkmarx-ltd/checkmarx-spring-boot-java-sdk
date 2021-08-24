@@ -257,12 +257,13 @@ public class ScanResults{
 
             XIssue issue = (XIssue) o;
 
-            if (!vulnerability.equals(issue.vulnerability)) return false;
+            if (!vulnerability.equals(issue.vulnerability)) {
+                return false;
+            }
             if (groupBySeverity) {
-        	if (!filename.equals(issue.filename)) return false;
-        	return severity.equals(issue.severity);
+                return filename.equals(issue.filename) && severity.equals(issue.severity);
             } else {
-        	return filename.equals(issue.filename);
+                return filename.equals(issue.filename);
             }
         }
 

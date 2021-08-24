@@ -52,6 +52,11 @@ public class CxProperties extends CxPropertiesBase{
 
     private Map<String, String> customStateMap;
 
+    /*
+     * If set to true, group results by vulnerability, filename and
+     * severity (by default, results are grouped only by vulnerability
+     * and filename).
+     */
     private Boolean groupBySeverity = false;
 
     /**
