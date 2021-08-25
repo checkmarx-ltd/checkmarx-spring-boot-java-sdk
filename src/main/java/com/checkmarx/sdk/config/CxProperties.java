@@ -52,6 +52,13 @@ public class CxProperties extends CxPropertiesBase{
 
     private Map<String, String> customStateMap;
 
+    /*
+     * If set to true, group results by vulnerability, filename and
+     * severity (by default, results are grouped only by vulnerability
+     * and filename).
+     */
+    private Boolean groupBySeverity = false;
+
     /**
      * Maps finding state ID (as returned in CxSAST report) to state name (as specified in filter configuration).
      */
@@ -258,6 +265,14 @@ public class CxProperties extends CxPropertiesBase{
 	    stateFullName = customStateMap.get(key);
 	}
 	return stateFullName;
+    }
+
+    public Boolean getGroupBySeverity() {
+	return groupBySeverity;
+    }
+
+    public void setGroupBySeverity(Boolean groupBySeverity) {
+	this.groupBySeverity = groupBySeverity;
     }
 }
 
