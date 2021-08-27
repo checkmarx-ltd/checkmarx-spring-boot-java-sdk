@@ -32,6 +32,7 @@ public abstract class CxPropertiesBase {
     private String projectScript;
     private Boolean enablePostActionMonitor = false;
     private String postCloneScript;
+    private Boolean enablePostActionEvent = false;
     
     public abstract Boolean getEnableOsa();
     
@@ -261,6 +262,14 @@ public abstract class CxPropertiesBase {
 
     public void setEnablePostActionMonitor(Boolean enablePostActionMonitor) {
         this.enablePostActionMonitor = enablePostActionMonitor;
+    }
+
+    public boolean getEnablePostActionEvent() {
+        return this.enablePostActionEvent;
+    }
+
+    public void setEnablePostActionEvent(Boolean enablePostActionEvent) {
+        this.enablePostActionEvent = enablePostActionEvent;
     }
 
     public String getPostCloneScript() {
