@@ -21,6 +21,7 @@ public class CxProperties extends CxPropertiesBase{
     
     private String username;
     private String password;
+    private String sshKey;
     private String clientId = "resource_owner_client";
     private String soapClientId = "resource_owner_sast_client";
     private String soapClientSecret;
@@ -77,6 +78,10 @@ public class CxProperties extends CxPropertiesBase{
         return enabledZipScan;
     }
     
+    public String getSshKey() {
+        return this.sshKey;
+    }
+
     public String getUsername() {
         return this.username;
     }
@@ -115,6 +120,10 @@ public class CxProperties extends CxPropertiesBase{
 
     public String getHtmlStrip() {
         return this.htmlStrip;
+    }
+
+    public void setSshKey(String sshKey) {
+        this.sshKey = sshKey;
     }
 
     public void setUsername(String username) {

@@ -35,7 +35,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-
+import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -1186,18 +1191,61 @@ public class CxService implements CxClient {
         }
         return null;
     }
+
+    private String readKeyFile(String fileName) {
+        StringBuilder contentBuilder = new StringBuilder();
+        try (Stream<String> stream = Files.lines(Paths.get(fileName), StandardCharsets.UTF_8)) {
+            stream.forEach(s -> contentBuilder.append(s).append("\n"));
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return contentBuilder.toString();
+    }
+
+    private String getSshKey() {
+        String sshKey = "";
+        if(cxProperties.getSshKey() != null) {
+            // THe readString() method is much nicer but not introduced until Java 11
+            // Path fileName = Path.of(cxProperties.getSshKey());
+            // sshKey = Files.readString(fileName);
+            sshKey = readKeyFile(cxProperties.getSshKey());
+        }
+        return sshKey;
+    }
+
+    private String createGitURL(String srcURL) {
+        String gitURL = srcURL;
+        try {
+            URL url = new URL(srcURL);
+            gitURL = "git@github.com:" + url.getPath();
+        } catch(java.net.MalformedURLException e) {
+            log.error("Bad GitHub repository URL {}", srcURL);
+        }
+        return gitURL;
+    }
+
     /**
      * Set Repository details for a project
      */
     public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException {
-        CxProjectSource projectSource = CxProjectSource.builder()
+        String sshKey = getSshKey();
+        CxProjectSource projectSource;        
+        if(sshKey.length() > 0) {
+            projectSource = CxProjectSource.builder()                
+                .url(createGitURL(gitUrl))
+                .privateKey(sshKey)
+                .branch(branch)
+                .build();
+        } else {
+            projectSource = CxProjectSource.builder()
                 .url(gitUrl)
                 .branch(branch)
                 .build();
+        }
         log.debug("branch {}", branch);
         log.debug("project {}", projectId);
         HttpEntity<CxProjectSource> requestEntity = new HttpEntity<>(projectSource, authClient.createAuthHeaders());
-
         try {
             log.info("Updating Source details for project Id {}", projectId);
             restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_SOURCE), HttpMethod.POST, requestEntity, String.class, projectId);
@@ -1662,21 +1710,8 @@ public class CxService implements CxClient {
             Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
             createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
-        }
-
-        boolean useSsh = false;
-        if(projectExistedBeforeScan)
-        {
-            CxProjectSource projectSource = checkProjectRemoteSettings(projectId);
-            if(projectSource !=null)
-            {
-                useSsh = projectSource.getUseSsh();
-            }
-        }
-
-        if(!useSsh) {
-            prepareSources(params, projectId);
-        }
+        }        
+        prepareSources(params, projectId);
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
             if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
@@ -1727,7 +1762,7 @@ public class CxService implements CxClient {
     private void prepareSources(CxScanParams params, Integer projectId) throws CheckmarxException {
         if (params.isFileSource()) {
             uploadProjectSource(projectId, new File(params.getFilePath()));
-        }
+        }            
         else if (params.isGitSource()) {
             if (cxProperties.getEnabledZipScan()) {
                 String clonedRepoPath = cxRepoFileHelper.prepareRepoFile(params);
