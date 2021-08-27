@@ -222,10 +222,11 @@ public class ScanResults{
         private Map<Integer, IssueDetails>  details;
         private Map<String, Object> additionalDetails;
         private String queryId;
+        private boolean groupBySeverity;
 
         XIssue(String vulnerability, String vulnerabilityStatus, String similarityId, String cwe, String cve, String description, String language,
                String severity, String link, String filename, String gitUrl, List<OsaDetails> osaDetails, List<ScaDetails> scaDetails, Map<Integer, IssueDetails> details,
-               Map<String, Object> additionalDetails, String queryId) {
+               Map<String, Object> additionalDetails, String queryId, boolean groupBySeverity) {
             this.vulnerability = vulnerability;
             this.vulnerabilityStatus = vulnerabilityStatus;
             this.similarityId = similarityId;
@@ -242,6 +243,7 @@ public class ScanResults{
             this.details = details;
             this.additionalDetails = additionalDetails;
             this.queryId = queryId;
+            this.groupBySeverity = groupBySeverity;
         }
 
         public static XIssueBuilder builder() {
@@ -255,8 +257,14 @@ public class ScanResults{
 
             XIssue issue = (XIssue) o;
 
-            if (!vulnerability.equals(issue.vulnerability)) return false;
-            return filename.equals(issue.filename);
+            if (!vulnerability.equals(issue.vulnerability)) {
+                return false;
+            }
+            if (groupBySeverity) {
+                return filename.equals(issue.filename) && severity.equals(issue.severity);
+            } else {
+                return filename.equals(issue.filename);
+            }
         }
 
         @Override
@@ -265,6 +273,9 @@ public class ScanResults{
             if(vulnerability != null) {
                 result = vulnerability.hashCode();
                 result = HASH_CONST * result + filename.hashCode();
+                if (groupBySeverity) {
+                    result = HASH_CONST * result + severity.hashCode();
+                }
             }else{
                 if(scaDetails != null){
                     result = scaDetails.get(0).finding.hashCode();
@@ -425,6 +436,7 @@ public class ScanResults{
             private String link;
             private String file;
             private String queryId;
+            private Boolean groupBySeverity;
             private List<OsaDetails> osaDetails;
             private List<ScaDetails> scaDetails;
 
@@ -488,6 +500,11 @@ public class ScanResults{
                 return this;
             }
 
+            public XIssue.XIssueBuilder groupBySeverity(Boolean groupBySeverity) {
+                this.groupBySeverity = groupBySeverity;
+                return this;
+            }
+
             public XIssue.XIssueBuilder osaDetails(List<OsaDetails> osaDetails) {
                 this.osaDetails = osaDetails;
                 return this;
@@ -509,7 +526,7 @@ public class ScanResults{
             }
 
             public XIssue build() {
-                return new XIssue(vulnerability,  vulnerabilityStatus, similarityId, cwe, cve, description, language, severity, link, file, "", osaDetails, scaDetails, details, additionalDetails, queryId);
+                return new XIssue(vulnerability,  vulnerabilityStatus, similarityId, cwe, cve, description, language, severity, link, file, "", osaDetails, scaDetails, details, additionalDetails, queryId, groupBySeverity);
             }
 
             @Override

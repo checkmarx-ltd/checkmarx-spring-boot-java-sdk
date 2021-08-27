@@ -21,6 +21,7 @@ public class CxProperties extends CxPropertiesBase{
     
     private String username;
     private String password;
+    private String sshKey;
     private String clientId = "resource_owner_client";
     private String soapClientId = "resource_owner_sast_client";
     private String soapClientSecret;
@@ -52,6 +53,13 @@ public class CxProperties extends CxPropertiesBase{
 
     private Map<String, String> customStateMap;
 
+    /*
+     * If set to true, group results by vulnerability, filename and
+     * severity (by default, results are grouped only by vulnerability
+     * and filename).
+     */
+    private Boolean groupBySeverity = false;
+
     /**
      * Maps finding state ID (as returned in CxSAST report) to state name (as specified in filter configuration).
      */
@@ -70,6 +78,10 @@ public class CxProperties extends CxPropertiesBase{
         return enabledZipScan;
     }
     
+    public String getSshKey() {
+        return this.sshKey;
+    }
+
     public String getUsername() {
         return this.username;
     }
@@ -108,6 +120,10 @@ public class CxProperties extends CxPropertiesBase{
 
     public String getHtmlStrip() {
         return this.htmlStrip;
+    }
+
+    public void setSshKey(String sshKey) {
+        this.sshKey = sshKey;
     }
 
     public void setUsername(String username) {
@@ -258,6 +274,14 @@ public class CxProperties extends CxPropertiesBase{
 	    stateFullName = customStateMap.get(key);
 	}
 	return stateFullName;
+    }
+
+    public Boolean getGroupBySeverity() {
+	      return groupBySeverity;
+   }
+
+    public void setGroupBySeverity(Boolean groupBySeverity) {
+	this.groupBySeverity = groupBySeverity;
     }
 }
 

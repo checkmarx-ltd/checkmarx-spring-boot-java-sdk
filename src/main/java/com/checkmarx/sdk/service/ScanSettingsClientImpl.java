@@ -60,7 +60,7 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
                 .engineConfigurationId(engineConfigId)
                 .presetId(presetId)
                 .build();
-        if(cxProperties.getEnablePostActionMonitor() && postActionId != 0)
+        if(cxProperties.getEnablePostActionEvent() && postActionId != 0)
             scanSettings.setPostScanActionId(postActionId);
         HttpEntity<CxScanSettings> requestEntity = new HttpEntity<>(scanSettings, authClient.createAuthHeaders());
 
