@@ -277,8 +277,8 @@ public class CxProperties extends CxPropertiesBase{
     }
 
     public Boolean getGroupBySeverity() {
-	return groupBySeverity;
-    }
+	      return groupBySeverity;
+   }
 
     public void setGroupBySeverity(Boolean groupBySeverity) {
 	this.groupBySeverity = groupBySeverity;
