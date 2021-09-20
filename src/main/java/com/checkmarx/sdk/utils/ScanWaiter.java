@@ -33,7 +33,7 @@ public class ScanWaiter {
     private final String scannerDisplayName;
     private long startTimestampSec;
     private final Logger log;
-    private static final int DEFAULT_TIMEOUT = 30;
+    private static final int DEFAULT_TIMEOUT = 120;
      
     public void waitForScanToFinish(String scanId) {
         startTimestampSec = System.currentTimeMillis() / 1000;
@@ -65,7 +65,11 @@ public class ScanWaiter {
     }
 
     private static Duration getTimeout(RestClientConfig config) {
-        return Duration.ofMinutes(DEFAULT_TIMEOUT);
+        Integer timeout = config.getScaConfig().getScanTimeout();
+        if(timeout == null){
+            return Duration.ofMinutes(DEFAULT_TIMEOUT);
+        }
+        return Duration.ofMinutes(timeout);
     }
 
     private static Duration getPollInterval(RestClientConfig config) {

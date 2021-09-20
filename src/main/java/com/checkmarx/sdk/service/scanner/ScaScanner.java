@@ -140,7 +140,7 @@ public class ScaScanner extends AbstractScanner {
             scaConfig.setUsername(scaProperties.getUsername());
             scaConfig.setPassword(scaProperties.getPassword());
             scaConfig.setTeam(sdkScaConfig.getTeam());
-
+            scaConfig.setScanTimeout(sdkScaConfig.getScanTimeout());
             String zipPath = scanParams.getZipPath();
             if (StringUtils.isNotEmpty(zipPath)) {
                 scaConfig.setZipFilePath(zipPath);
