@@ -31,4 +31,5 @@ public class ScaProperties {
     private boolean enabledZipScan;
     private String team;
     private boolean includeSources;
+    private Integer scanTimeout;
 }
