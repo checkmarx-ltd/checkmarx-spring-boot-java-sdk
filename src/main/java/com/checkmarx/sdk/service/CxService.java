@@ -2320,6 +2320,7 @@ public class CxService implements CxClient {
     public void waitForScanCompletion(Integer scanId) throws CheckmarxException{
         Integer status = getScanStatus(scanId);
         long timer = 0;
+        long queueTimer = 0;
         try {
 
             while (!status.equals(CxService.SCAN_STATUS_FINISHED) && !status.equals(CxService.SCAN_STATUS_CANCELED) &&
@@ -2327,6 +2328,15 @@ public class CxService implements CxClient {
                 Thread.sleep(cxProperties.getScanPolling());
                 status = getScanStatus(scanId);
                 timer += cxProperties.getScanPolling();
+
+                //Scan Queuing Timeout = '0' and Scan Queuing = true would be waiting forever with the scan in the queue
+                 if(cxProperties.getScanQueuing() && status.equals(CxService.SCAN_STATUS_QUEUED)){
+                    queueTimer += cxProperties.getScanPolling();
+                    if (cxProperties.getScanQueuingTimeout() != 0 && queueTimer >= (cxProperties.getScanQueuingTimeout() * 60000)) {
+                        log.error("Scan queued time exceded. {} minutes ", cxProperties.getScanQueuingTimeout());
+                        throw new CheckmarxException("Timeout exceeded for Scan Queuing.");
+                    }
+                }
                 if (timer >= (cxProperties.getScanTimeout() * 60000)) {
                     log.error("Scan timeout exceeded.  {} minutes", cxProperties.getScanTimeout());
                     throw new CheckmarxException("Timeout exceeded during scan");
