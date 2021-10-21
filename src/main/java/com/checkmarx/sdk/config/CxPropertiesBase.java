@@ -33,9 +33,25 @@ public abstract class CxPropertiesBase {
     private Boolean enablePostActionMonitor = false;
     private String postCloneScript;
     private Boolean enablePostActionEvent = false;
+
+    private Boolean scanQueuing = false;
+    private Integer scanQueuingTimeout = 720;
     
     public abstract Boolean getEnableOsa();
-    
+
+    public Integer getScanQueuingTimeout() {
+        return scanQueuingTimeout;
+    }
+
+    public void setScanQueuingTimeout(Integer scanQueuingTimeout) {
+        this.scanQueuingTimeout = scanQueuingTimeout;
+    }
+
+    public Boolean getScanQueuing() {return scanQueuing;}
+
+    public void setScanQueuing(Boolean scanQueuing) {this.scanQueuing = scanQueuing;}
+
+
     public void setGitClonePath(String gitClonePath) {
         this.gitClonePath = gitClonePath;
     }
