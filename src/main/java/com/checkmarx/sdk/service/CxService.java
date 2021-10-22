@@ -1042,7 +1042,7 @@ public class CxService implements CxClient {
             ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS)
                     .concat("?projectName=").concat(name).concat("&teamId=").concat(ownerId), HttpMethod.GET, httpEntity, String.class);
             JSONArray arr = new JSONArray(projects.getBody());
-            if (arr.length() > 1) {
+            if (arr.length() < 1) {
                 return UNKNOWN_INT;
             }
             JSONObject obj = arr.getJSONObject(0);
