@@ -32,4 +32,7 @@ public class ScaProperties {
     private String team;
     private boolean includeSources;
     private Integer scanTimeout;
+    private String excludeFiles;
+    private String fingerprintsIncludePattern;
+    private String manifestsIncludePattern;
 }
