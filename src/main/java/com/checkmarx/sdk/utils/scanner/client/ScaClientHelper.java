@@ -305,7 +305,17 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             zipFile = FileUtils.readFileToByteArray(new File(zipFilePath));
         } else {
             // CLI Mode
-            PathFilter filter = new PathFilter("", "", log);
+            // The Exclude files parameter is used as a regular expression but
+            // for this method it is used as include,exclude pattern which requires exclude files
+            // to begin with an ! to be then used by the directoryScanner used in this utility.
+            // So the below method converts the list to comma separated string and all elements starts with !.
+            String pattern = "";
+            for (String nextpattern: this.scaConfig.getExcludeFiles()) {
+                pattern += "!" + nextpattern + ",";
+            }
+            // removing the last comma from the string
+            pattern = pattern.substring(0,pattern.length()-1);
+            PathFilter filter = new PathFilter("", pattern, log);
             zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
         }
 

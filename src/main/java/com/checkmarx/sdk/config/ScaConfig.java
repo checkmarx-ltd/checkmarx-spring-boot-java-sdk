@@ -31,6 +31,10 @@ public class ScaConfig {
     private boolean includeSources;
     @Optional
     private List<String> excludeFiles;
+    @Optional
+    private String fingerprintsIncludePattern;
+    @Optional
+    private String manifestsIncludePattern;
 
     @Optional
     private Map<Severity, Integer> thresholdsSeverity;
