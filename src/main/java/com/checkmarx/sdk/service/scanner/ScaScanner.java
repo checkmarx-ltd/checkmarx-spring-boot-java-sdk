@@ -139,6 +139,8 @@ public class ScaScanner extends AbstractScanner {
             scaConfig.setExcludeFiles(sdkScaConfig.getExcludeFiles());
             scaConfig.setUsername(scaProperties.getUsername());
             scaConfig.setPassword(scaProperties.getPassword());
+            scaConfig.setFingerprintsIncludePattern(scaProperties.getFingerprintsIncludePattern());
+            scaConfig.setManifestsIncludePattern(scaProperties.getManifestsIncludePattern());
             scaConfig.setTeam(sdkScaConfig.getTeam());
             scaConfig.setScanTimeout(sdkScaConfig.getScanTimeout());
             String zipPath = scanParams.getZipPath();
