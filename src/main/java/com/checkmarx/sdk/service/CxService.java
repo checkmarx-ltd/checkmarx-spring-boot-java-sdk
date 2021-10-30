@@ -1170,6 +1170,11 @@ public class CxService implements CxClient {
     }
 
     @Override
+    public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException {
+
+    }
+
+    @Override
     public Integer getProjectPresetId(Integer projectId) {
         return scanSettingsClient.getProjectPresetId(projectId);
     }
@@ -1203,8 +1208,13 @@ public class CxService implements CxClient {
         return contentBuilder.toString();
     }
 
-    private String getSshKey() {
+    private String getSshKey(CxScanParams params) {
         String sshKey = "";
+        if(params.getSshKeyIdentifier() != null && !params.getSshKeyIdentifier().isEmpty()){
+            if( MapUtils.isNotEmpty(cxProperties.getSshKeyList()) && cxProperties.getSshKeyList().containsKey(params.getSshKeyIdentifier())) {
+                cxProperties.setSshKey(cxProperties.getSshKeyList().get(params.getSshKeyIdentifier()));
+            }
+        }
         if(cxProperties.getSshKey() != null) {
             // THe readString() method is much nicer but not introduced until Java 11
             // Path fileName = Path.of(cxProperties.getSshKey());
@@ -1228,8 +1238,8 @@ public class CxService implements CxClient {
     /**
      * Set Repository details for a project
      */
-    public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException {
-        String sshKey = getSshKey();
+    public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch, CxScanParams params) throws CheckmarxException {
+        String sshKey = getSshKey(params);
         CxProjectSource projectSource;        
         if(sshKey.length() > 0) {
             projectSource = CxProjectSource.builder()                
@@ -1769,7 +1779,7 @@ public class CxService implements CxClient {
                 uploadProjectSource(projectId, new File(clonedRepoPath));
                 params.setFilePath(clonedRepoPath);
             }else {
-                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
+                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch(), params);
             }
         }
     }
