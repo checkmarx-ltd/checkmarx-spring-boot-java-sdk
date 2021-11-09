@@ -1,25 +1,30 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.dto.*;
+import com.checkmarx.sdk.dto.sca.ScaStartScanRequest;
+import com.checkmarx.sdk.dto.sca.ScaUploadUrlRequest;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.ScanWaiter;
 import com.checkmarx.sdk.utils.State;
 import com.checkmarx.sdk.utils.UrlUtils;
+import com.checkmarx.sdk.config.ContentType;
 import com.checkmarx.sdk.config.RestClientConfig;
-import com.checkmarx.sdk.dto.ResultsBase;
-import com.checkmarx.sdk.dto.SourceLocationType;
 import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
+import com.checkmarx.sdk.utils.scanner.client.httpClient.HttpClientHelper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public abstract class ScanClientHelper {
@@ -182,7 +187,12 @@ public abstract class ScanClientHelper {
     }
 
     private String getSourcesUploadUrl() throws IOException {
-        JsonNode response = httpClient.postRequest(GET_UPLOAD_URL, null, null, JsonNode.class,
+    	List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
+        ScaUploadUrlRequest request = ScaUploadUrlRequest.builder()
+                .config(apiScanConfig)
+                .build();
+        StringEntity entity = HttpClientHelper.convertToStringEntity(request);
+        JsonNode response = httpClient.postRequest(GET_UPLOAD_URL, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity, JsonNode.class,
                 HttpStatus.SC_OK, "get upload URL for sources");
 
         if (response == null || response.get("url") == null) {
