@@ -306,10 +306,13 @@ public class ScanResults{
         }
 
         public boolean isAllFalsePositive(){
-            if(this.getDetails() == null){
-                return false;
-            }
-            return this.getDetails().size() <= this.getFalsePositiveCount();
+            
+            if(this.getDetails() != null) 
+            	return this.getDetails().size() <= this.getFalsePositiveCount();
+            else if(this.getScaDetails() != null)
+            	return this.getScaDetails().size() <=this.getFalsePositiveCount();
+            else
+            	return false;
         }
 
         public String getSimilarityId() {

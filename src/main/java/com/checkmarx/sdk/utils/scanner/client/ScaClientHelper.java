@@ -123,9 +123,15 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
     @Override
     protected ScanConfig getScanConfig() {
-        return ScanConfig.builder()
+    	
+    	CxSCAScanAPIConfig apiConfig = new CxSCAScanAPIConfig();
+    	apiConfig.setIncludeSourceCode(Boolean.toString(scaConfig.isIncludeSources()));
+    
+        ScanConfig scanConfig =  ScanConfig.builder()
                 .type(ENGINE_TYPE_FOR_API)
+                .value(apiConfig)
                 .build();
+        return scanConfig;
     }
 
     @Override
@@ -310,11 +316,14 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             // to begin with an ! to be then used by the directoryScanner used in this utility.
             // So the below method converts the list to comma separated string and all elements starts with !.
             String pattern = "";
-            for (String nextpattern: this.scaConfig.getExcludeFiles()) {
-                pattern += "!" + nextpattern + ",";
+            if(this.scaConfig.getExcludeFiles() != null) {
+	            for (String nextpattern: this.scaConfig.getExcludeFiles()) {
+	                pattern += "!" + nextpattern + ",";
+	            }
+	            // removing the last comma from the string
+	            pattern = pattern.substring(0,pattern.length()-1);
             }
-            // removing the last comma from the string
-            pattern = pattern.substring(0,pattern.length()-1);
+
             PathFilter filter = new PathFilter("", pattern, log);
             zipFile = CxZipUtils.getZippedSources(config, filter, sourceDir, log);
         }
