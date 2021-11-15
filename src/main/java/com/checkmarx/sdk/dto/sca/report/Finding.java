@@ -1,6 +1,8 @@
 package com.checkmarx.sdk.dto.sca.report;
 
 import com.checkmarx.sdk.dto.scansummary.Severity;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,5 +28,7 @@ public class Finding implements Serializable {
     private String packageId;
     private String similarityId;
     private String fixResolutionText;
+
+    @JsonProperty(value="isIgnored")
     private boolean isIgnored;
 }
