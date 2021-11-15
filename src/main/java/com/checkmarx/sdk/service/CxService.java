@@ -2365,4 +2365,10 @@ public class CxService implements CxClient {
     public CxPropertiesBase getCxPropertiesBase() {
         return cxProperties;
     }
+
+	@Override
+	public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException {
+		// TODO Auto-generated method stub
+		
+	}
 }
