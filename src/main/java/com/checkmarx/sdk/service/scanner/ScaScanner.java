@@ -203,6 +203,7 @@ public class ScaScanner extends AbstractScanner {
     }
 
     protected void setRemoteBranch(ScanParams scanParams, RemoteRepositoryInfo remoteRepoInfo) {
-       //branches are not supported for SCA
+       //branches are supported for SCA
+        remoteRepoInfo.setBranch(scanParams.getBranch());
     }
 }
