@@ -137,12 +137,12 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     @Override
     protected HandlerRef getBranchToScan(RemoteRepositoryInfo repoInfo) {
         if (StringUtils.isNotEmpty(repoInfo.getBranch())) {
-            // If we pass the branch to start scan API, the API will return an error:
-            // "Git references (branch, commit ID, etc.) are not yet supported."
-            //
-            // We can't just ignore the branch, because it will lead to confusion.
-            String message = String.format("Branch specification is not yet supported by %s.", getScannerDisplayName());
-            throw new ScannerRuntimeException(message);
+            
+           HandlerRef ref = new HandlerRef();
+            ref.setType("branch");
+            ref.setValue(repoInfo.getBranch());
+            return ref;
+
         }
         return null;
     }
@@ -857,9 +857,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             RemoteRepositoryInfo repoInfo = config.getRemoteRepositoryInfo();
             if (repoInfo == null && config.getSourceLocationType() == SourceLocationType.REMOTE_REPOSITORY) {
                 error = "%s remote repository info must be provided.";
-            } else if (repoInfo != null && StringUtils.isNotEmpty(repoInfo.getBranch())) {
-                error = "%s doesn't support specifying custom branches. It currently uses the default branch of a repo.";
-            }
+            } 
         }
 
         if (error != null) {
