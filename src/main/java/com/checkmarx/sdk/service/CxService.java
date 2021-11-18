@@ -1706,10 +1706,39 @@ public class CxService implements CxClient {
             }
         }
         if (!projectExistedBeforeScan || cxProperties.getSettingsOverride()) {
+            log.debug("Updating project...");
             Integer presetId = getPresetId(params.getScanPreset());
             Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
             createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
+            if (params.getCustomFields() != null && !params.getCustomFields().isEmpty()) {
+                List<CxCustomField> fieldDefinitions = getCustomFields();
+                List<CxProject.CustomField> customFields = new ArrayList<>();
+                for (Map.Entry<String, String> entry : params.getCustomFields().entrySet()) {
+                    boolean matched = false;
+                    for (CxCustomField fieldDefinition : fieldDefinitions) {
+                        if (fieldDefinition.getName().equalsIgnoreCase(entry.getKey())) {
+                            matched = true;
+                            CxProject.CustomField customField = new CxProject.CustomField();
+                            customField.setId(fieldDefinition.getId());
+                            customField.setName(fieldDefinition.getName());
+                            customField.setValue(entry.getValue());
+                            customFields.add(customField);
+                        }
+                    }
+                    if (!matched) {
+                        log.warn("{}: ignoring unrecognised custom field", entry.getKey());
+                    }
+                }
+                CxProject cxProject = CxProject.builder()
+                        .id(projectId)
+                        .name(params.getProjectName())
+                        .teamId(teamId)
+                        .customFields(customFields)
+                        .build();
+                log.debug("cxProject: {}", cxProject);
+                updateProjectCustomFields(cxProject);
+            }
         }        
         prepareSources(params, projectId);
         if(params.isIncremental() && projectExistedBeforeScan) {
