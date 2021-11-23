@@ -188,6 +188,11 @@ public class CxScanParams {
         return this;
     }
 
+    public CxScanParams withSshKeyIdentifier(String sshKeyIdentifier) {
+        this.sshKeyIdentifier = sshKeyIdentifier;
+        return this;
+    }
+
     public CxScanParams withIsPublic(boolean isPublic) {
         this.isPublic = isPublic;
         return this;

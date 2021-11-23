@@ -1209,6 +1209,7 @@ public class CxService implements CxClient {
             if( MapUtils.isNotEmpty(cxProperties.getSshKeyList()) && !StringUtils.isEmpty(cxProperties.getSshKeyList().get(params.getSshKeyIdentifier()))) {
            	 log.debug("Using SSH Key configured for the repository.");
             	sshKey = cxProperties.getSshKeyList().get(params.getSshKeyIdentifier());
+                cxProperties.setSshKey(sshKey);
             }else {
             	throw new CheckmarxException("SSH Key corresponding to the identifier configured for the repository is not found.");
             }
