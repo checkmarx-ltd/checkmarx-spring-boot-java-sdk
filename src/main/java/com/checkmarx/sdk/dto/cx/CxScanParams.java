@@ -21,6 +21,7 @@ public class CxScanParams {
     private Type sourceType = Type.GIT;
     private String gitUrl;
     private String branch;
+    private String sshKeyIdentifier;
     private String filePath; //Only used if Type.FILE is used
     //TODO add custom fields
     private Map<String, String> customFields;
@@ -174,8 +175,21 @@ public class CxScanParams {
         this.scanPresetId = scanPresetId;
     }
 
+    public void setSshKeyIdentifier(String sshKeyIdentifier) {
+        this.sshKeyIdentifier = sshKeyIdentifier;
+    }
+
+    public String getSshKeyIdentifier() {
+        return sshKeyIdentifier;
+    }
+
     public CxScanParams withIncremental(boolean incremental) {
         this.incremental = incremental;
+        return this;
+    }
+
+    public CxScanParams withSshKeyIdentifier(String sshKeyIdentifier) {
+        this.sshKeyIdentifier = sshKeyIdentifier;
         return this;
     }
 

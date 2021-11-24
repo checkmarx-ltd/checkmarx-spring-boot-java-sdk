@@ -1203,12 +1203,22 @@ public class CxService implements CxClient {
         return contentBuilder.toString();
     }
 
-    private String getSshKey() {
+    private String getSshKey(CxScanParams params) throws CheckmarxException {
         String sshKey = "";
+        if(!StringUtils.isEmpty(params.getSshKeyIdentifier())){
+            if( MapUtils.isNotEmpty(cxProperties.getSshKeyList()) && !StringUtils.isEmpty(cxProperties.getSshKeyList().get(params.getSshKeyIdentifier()))) {
+           	 log.debug("Using SSH Key configured for the repository.");
+            	sshKey = cxProperties.getSshKeyList().get(params.getSshKeyIdentifier());
+                cxProperties.setSshKey(sshKey);
+            }else {
+            	throw new CheckmarxException("SSH Key corresponding to the identifier configured for the repository is not found.");
+            }
+        }
         if(cxProperties.getSshKey() != null) {
             // THe readString() method is much nicer but not introduced until Java 11
             // Path fileName = Path.of(cxProperties.getSshKey());
             // sshKey = Files.readString(fileName);
+        	 log.debug("Using SSH Key configured at the CxFlow server level.");
             sshKey = readKeyFile(cxProperties.getSshKey());
         }
         return sshKey;
@@ -1228,8 +1238,8 @@ public class CxService implements CxClient {
     /**
      * Set Repository details for a project
      */
-    public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException {
-        String sshKey = getSshKey();
+    public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch, CxScanParams params) throws CheckmarxException {
+        String sshKey = getSshKey(params);
         CxProjectSource projectSource;        
         if(sshKey.length() > 0) {
             projectSource = CxProjectSource.builder()                
@@ -1769,7 +1779,7 @@ public class CxService implements CxClient {
                 uploadProjectSource(projectId, new File(clonedRepoPath));
                 params.setFilePath(clonedRepoPath);
             }else {
-                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch());
+                setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch(), params);
             }
         }
     }
@@ -2356,4 +2366,10 @@ public class CxService implements CxClient {
     public CxPropertiesBase getCxPropertiesBase() {
         return cxProperties;
     }
+
+	@Override
+	public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException {
+		// TODO Auto-generated method stub
+		
+	}
 }
