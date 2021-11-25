@@ -53,6 +53,8 @@ public class CxProperties extends CxPropertiesBase{
 
     private Map<String, String> customStateMap;
 
+    private Map<String, String> sshKeyList;
+
     /*
      * If set to true, group results by vulnerability, filename and
      * severity (by default, results are grouped only by vulnerability
@@ -282,6 +284,14 @@ public class CxProperties extends CxPropertiesBase{
 
     public void setGroupBySeverity(Boolean groupBySeverity) {
 	this.groupBySeverity = groupBySeverity;
+    }
+
+    public Map<String, String> getSshKeyList() {
+        return sshKeyList;
+    }
+
+    public void setSshKeyList(Map<String, String> sshKeyList) {
+        this.sshKeyList = sshKeyList;
     }
 }
 
