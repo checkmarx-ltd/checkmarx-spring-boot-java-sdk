@@ -21,6 +21,7 @@ public class CxScanParams {
     private Type sourceType = Type.GIT;
     private String gitUrl;
     private String branch;
+    private String defaultBranch;
     private String sshKeyIdentifier;
     private String filePath; //Only used if Type.FILE is used
     //TODO add custom fields
@@ -143,6 +144,14 @@ public class CxScanParams {
         this.branch = branch;
     }
 
+    public String getDefaultBranch() {
+        return defaultBranch;
+    }
+
+    public void setDefaultBranch(String defaultBranch) {
+        this.defaultBranch = defaultBranch;
+    }
+
     public String getFilePath() {
         return filePath;
     }
@@ -245,6 +254,11 @@ public class CxScanParams {
 
     public CxScanParams withBranch(String branch) {
         this.branch = branch;
+        return this;
+    }
+
+    public CxScanParams withDefaultBranch(String defaultBranch) {
+        this.defaultBranch = defaultBranch;
         return this;
     }
 
