@@ -1728,7 +1728,7 @@ public class CxService implements CxClient {
             if(!baseProjectId.equals(UNKNOWN_INT) && cxProperties.getCxBranch()) {
                 projectId = branchProject(baseProjectId, params.getProjectName());
             }
-            if(baseProjectId.equals(UNKNOWN_INT)) {
+            if(baseProjectId.equals(UNKNOWN_INT) || !cxProperties.getCxBranch()) {
                 projectId = createProject(teamId, params.getProjectName());
             }
             if (projectId.equals(UNKNOWN_INT)) {
