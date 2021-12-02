@@ -55,6 +55,8 @@ public class CxProperties extends CxPropertiesBase{
 
     private Map<String, String> sshKeyList;
 
+    private Boolean cxBranch = false;
+
     /*
      * If set to true, group results by vulnerability, filename and
      * severity (by default, results are grouped only by vulnerability
@@ -292,6 +294,14 @@ public class CxProperties extends CxPropertiesBase{
 
     public void setSshKeyList(Map<String, String> sshKeyList) {
         this.sshKeyList = sshKeyList;
+    }
+
+    public Boolean getCxBranch() {
+        return cxBranch;
+    }
+
+    public void setCxBranch(Boolean cxBranch) {
+        this.cxBranch = cxBranch;
     }
 }
 
