@@ -1705,6 +1705,7 @@ public class CxService implements CxClient {
     @Override
     public Integer createScan(CxScanParams params, String comment) throws CheckmarxException{
         log.info("Creating scan...");
+        log.debug("Creating scan with params: {} and comment: \"{}\"", params, comment);
         validateScanParams(params);
         String teamId = determineTeamId(params);
         Integer projectId = determineProjectId(params, teamId);
@@ -1793,7 +1794,9 @@ public class CxService implements CxClient {
                 .forceScan(params.isForceScan())
                 .isPublic(params.isPublic())
                 .comment(comment)
+                .customFields(params.getScanCustomFields())
                 .build();
+        log.debug("scan: {}", scan);
 
         HttpHeaders headers = authClient.createAuthHeaders();
         headers.add(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);

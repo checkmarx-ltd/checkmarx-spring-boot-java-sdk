@@ -32,6 +32,8 @@ public class CxConfig implements Serializable {
     private String policy;
     @JsonProperty("customFields")
     private Map<String, String> customFields;
+    @JsonProperty("scanCustomFields")
+    private Map<String, String> scanCustomFields;
     @JsonProperty("sast")
     private Sast sast;
     @JsonProperty("osa")
@@ -129,6 +131,16 @@ public class CxConfig implements Serializable {
     @JsonProperty("customFields")
     public void setCustomFields(Map<String, String> customFields) {
         this.customFields = customFields;
+    }
+
+    @JsonProperty("scanCustomFields")
+    public Map<String, String> getScanCustomFields() {
+        return scanCustomFields;
+    }
+
+    @JsonProperty("scanCustomFields")
+    public void setScanCustomFields(Map<String, String> scanCustomFields) {
+        this.scanCustomFields = scanCustomFields;
     }
 
     @JsonProperty("sast")
