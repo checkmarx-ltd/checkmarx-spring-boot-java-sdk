@@ -1711,7 +1711,27 @@ public class CxService implements CxClient {
         Integer projectId = determineProjectId(params, teamId);
         boolean projectExistedBeforeScan = !projectId.equals(UNKNOWN_INT);
         if (!projectExistedBeforeScan) {
-            projectId = createProject(teamId, params.getProjectName());
+            Integer baseProjectId = UNKNOWN_INT;
+            /*
+             When projectId = UNKNOWN_INT i.e -1, the below code checks if the current branch
+             and the default branch are equal or not. When the branches are not equal the code tries to retrieve the base
+             project id i.e. baseProjectId, if the value of baseProjectId != UNKNOWN_INT and the value of cxBranch property
+             is true then a branched project is created from the base project.
+             If the baseProjectId = UNKNOWN_INT then there was no base project present and a new normal project is created.
+             And if the default and current branches are same then a normal project is created.
+             */
+            if(!params.getBranch().equals(params.getDefaultBranch())) {
+                String currentBranch = params.getBranch().replace("refs/heads/","");
+                String defaultBranch = params.getDefaultBranch().replace("refs/heads/","");
+                String derivedProjectName = params.getProjectName().replace(currentBranch,defaultBranch);
+                baseProjectId = getProjectId(teamId,derivedProjectName);
+            }
+            if(!baseProjectId.equals(UNKNOWN_INT) && cxProperties.getCxBranch()) {
+                projectId = branchProject(baseProjectId, params.getProjectName());
+            }
+            if(baseProjectId.equals(UNKNOWN_INT) || !cxProperties.getCxBranch()) {
+                projectId = createProject(teamId, params.getProjectName());
+            }
             if (projectId.equals(UNKNOWN_INT)) {
                 throw new CheckmarxException("Project was not created successfully: ".concat(params.getProjectName()));
             }
