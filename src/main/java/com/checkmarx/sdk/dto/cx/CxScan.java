@@ -2,13 +2,15 @@ package com.checkmarx.sdk.dto.cx;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import java.util.Map;
 
 @JsonPropertyOrder({
         "projectId",
         "isIncremental",
         "isPublic",
         "forceScan",
-        "comment"
+        "comment",
+        "customFields"
 })
 
 public class CxScan {
@@ -22,14 +24,17 @@ public class CxScan {
     public Boolean forceScan;
     @JsonProperty("comment")
     public String comment;
+    @JsonProperty("customFields")
+    public Map<String, String> customFields;
 
-    @java.beans.ConstructorProperties({"projectId", "isIncremental", "isPublic", "forceScan", "comment"})
-    CxScan(Integer projectId, Boolean isIncremental, Boolean isPublic, Boolean forceScan, String comment) {
+    @java.beans.ConstructorProperties({"projectId", "isIncremental", "isPublic", "forceScan", "comment", "customFields"})
+    CxScan(Integer projectId, Boolean isIncremental, Boolean isPublic, Boolean forceScan, String comment, Map<String, String> customFields) {
         this.projectId = projectId;
         this.isIncremental = isIncremental;
         this.isPublic = isPublic;
         this.forceScan = forceScan;
         this.comment = comment;
+        this.customFields = customFields;
     }
 
     public static CxScanBuilder builder() {
@@ -56,6 +61,10 @@ public class CxScan {
         return this.comment;
     }
 
+    public Map<String, String> getCustomFields() {
+        return this.customFields;
+    }
+
     public void setProjectId(Integer projectId) {
         this.projectId = projectId;
     }
@@ -76,8 +85,18 @@ public class CxScan {
         this.comment = comment;
     }
 
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
+    }
+
     public String toString() {
-        return "CxScan(projectId=" + this.getProjectId() + ", isIncremental=" + this.getIsIncremental() + ", isPublic=" + this.getIsPublic() + ", forceScan=" + this.getForceScan() + ", comment=" + this.getComment() + ")";
+        return "CxScan(projectId=" + this.getProjectId() +
+                ", isIncremental=" + this.getIsIncremental() +
+                ", isPublic=" + this.getIsPublic() +
+                ", forceScan=" + this.getForceScan() +
+                ", comment=" + this.getComment() +
+                ", customFields=" + this.getCustomFields() +
+                ")";
     }
 
     public static class CxScanBuilder {
@@ -86,6 +105,7 @@ public class CxScan {
         private Boolean isPublic;
         private Boolean forceScan;
         private String comment;
+        private Map<String, String> customFields;
 
         CxScanBuilder() {
         }
@@ -115,12 +135,23 @@ public class CxScan {
             return this;
         }
 
+        public CxScan.CxScanBuilder customFields(Map<String, String> customFields) {
+            this.customFields = customFields;
+            return this;
+        }
+
         public CxScan build() {
-            return new CxScan(projectId, isIncremental, isPublic, forceScan, comment);
+            return new CxScan(projectId, isIncremental, isPublic, forceScan, comment, customFields);
         }
 
         public String toString() {
-            return "CxScan.CxScanBuilder(projectId=" + this.projectId + ", isIncremental=" + this.isIncremental + ", isPublic=" + this.isPublic + ", forceScan=" + this.forceScan + ", comment=" + this.comment + ")";
+            return "CxScan.CxScanBuilder(projectId=" + this.projectId +
+                    ", isIncremental=" + this.isIncremental +
+                    ", isPublic=" + this.isPublic +
+                    ", forceScan=" + this.forceScan +
+                    ", comment=" + this.comment +
+                    ", customFields=" + this.customFields +
+                    ")";
         }
     }
 }

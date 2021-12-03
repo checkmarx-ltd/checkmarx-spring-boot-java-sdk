@@ -26,6 +26,7 @@ public class CxScanParams {
     private String filePath; //Only used if Type.FILE is used
     //TODO add custom fields
     private Map<String, String> customFields;
+    private Map<String, String> scanCustomFields;
     //TODO add add post actions
     private String postAction;
 
@@ -110,6 +111,14 @@ public class CxScanParams {
 
     public void setCustomFields(Map<String, String> customFields) {
         this.customFields = customFields;
+    }
+
+    public Map<String, String> getScanCustomFields() {
+        return scanCustomFields;
+    }
+
+    public void setScanCustomFields(Map<String, String> scanCustomFields) {
+        this.scanCustomFields = scanCustomFields;
     }
 
     public String getPostAction() {
@@ -237,6 +246,11 @@ public class CxScanParams {
         return this;
     }
 
+    public CxScanParams withScanCustomFields(Map<String, String> scanCustomFields) {
+        this.scanCustomFields = scanCustomFields;
+        return this;
+    }
+
     public CxScanParams withPostAction(String postAction) {
         this.postAction = postAction;
         return this;
@@ -337,6 +351,7 @@ public class CxScanParams {
                 ", gitUrl='" + gitUrl + '\'' +
                 ", filePath='" + filePath + '\'' +
                 ", customFields=" + customFields +
+                ", scanCustomFields=" + scanCustomFields +
                 ", postAction='" + postAction + '\'' +
                 '}';
     }
