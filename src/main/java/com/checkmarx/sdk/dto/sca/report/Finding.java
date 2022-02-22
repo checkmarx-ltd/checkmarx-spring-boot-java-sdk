@@ -31,4 +31,6 @@ public class Finding implements Serializable {
 
     @JsonProperty(value="isIgnored")
     private boolean isIgnored;
+    @JsonProperty(value="isViolatingPolicy")
+    private boolean isViolatingPolicy;
 }
