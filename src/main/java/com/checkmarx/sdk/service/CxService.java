@@ -1261,6 +1261,7 @@ public class CxService implements CxClient {
             restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_SOURCE), HttpMethod.POST, requestEntity, String.class, projectId);
         } catch (HttpStatusCodeException e) {
             log.error("Error occurred while updating Project source info for project {}.", projectId);
+            log.debug(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException("Error occurred while adding source details to project.  Please ensure GIT is defined within Checkmarx");
         }
     }
