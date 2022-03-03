@@ -13,6 +13,7 @@ import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
 import com.checkmarx.sdk.exception.CxHTTPClientException;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.CxRepoFileHelper;
+import com.checkmarx.sdk.utils.ScanUtils;
 import com.checkmarx.sdk.utils.State;
 import com.checkmarx.sdk.utils.UrlUtils;
 import com.checkmarx.sdk.utils.sca.CxSCAFileSystemUtils;
@@ -71,6 +72,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final String LATEST_SCAN = RISK_MANAGEMENT_API + "riskReports?size=1&projectId=%s";
     private static final String WEB_REPORT = "/#/projects/%s/reports/%s";
     private static final String RESOLVING_CONFIGURATION_API = "/settings/projects/%s/resolving-configuration";
+    private static final String REPORT_IN_XML_WITH_SCANID = RISK_MANAGEMENT_API + "risk-reports/%s/export?format=xml";
 
     private static final String REPORT_SCA_PACKAGES = "cxSCAPackages";
     private static final String REPORT_SCA_FINDINGS = "cxSCAVulnerabilities";
@@ -695,6 +697,19 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             List<String> scanViolatedPolicies = getScanViolatedPolicies(policyEvaluationsByReportId);
             result.setPolicyViolated(!scanViolatedPolicies.isEmpty());
             result.setViolatedPolicies(scanViolatedPolicies);
+
+            if(scaProperties.isPreserveXml()){
+                String path = String.format(REPORT_IN_XML_WITH_SCANID, URLEncoder.encode(scanId, ENCODING));
+                String xml = httpClient.getRequest(path,
+                        ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                        String.class,
+                        HttpStatus.SC_OK,
+                        "CxSCA findings",
+                        false);
+                xml = xml.trim().replaceFirst("^([\\W]+)<", "<");
+                String xml2 = ScanUtils.cleanStringUTF8_2(xml);
+                result.setOutput(xml2);
+            }
 
             log.info("Retrieved SCA results successfully.");
         } catch (IOException e) {
