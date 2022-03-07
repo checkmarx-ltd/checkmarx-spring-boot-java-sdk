@@ -4,12 +4,15 @@ import com.checkmarx.sdk.config.ContentType;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.*;
+import com.checkmarx.sdk.dto.ast.ASTResults;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.sca.*;
-import com.checkmarx.sdk.dto.sca.report.Finding;
+import com.checkmarx.sdk.dto.sca.report.*;
 import com.checkmarx.sdk.dto.sca.report.Package;
-import com.checkmarx.sdk.dto.sca.report.PolicyEvaluation;
-import com.checkmarx.sdk.dto.sca.report.ScaSummaryBaseFormat;
+import com.checkmarx.sdk.dto.sca.xml.*;
+import com.checkmarx.sdk.dto.scansummary.Severity;
+import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CxHTTPClientException;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.utils.CxRepoFileHelper;
@@ -30,8 +33,10 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -41,6 +46,11 @@ import org.apache.http.entity.StringEntity;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.stream.XMLInputFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -85,6 +95,9 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
 
     public static final String CX_REPORT_LOCATION = File.separator + "Checkmarx" + File.separator + "Reports";
+
+    public static final String ERROR_WITH_XML_REPORT = "Error with XML report";
+    public static final String ERROR_PROCESSING_SCAN_RESULTS = "Error while processing scan results";
 
     private static final ObjectMapper caseInsensitiveObjectMapper = new ObjectMapper()
             // Ignore any fields that can be added to SCA API in the future.
@@ -548,6 +561,306 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             httpClient.close();
         }
     }
+
+    @Override
+    public ScanResults getReportContent(File file, FilterConfiguration filter) throws CheckmarxException {
+        SCAResults scaResult=new SCAResults();
+        ScanResults result = null;
+        if (file == null) {
+            throw new CheckmarxException("File not provided for processing of results");
+        }
+        try {
+
+            /* protect against XXE */
+            JAXBContext jc = JAXBContext.newInstance(SCARiskReportType.class);
+            XMLInputFactory xif = XMLInputFactory.newInstance();
+            xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+            xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+            xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
+            Unmarshaller unmarshaller = jc.createUnmarshaller();
+
+            List<ScanResults.XIssue> issueList = new ArrayList<>();
+            JAXBElement<SCARiskReportType> event = (JAXBElement<SCARiskReportType>)unmarshaller.unmarshal(file);
+            SCARiskReportType scaResults = event.getValue();
+            ScanResults.ScanResultsBuilder scaScanBuilder = ScanResults.builder();
+
+            RiskReportSummaryType iskReportSummaryType=scaResults.getRiskReportSummary();
+
+            PackagesType packagesType=scaResults.getPackages();
+
+            VulnerabilitiesType vulnerabilitiesType=scaResults.getVulnerabilities();
+
+            LicensesType licensesType=scaResults.getLicenses();
+
+            PoliciesType policiesType=scaResults.getPolicies();
+
+            this.scanId = extractScanIdFromFile(file);
+            this.projectId=iskReportSummaryType.getProjectId();
+
+            scaResult =getLatestScaResults(iskReportSummaryType,packagesType,vulnerabilitiesType,licensesType,policiesType) ;
+
+            scaResult.setScanId(scanId);
+
+            AstScaResults internalResults = new AstScaResults(new SCAResults(), new ASTResults());
+
+            result = toScanResults(scaResult);
+
+
+
+            return result;
+
+        } catch (JAXBException e) {
+            log.error(ERROR_WITH_XML_REPORT);
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException(ERROR_PROCESSING_SCAN_RESULTS);
+        } catch (NullPointerException e) {
+            log.info("Null error");
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException(ERROR_PROCESSING_SCAN_RESULTS);
+        }
+    }
+
+    private ScanResults toScanResults(SCAResults scaResult) {
+        return ScanResults.builder()
+                .scaResults(scaResult)
+                .build();
+    }
+
+    private SCAResults getLatestScaResults(RiskReportSummaryType iskReportSummaryType, PackagesType packagesType, VulnerabilitiesType vulnerabilitiesType, LicensesType licensesType, PoliciesType policiesType) {
+        SCAResults result = new SCAResults();
+        try {
+            log.info("Getting latest scan results.");
+            result = tryGetScaResults(iskReportSummaryType,packagesType,vulnerabilitiesType,licensesType,policiesType).orElse(null);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            result.setException(new ScannerRuntimeException("Error getting latest scan results.", e));
+        }
+        return result;
+    }
+
+    private Optional<SCAResults> tryGetScaResults(RiskReportSummaryType iskReportSummaryType, PackagesType packagesType, VulnerabilitiesType vulnerabilitiesType, LicensesType licensesType, PoliciesType policiesType) {
+        SCAResults result = null;
+        if (result==null) {
+            result = getScaResults(iskReportSummaryType,packagesType,vulnerabilitiesType,licensesType,policiesType);
+        } else {
+            log.info("Unable to get scan results");
+        }
+        return Optional.ofNullable(result);
+    }
+
+    private SCAResults getScaResults(RiskReportSummaryType riskReportSummaryType, PackagesType packagesType, VulnerabilitiesType vulnerabilitiesType, LicensesType licensesType, PoliciesType policiesType) {
+        SCAResults result;
+        ScaSummaryBaseFormat summaryBaseFormat=new ScaSummaryBaseFormat();
+        List<Package> packages = null;
+        log.debug("Getting results for scan ID {}", scanId);
+        try {
+            result = new SCAResults();
+            result.setScanId(this.scanId);
+
+            summaryBaseFormat = getScaSummaryReport(riskReportSummaryType,summaryBaseFormat);
+
+            printSummary(summaryBaseFormat, this.scanId);
+
+            ModelMapper mapper = new ModelMapper();
+            Summary summary = mapper.map(summaryBaseFormat, Summary.class);
+            Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summaryBaseFormat);
+	        summary.setFindingCounts(findingCountsPerSeverity);
+            result.setSummary(summary);
+
+            List<Finding> findings = getScaFindings(vulnerabilitiesType);          
+            result.setFindings(findings);
+
+            packages = getScaPackages(packagesType,packages);
+            
+            result.setPackages(packages);
+
+            String reportLink = getWebReportLink(config.getScaConfig().getWebAppUrl());
+            result.setWebReportLink(reportLink);
+            printWebReportLink(result);
+            result.setScaResultReady(true);
+
+            List<PolicyEvaluation> policyEvaluationsByReport = getScaPolicyEvaluationByReport(policiesType);
+            List<String> scanViolatedPolicies = getScanViolatedPolicies(policyEvaluationsByReport);
+            
+	        result.setPolicyViolated(!scanViolatedPolicies.isEmpty());
+            result.setViolatedPolicies(scanViolatedPolicies);
+
+            log.info("Retrieved SCA results successfully.");
+        } catch (Exception e) {
+            throw new ScannerRuntimeException("Error retrieving CxSCA scan results.", e);
+        }
+        return result;
+    }
+
+    private List<PolicyEvaluation> getScaPolicyEvaluationByReport(PoliciesType policiesType) {
+
+        PolicyEvaluation policyEvaluation=new PolicyEvaluation();
+        PolicyAction policyAction=new PolicyAction();
+
+        List<PolicyEvaluation> policyEvaluationList=new ArrayList<>();
+
+        for(int count=0;count<policiesType.getPolicy().size();count++)
+        {
+            policyEvaluation.setName(policiesType.getPolicy().get(count).getPolicyName());
+            policyEvaluation.setViolated(Boolean.parseBoolean(policiesType.getPolicy().get(count).getIsViolating()));
+            policyAction.setBreakBuild(Boolean.parseBoolean(policiesType.getPolicy().get(count).getBreakBuild()));
+            policyEvaluation.setActions(policyAction);
+            policyEvaluationList.add(policyEvaluation);
+            policyEvaluation=new PolicyEvaluation();
+        }
+
+        return policyEvaluationList;
+    }
+
+    private List<Package> getScaPackages(PackagesType packagesType, List<Package> packages) {
+
+        List<PackageType> packageTypeList=packagesType.getPackage();
+        Package packge=new Package();
+        packages=new ArrayList<>();
+
+        List<String> licenses =null;
+        for (int count=0;count<packageTypeList.size();count++)
+        {
+            packge.setId(packageTypeList.get(count).getId());
+            packge.setName(packageTypeList.get(count).getName());
+            packge.setVersion(packageTypeList.get(count).getVersion());
+            packge.setMatchType(packageTypeList.get(count).getMatchType());
+            packge.setHighVulnerabilityCount(packageTypeList.get(count).getHighVulnerabilityCount());
+            packge.setLowVulnerabilityCount(packageTypeList.get(count).getLowVulnerabilityCount());
+            packge.setMediumVulnerabilityCount(packageTypeList.get(count).getMediumVulnerabilityCount());
+            packge.setNumberOfVersionsSinceLastUpdate(packageTypeList.get(count).getNumberOfVersionsSinceLastUpdate());
+            packge.setNewestVersion(packageTypeList.get(count).getNewestVersion());
+            packge.setOutdated(Boolean.parseBoolean(packageTypeList.get(count).getOutdated()));
+            packge.setReleaseDate(packageTypeList.get(count).getReleaseDate().toString());
+            packge.setRiskScore(packageTypeList.get(count).getRiskScore());
+            PackageSeverity severity=scaToScanPackageSeverity(packageTypeList.get(count).getSeverity());
+            packge.setSeverity(severity);
+            packge.setLocations(packageTypeList.get(count).getLocations().getLocation());
+            packge.setPackageRepository(packageTypeList.get(count).getPackageRepository());
+            packge.setDirectDependency(Boolean.parseBoolean(packageTypeList.get(count).getIsDirectDependency()));
+            packge.setDevelopment(Boolean.parseBoolean(packageTypeList.get(count).getIsDevelopmentDependency()));
+
+            LicensesType licensesType=packageTypeList.get(count).getLicenses();
+
+            licenses = new ArrayList<>();
+
+            for(int licensesTypeCount=0;licensesTypeCount<licensesType.getLicense().size();licensesTypeCount++)
+            {
+                licenses.add(licensesType.getLicense().get(licensesTypeCount).getContent().toString());
+
+                packge.setLicenses(licenses);
+            }
+            packages.add(packge);
+            packge= new Package();
+        }
+        return packages;
+
+    }
+
+    private PackageSeverity scaToScanPackageSeverity(String severity) {
+
+        PackageSeverity scaPackageSeverity = null;
+
+        switch (severity)
+        {
+            case "High":
+                scaPackageSeverity = PackageSeverity.HIGH;
+                break;
+
+            case "Medium":
+                scaPackageSeverity = PackageSeverity.MEDIUM;
+                break;
+
+            case "Low":
+                scaPackageSeverity = PackageSeverity.LOW;
+                break;
+            case "None":
+                scaPackageSeverity = PackageSeverity.NONE;
+                break;
+            default:
+                break;
+        }
+        return scaPackageSeverity;
+    }
+
+
+
+    private List<Finding> getScaFindings(VulnerabilitiesType vulnerabilitiesType) {
+        Finding finding=new Finding();
+        List<Finding> findingList=new ArrayList<>();
+        List<String> references = new ArrayList<>();
+        List<String> reference = new ArrayList<>();
+        for(int count=0;count<vulnerabilitiesType.getVulnerability().size();count++)
+        {
+            finding.setId(vulnerabilitiesType.getVulnerability().get(count).getId());
+            finding.setCveName(vulnerabilitiesType.getVulnerability().get(count).getCveName());
+            finding.setScore(vulnerabilitiesType.getVulnerability().get(count).getScore());
+            references=vulnerabilitiesType.getVulnerability().get(count).getReferences().getReference();
+            reference = new ArrayList<>();
+            for(int referenceCount=0;referenceCount<references.size();referenceCount++)
+            {
+                reference.add(references.get(referenceCount));
+                finding.setReferences(reference);
+            }
+            Severity severity=scaToScanResultSeverity(vulnerabilitiesType.getVulnerability().get(count).getSeverity());
+            finding.setSeverity(severity);
+            finding.setPublishDate(vulnerabilitiesType.getVulnerability().get(count).getPublishDate().toString());
+            finding.setCveName(vulnerabilitiesType.getVulnerability().get(count).getCveName());
+            finding.setDescription(vulnerabilitiesType.getVulnerability().get(count).getDescription());
+            finding.setRecommendations(vulnerabilitiesType.getVulnerability().get(count).getRecommendations());
+            finding.setPackageId(vulnerabilitiesType.getVulnerability().get(count).getPackageId());
+            finding.setIgnored(Boolean.parseBoolean(vulnerabilitiesType.getVulnerability().get(count).getIsIgnored()));
+            finding.setViolatingPolicy(Boolean.parseBoolean(vulnerabilitiesType.getVulnerability().get(count).getIsViolatingPolicy()));
+            finding.setFixResolutionText(String.valueOf(vulnerabilitiesType.getVulnerability().get(count).getFixResolutionText()));
+            findingList.add(finding);
+            finding=new Finding();
+        }
+
+        return findingList;
+    }
+
+    private Severity scaToScanResultSeverity(String severity) {
+        Severity scaSeverity = null;
+        switch (severity) {
+            case "High":
+                scaSeverity = Severity.HIGH;
+                break;
+
+            case "Medium":
+                scaSeverity = Severity.MEDIUM;
+                break;
+
+            case "Low":
+                scaSeverity = Severity.LOW;
+                break;
+            default:
+                break;
+
+        }
+
+        return scaSeverity;
+    }
+
+    private ScaSummaryBaseFormat getScaSummaryReport(RiskReportSummaryType riskReportSummaryType, ScaSummaryBaseFormat scaSummaryBaseFormat) {
+        scaSummaryBaseFormat.setDirectPackages(riskReportSummaryType.getDirectPackages());
+        scaSummaryBaseFormat.setRiskScore(riskReportSummaryType.getRiskScore());
+        scaSummaryBaseFormat.setTotalPackages(riskReportSummaryType.getTotalPackages());
+        scaSummaryBaseFormat.setTotalOutdatedPackages(riskReportSummaryType.getTotalOutdatedPackages());
+        scaSummaryBaseFormat.setCreatedOn(riskReportSummaryType.getCreatedOn().toString());
+        scaSummaryBaseFormat.setHighVulnerabilityCount(riskReportSummaryType.getHighVulnerabilityCount());
+        scaSummaryBaseFormat.setLowVulnerabilityCount(riskReportSummaryType.getLowVulnerabilityCount());
+        scaSummaryBaseFormat.setMediumVulnerabilityCount(riskReportSummaryType.getMediumVulnerabilityCount());
+
+        return scaSummaryBaseFormat;
+    }
+
+
+
+    private String extractScanIdFromFile(File file) {
+        String scanId = FilenameUtils.getName(file.toString());
+        return scanId;
+    }
+
 
     /**
      * The following config properties are used:

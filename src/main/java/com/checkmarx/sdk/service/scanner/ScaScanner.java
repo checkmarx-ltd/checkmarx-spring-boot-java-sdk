@@ -112,7 +112,7 @@ public class ScaScanner extends AbstractScanner {
      * Convert scanParams to an object that is used by underlying logic in Common Client.
      */
     @Override
-    protected RestClientConfig getScanConfig(ScanParams scanParams) {
+    public RestClientConfig getScanConfig(ScanParams scanParams) {
         RestClientConfig restClientConfig = new RestClientConfig();
         restClientConfig.setProjectName(scanParams.getProjectName());
         restClientConfig.setDisableCertificateValidation(scanParams.isDisableCertificateValidation());
