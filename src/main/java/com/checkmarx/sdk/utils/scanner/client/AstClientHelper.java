@@ -3,8 +3,6 @@ package com.checkmarx.sdk.utils.scanner.client;
 import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.ast.*;
 import com.checkmarx.sdk.dto.ast.report.Finding;
-import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
-import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import com.checkmarx.sdk.config.AstConfig;
 import com.checkmarx.sdk.dto.ast.report.*;
@@ -30,7 +28,6 @@ import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.springframework.web.client.RestClientException;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -508,11 +505,6 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
     @Override
     public void close() {
         Optional.ofNullable(httpClient).ifPresent(CxHttpClient::close);
-    }
-
-    @Override
-    public ScanResults getReportContent(File file, FilterConfiguration filter) throws CheckmarxException {
-        return null;
     }
 
     private void validate(ScanConfigBase astScaSastConfig) {
