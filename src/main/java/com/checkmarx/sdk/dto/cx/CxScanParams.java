@@ -23,6 +23,7 @@ public class CxScanParams {
     private String branch;
     private String defaultBranch;
     private String sshKeyIdentifier;
+    private Boolean preserveProjectName;
     private String filePath; //Only used if Type.FILE is used
     //TODO add custom fields
     private Map<String, String> customFields;
@@ -201,6 +202,10 @@ public class CxScanParams {
         return sshKeyIdentifier;
     }
 
+    public Boolean getPreserveProjectName() { return preserveProjectName; }
+
+    public void setPreserveProjectName(Boolean preserveProjectName) { this.preserveProjectName = preserveProjectName; }
+
     public CxScanParams withIncremental(boolean incremental) {
         this.incremental = incremental;
         return this;
@@ -309,6 +314,11 @@ public class CxScanParams {
 
     public CxScanParams scanPresetId(final Integer scanPresetId) {
         this.scanPresetId = scanPresetId;
+        return this;
+    }
+
+    public CxScanParams withPreserveProjectName(Boolean preserveProjectName){
+        this.preserveProjectName = preserveProjectName;
         return this;
     }
 
