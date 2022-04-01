@@ -594,7 +594,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
             PoliciesType policiesType=scaResults.getPolicies();
 
-            this.scanId = extractScanIdFromFile(file);
+            this.scanId =iskReportSummaryType.getRiskReportId();
             this.projectId=iskReportSummaryType.getProjectId();
 
             scaResult =getLatestScaResults(iskReportSummaryType,packagesType,vulnerabilitiesType,licensesType,policiesType) ;
@@ -853,14 +853,6 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
         return scaSummaryBaseFormat;
     }
-
-
-
-    private String extractScanIdFromFile(File file) {
-        String scanId = FilenameUtils.getName(file.toString());
-        return scanId;
-    }
-
 
     /**
      * The following config properties are used:

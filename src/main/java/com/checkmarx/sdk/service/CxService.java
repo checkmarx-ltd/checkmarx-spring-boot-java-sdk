@@ -1712,25 +1712,35 @@ public class CxService implements CxClient {
         Integer projectId = determineProjectId(params, teamId);
         boolean projectExistedBeforeScan = !projectId.equals(UNKNOWN_INT);
         if (!projectExistedBeforeScan) {
-            Integer baseProjectId = UNKNOWN_INT;
             /*
-             When projectId = UNKNOWN_INT i.e -1, the below code checks if the current branch
-             and the default branch are equal or not. When the branches are not equal the code tries to retrieve the base
-             project id i.e. baseProjectId, if the value of baseProjectId != UNKNOWN_INT and the value of cxBranch property
-             is true then a branched project is created from the base project.
-             If the baseProjectId = UNKNOWN_INT then there was no base project present and a new normal project is created.
-             And if the default and current branches are same then a normal project is created.
+                When CxBranch is set to true, the current and default branches are compared if they are same then a licensed project is created,
+                if they are not same then, the ID of the default or base project is retrieved to create a branch project for the current branch of the repo,
+                if a project for default branch is not present then it is first created and then a branched project is created from it.
              */
-            if(!params.getBranch().equals(params.getDefaultBranch())) {
-                String currentBranch = params.getBranch().replace("refs/heads/","");
-                String defaultBranch = params.getDefaultBranch().replace("refs/heads/","");
-                String derivedProjectName = params.getProjectName().replace(currentBranch,defaultBranch);
-                baseProjectId = getProjectId(teamId,derivedProjectName);
-            }
-            if(!baseProjectId.equals(UNKNOWN_INT) && cxProperties.getCxBranch()) {
-                projectId = branchProject(baseProjectId, params.getProjectName());
-            }
-            if(baseProjectId.equals(UNKNOWN_INT) || !cxProperties.getCxBranch()) {
+            Integer baseProjectId;
+            String derivedProjectName = "";
+            if(cxProperties.getCxBranch()){
+                if(!params.getBranch().equals(params.getDefaultBranch())) {
+                    String currentBranch = params.getBranch().replace("refs/heads/","");
+                    log.debug("Current branch is {}", currentBranch);
+                    String defaultBranch = params.getDefaultBranch().replace("refs/heads/","");
+                    log.debug("Target/default branch is {}", defaultBranch);
+                    if(!params.getPreserveProjectName()){
+                        currentBranch = currentBranch.replaceAll("[^a-zA-Z0-9-_.]+", "-");
+                        defaultBranch = defaultBranch.replaceAll("[^a-zA-Z0-9-_.]+", "-");
+                        log.debug("Normalized name for current branch is {} and target/default branch is {}", currentBranch, defaultBranch);
+                    }
+                    derivedProjectName = params.getProjectName().replace(currentBranch,defaultBranch);
+                    log.debug("Derived project name : {}", derivedProjectName);
+                    baseProjectId = getProjectId(teamId,derivedProjectName);
+                    if(baseProjectId.equals(UNKNOWN_INT)){
+                        baseProjectId = createProject(teamId, derivedProjectName);
+                    }
+                    projectId = branchProject(baseProjectId, params.getProjectName());
+                } else {
+                    projectId = createProject(teamId, params.getProjectName());
+                }
+            } else {
                 projectId = createProject(teamId, params.getProjectName());
             }
             if (projectId.equals(UNKNOWN_INT)) {
