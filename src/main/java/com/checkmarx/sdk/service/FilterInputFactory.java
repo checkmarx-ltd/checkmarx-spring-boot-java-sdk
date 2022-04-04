@@ -11,7 +11,9 @@ import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.google.common.collect.ImmutableMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -53,6 +55,7 @@ public class FilterInputFactory {
                 .cwe(scaFinding.getCveName())
                 .severity(scaFinding.getSeverity().toString())
                 .score(scaFinding.getScore())
+                .policyViolation(BooleanUtils.toStringTrueFalse(scaFinding.isViolatingPolicy()))
                 .build();
     }
 
