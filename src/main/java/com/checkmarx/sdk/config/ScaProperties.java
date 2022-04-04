@@ -36,4 +36,5 @@ public class ScaProperties {
     private String fingerprintsIncludePattern;
     private String manifestsIncludePattern;
     private boolean preserveXml = false;
+    private String filterPolicyViolation;
 }

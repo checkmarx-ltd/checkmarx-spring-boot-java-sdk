@@ -26,4 +26,5 @@ public class FilterInput {
     private final String status;
     private final String state;
     private final Double score;
+    private final String policyViolation;
 }
