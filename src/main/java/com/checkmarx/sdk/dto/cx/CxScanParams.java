@@ -30,6 +30,10 @@ public class CxScanParams {
     private Map<String, String> scanCustomFields;
     //TODO add add post actions
     private String postAction;
+    // Email notifications
+    private List<String> afterScanEmails;
+    private List<String> beforeScanEmails;
+    private List<String> failedScanEmails;
 
     @Getter
     private String clientSecret;
@@ -206,6 +210,18 @@ public class CxScanParams {
 
     public void setPreserveProjectName(Boolean preserveProjectName) { this.preserveProjectName = preserveProjectName; }
 
+    public List<String> getAfterScanEmails() { return afterScanEmails; }
+
+    public void setAfterScanEmails(List<String> afterScanEmails) { this.afterScanEmails = afterScanEmails; }
+
+    public List<String> getBeforeScanEmails() { return beforeScanEmails; }
+
+    public void setBeforeScanEmails(List<String> beforeScanEmails) { this.beforeScanEmails = beforeScanEmails; }
+
+    public List<String> getFailedScanEmails() { return failedScanEmails; }
+
+    public void setFailedScanEmails(List<String> failedScanEmails) { this.failedScanEmails = failedScanEmails; }
+
     public CxScanParams withIncremental(boolean incremental) {
         this.incremental = incremental;
         return this;
@@ -322,6 +338,20 @@ public class CxScanParams {
         return this;
     }
 
+    public CxScanParams withAfterScanEmails(List<String> afterScanEmails) {
+        this.afterScanEmails = afterScanEmails;
+        return this;
+    }
+
+    public CxScanParams withBeforeScanEmails(List<String> beforeScanEmails) {
+        this.beforeScanEmails = beforeScanEmails;
+        return this;
+    }
+
+    public CxScanParams withFailedScanEmails(List<String> failedScanEmails) {
+        this.failedScanEmails = failedScanEmails;
+        return this;
+    }
 
     public enum Type {
         GIT("GIT"),
@@ -363,6 +393,9 @@ public class CxScanParams {
                 ", customFields=" + customFields +
                 ", scanCustomFields=" + scanCustomFields +
                 ", postAction='" + postAction + '\'' +
+                ", afterScanEmails='" + afterScanEmails + '\'' +
+                ", beforeScanEmails='" + beforeScanEmails + '\'' +
+                ", failedScanEmails='" + failedScanEmails + '\'' +
                 '}';
     }
 }

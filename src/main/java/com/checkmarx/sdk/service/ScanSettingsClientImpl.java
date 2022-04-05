@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -54,11 +55,16 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
     }
 
     @Override
-    public int createScanSettings(int projectId, int presetId, int engineConfigId, int postActionId) {
+    public int createScanSettings(int projectId, int presetId, int engineConfigId, int postActionId,
+                                  List<String> afterScanEmails, List<String> beforeScanEmails,
+                                  List<String> failedScanEmails) {
+        CxScanSettings.EmailNotifications emailNotifications =
+                new CxScanSettings.EmailNotifications(afterScanEmails, beforeScanEmails, failedScanEmails);
         CxScanSettings scanSettings = CxScanSettings.builder()
                 .projectId(projectId)
                 .engineConfigurationId(engineConfigId)
                 .presetId(presetId)
+                .emailNotifications(emailNotifications)
                 .build();
         if(cxProperties.getEnablePostActionEvent() && postActionId != 0)
             scanSettings.setPostScanActionId(postActionId);
