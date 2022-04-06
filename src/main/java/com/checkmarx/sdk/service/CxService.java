@@ -1152,10 +1152,9 @@ public class CxService implements CxClient {
      * @return Scan setting ID.
      */
     public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId,
-                                     Integer postActionId, List<String> afterScanEmails,
-                                     List<String> beforeScanEmails, List<String> failedScanEmails) {
+                                     Integer postActionId, CxEmailNotifications emailNotifications) {
         return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId, postActionId,
-                afterScanEmails, beforeScanEmails, failedScanEmails);
+                emailNotifications);
     }
 
     /**
@@ -1755,7 +1754,7 @@ public class CxService implements CxClient {
             Integer presetId = getPresetId(params.getScanPreset());
             Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
             createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
-                    params.getAfterScanEmails(), params.getBeforeScanEmails(), params.getFailedScanEmails());
+                    params.getEmailNotifications());
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
             if (params.getCustomFields() != null && !params.getCustomFields().isEmpty()) {
                 List<CxCustomField> fieldDefinitions = getCustomFields();

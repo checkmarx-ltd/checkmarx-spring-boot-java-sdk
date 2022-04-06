@@ -31,9 +31,7 @@ public class CxScanParams {
     //TODO add add post actions
     private String postAction;
     // Email notifications
-    private List<String> afterScanEmails;
-    private List<String> beforeScanEmails;
-    private List<String> failedScanEmails;
+    private CxEmailNotifications emailNotifications;
 
     @Getter
     private String clientSecret;
@@ -210,17 +208,9 @@ public class CxScanParams {
 
     public void setPreserveProjectName(Boolean preserveProjectName) { this.preserveProjectName = preserveProjectName; }
 
-    public List<String> getAfterScanEmails() { return afterScanEmails; }
+    public CxEmailNotifications getEmailNotifications() { return emailNotifications; }
 
-    public void setAfterScanEmails(List<String> afterScanEmails) { this.afterScanEmails = afterScanEmails; }
-
-    public List<String> getBeforeScanEmails() { return beforeScanEmails; }
-
-    public void setBeforeScanEmails(List<String> beforeScanEmails) { this.beforeScanEmails = beforeScanEmails; }
-
-    public List<String> getFailedScanEmails() { return failedScanEmails; }
-
-    public void setFailedScanEmails(List<String> failedScanEmails) { this.failedScanEmails = failedScanEmails; }
+    public void setEmailNotifications(CxEmailNotifications emailNotifications) { this.emailNotifications = emailNotifications; }
 
     public CxScanParams withIncremental(boolean incremental) {
         this.incremental = incremental;
@@ -338,18 +328,8 @@ public class CxScanParams {
         return this;
     }
 
-    public CxScanParams withAfterScanEmails(List<String> afterScanEmails) {
-        this.afterScanEmails = afterScanEmails;
-        return this;
-    }
-
-    public CxScanParams withBeforeScanEmails(List<String> beforeScanEmails) {
-        this.beforeScanEmails = beforeScanEmails;
-        return this;
-    }
-
-    public CxScanParams withFailedScanEmails(List<String> failedScanEmails) {
-        this.failedScanEmails = failedScanEmails;
+    public CxScanParams withEmailNotifications(CxEmailNotifications emailNotifications) {
+        this.emailNotifications = emailNotifications;
         return this;
     }
 
@@ -393,9 +373,7 @@ public class CxScanParams {
                 ", customFields=" + customFields +
                 ", scanCustomFields=" + scanCustomFields +
                 ", postAction='" + postAction + '\'' +
-                ", afterScanEmails='" + afterScanEmails + '\'' +
-                ", beforeScanEmails='" + beforeScanEmails + '\'' +
-                ", failedScanEmails='" + failedScanEmails + '\'' +
+                ", emailNotifications='" + emailNotifications + '\'' +
                 '}';
     }
 }

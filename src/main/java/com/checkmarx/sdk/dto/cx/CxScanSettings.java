@@ -2,7 +2,6 @@ package com.checkmarx.sdk.dto.cx;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import java.util.List;
 
 @JsonPropertyOrder({
         "projectId",
@@ -21,12 +20,12 @@ public class CxScanSettings {
     @JsonProperty("postScanActionId")
     public Integer postScanActionId;
     @JsonProperty("emailNotifications")
-    public EmailNotifications emailNotifications;
+    public CxEmailNotifications emailNotifications;
 
 
     @java.beans.ConstructorProperties({"projectId", "presetId", "engineConfigurationId"})
     CxScanSettings(Integer projectId, Integer presetId, Integer engineConfigurationId, Integer postScanActionId,
-                   EmailNotifications emailNotifications) {
+                   CxEmailNotifications emailNotifications) {
         this.projectId = projectId;
         this.presetId = presetId;
         this.engineConfigurationId = engineConfigurationId;
@@ -79,7 +78,7 @@ public class CxScanSettings {
         private Integer presetId;
         private Integer engineConfigurationId;
         private Integer postScanActionId;
-        private EmailNotifications emailNotifications;
+        private CxEmailNotifications emailNotifications;
 
         CxScanSettingsBuilder() {
         }
@@ -104,7 +103,7 @@ public class CxScanSettings {
             return this;
         }
 
-        public CxScanSettings.CxScanSettingsBuilder emailNotifications(EmailNotifications emailNotifications) {
+        public CxScanSettings.CxScanSettingsBuilder emailNotifications(CxEmailNotifications emailNotifications) {
             this.emailNotifications = emailNotifications;
             return this;
         }
@@ -118,26 +117,6 @@ public class CxScanSettings {
             return "CxScanSettings.CxScanSettingsBuilder(projectId=" + this.projectId + ", presetId=" +
                     this.presetId + ", engineConfigurationId=" + this.engineConfigurationId +
                     "this.emailNotifications=" + emailNotifications + ")";
-        }
-    }
-
-    public static class EmailNotifications {
-        @JsonProperty("afterScan")
-        public List<String> afterScan;
-        @JsonProperty("beforeScan")
-        public List<String> beforeScan;
-        @JsonProperty("failedScan")
-        public List<String> failedScan;
-
-        public EmailNotifications(List<String> afterScan, List<String> beforeScan, List<String> failedScan) {
-            this.afterScan = afterScan;
-            this.beforeScan = beforeScan;
-            this.failedScan = failedScan;
-        }
-
-        public String toString() {
-            return "CxScanSettings.EmailNotifications(afterScan=" + this.afterScan + ", beforeScan=" +
-                    this.beforeScan + ", failedScan=" + this.failedScan + ")";
         }
     }
 }

@@ -2,6 +2,7 @@ package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
+import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
 import com.checkmarx.sdk.dto.cx.CxPreset;
 import com.checkmarx.sdk.dto.cx.CxScanEngine;
 import com.checkmarx.sdk.dto.cx.CxScanSettings;
@@ -56,10 +57,7 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
 
     @Override
     public int createScanSettings(int projectId, int presetId, int engineConfigId, int postActionId,
-                                  List<String> afterScanEmails, List<String> beforeScanEmails,
-                                  List<String> failedScanEmails) {
-        CxScanSettings.EmailNotifications emailNotifications =
-                new CxScanSettings.EmailNotifications(afterScanEmails, beforeScanEmails, failedScanEmails);
+                                  CxEmailNotifications emailNotifications) {
         CxScanSettings scanSettings = CxScanSettings.builder()
                 .projectId(projectId)
                 .engineConfigurationId(engineConfigId)
