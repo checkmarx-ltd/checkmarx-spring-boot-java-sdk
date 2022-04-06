@@ -26,7 +26,9 @@ public class Filter {
 
         STATUS("STATUS"),
         STATE("STATE"),
-        SCORE("SCORE");
+        SCORE("SCORE"),
+
+        POLICYVIOLATION("POLICYVIOLATION");
 
         private final String value;
     }

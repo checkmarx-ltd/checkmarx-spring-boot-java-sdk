@@ -109,6 +109,7 @@ public class FilterValidator {
                 fieldMatches(finding.getSeverity(), valuesByType.get(Filter.Type.SEVERITY)) &&
                 fieldMatches(finding.getCwe(), valuesByType.get(Filter.Type.CWE)) &&
                 fieldMatches(finding.getCategory(), valuesByType.get(Filter.Type.TYPE)) &&
+                fieldMatches(finding.getPolicyViolation(), valuesByType.get(Filter.Type.POLICYVIOLATION)) &&
                 scoreIsAtLeast(finding.getScore(), valuesByType.get(Filter.Type.SCORE));
     }
 
