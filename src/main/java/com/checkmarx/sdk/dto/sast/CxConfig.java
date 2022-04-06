@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.dto.sast;
 
 import com.checkmarx.sdk.dto.Osa;
+import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
 import com.checkmarx.sdk.dto.sca.Sca;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -42,6 +43,8 @@ public class CxConfig implements Serializable {
     private Map<String, Object> additionalProperties = new HashMap<>();
     @JsonProperty("sca")
     private Sca sca;
+    @JsonProperty("emailNotifications")
+    private CxEmailNotifications emailNotifications;
 
     private static final long serialVersionUID = 2851455437649831239L;
 
@@ -171,5 +174,13 @@ public class CxConfig implements Serializable {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @JsonProperty("emailNotifications")
+    public CxEmailNotifications getEmailNotifications() { return emailNotifications; }
+
+    @JsonProperty("emailNotifications")
+    public void setEmailNotifications(CxEmailNotifications emailNotifications) {
+        this.emailNotifications = emailNotifications;
     }
 }

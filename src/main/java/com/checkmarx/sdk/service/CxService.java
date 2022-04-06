@@ -1145,14 +1145,25 @@ public class CxService implements CxClient {
         return UNKNOWN_INT;
     }
 
+    /**
+     * Create Scan Settings
+     *
+     * @return Scan setting ID.
+     */
+    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId,
+                                     Integer postActionId, CxEmailNotifications emailNotifications) {
+        return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId, postActionId,
+                emailNotifications);
+    }
 
     /**
      * Create Scan Settings
      *
      * @return Scan setting ID.
      */
-    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId, Integer postActionId) {
-        return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId, postActionId);
+    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId,
+                                     Integer postActionId) {
+        return createScanSetting(projectId, presetId, engineConfigId, postActionId, null);
     }
 
     /**
@@ -1751,7 +1762,8 @@ public class CxService implements CxClient {
             log.debug("Updating project...");
             Integer presetId = getPresetId(params.getScanPreset());
             Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
-            createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
+            createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                    params.getEmailNotifications());
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
             if (params.getCustomFields() != null && !params.getCustomFields().isEmpty()) {
                 List<CxCustomField> fieldDefinitions = getCustomFields();

@@ -30,6 +30,8 @@ public class CxScanParams {
     private Map<String, String> scanCustomFields;
     //TODO add add post actions
     private String postAction;
+    // Email notifications
+    private CxEmailNotifications emailNotifications;
 
     @Getter
     private String clientSecret;
@@ -206,6 +208,10 @@ public class CxScanParams {
 
     public void setPreserveProjectName(Boolean preserveProjectName) { this.preserveProjectName = preserveProjectName; }
 
+    public CxEmailNotifications getEmailNotifications() { return emailNotifications; }
+
+    public void setEmailNotifications(CxEmailNotifications emailNotifications) { this.emailNotifications = emailNotifications; }
+
     public CxScanParams withIncremental(boolean incremental) {
         this.incremental = incremental;
         return this;
@@ -322,6 +328,10 @@ public class CxScanParams {
         return this;
     }
 
+    public CxScanParams withEmailNotifications(CxEmailNotifications emailNotifications) {
+        this.emailNotifications = emailNotifications;
+        return this;
+    }
 
     public enum Type {
         GIT("GIT"),
@@ -363,6 +373,7 @@ public class CxScanParams {
                 ", customFields=" + customFields +
                 ", scanCustomFields=" + scanCustomFields +
                 ", postAction='" + postAction + '\'' +
+                ", emailNotifications='" + emailNotifications + '\'' +
                 '}';
     }
 }
