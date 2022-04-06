@@ -56,6 +56,11 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
     }
 
     @Override
+    public int createScanSettings(int projectId, int presetId, int engineConfigId, int postActionId) {
+        return createScanSettings(projectId, presetId, engineConfigId, postActionId, null);
+    }
+
+    @Override
     public int createScanSettings(int projectId, int presetId, int engineConfigId, int postActionId,
                                   CxEmailNotifications emailNotifications) {
         CxScanSettings scanSettings = CxScanSettings.builder()

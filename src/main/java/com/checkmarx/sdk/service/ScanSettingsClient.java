@@ -10,6 +10,8 @@ import com.checkmarx.sdk.exception.CheckmarxException;
  * - scan presets
  */
 public interface ScanSettingsClient {
+    int createScanSettings(int projectId, int presetId, int engineConfigId, int postScanId);
+
     int createScanSettings(int projectId, int presetId, int engineConfigId, int postScanId,
                            CxEmailNotifications emailNotifications);
 

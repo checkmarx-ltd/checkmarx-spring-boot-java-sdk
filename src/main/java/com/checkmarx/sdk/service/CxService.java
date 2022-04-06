@@ -1145,7 +1145,6 @@ public class CxService implements CxClient {
         return UNKNOWN_INT;
     }
 
-
     /**
      * Create Scan Settings
      *
@@ -1155,6 +1154,16 @@ public class CxService implements CxClient {
                                      Integer postActionId, CxEmailNotifications emailNotifications) {
         return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId, postActionId,
                 emailNotifications);
+    }
+
+    /**
+     * Create Scan Settings
+     *
+     * @return Scan setting ID.
+     */
+    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId,
+                                     Integer postActionId) {
+        return createScanSetting(projectId, presetId, engineConfigId, postActionId, null);
     }
 
     /**
