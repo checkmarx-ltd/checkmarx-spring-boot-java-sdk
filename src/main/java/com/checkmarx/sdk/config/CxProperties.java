@@ -64,6 +64,13 @@ public class CxProperties extends CxPropertiesBase{
      */
     private Boolean groupBySeverity = false;
 
+    /*
+     * If set to true, results are not grouped at all
+     * (by default, results are grouped only by vulnerability
+     * and filename. Setting default to false).
+     */
+    private Boolean disableClubbing = false;
+
     /**
      * Maps finding state ID (as returned in CxSAST report) to state name (as specified in filter configuration).
      */
@@ -302,6 +309,14 @@ public class CxProperties extends CxPropertiesBase{
 
     public void setCxBranch(Boolean cxBranch) {
         this.cxBranch = cxBranch;
+    }
+
+    public Boolean getDisableClubbing() {
+        return disableClubbing;
+    }
+
+    public void setDisableClubbing(Boolean disableClubbing) {
+        this.disableClubbing = disableClubbing;
     }
 }
 
