@@ -37,9 +37,9 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import java.net.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -835,6 +835,10 @@ public class CxService implements CxClient {
             if (!nodes.isEmpty()) {
                 result.put("source", getNodeData(nodes, 0));
                 result.put("sink", getNodeData(nodes, nodes.size() - 1)); // Last node in dataFlow
+                AtomicInteger counter = new AtomicInteger(0);
+                nodes.forEach(node->{result.put(node.getNodeId(),getNodeData(nodes, counter.get()));
+                                        counter.getAndIncrement();
+                                    });
             } else {
                 log.debug(String.format("Result %s%s did not have node paths to process.", q.getName(), r.getNodeId()));
             }
@@ -860,6 +864,8 @@ public class CxService implements CxClient {
         nodeData.put("line", node.getLine());
         nodeData.put("column", node.getColumn());
         nodeData.put("object", node.getName());
+        nodeData.put("length", node.getLength());
+        nodeData.put("snippet",StringUtils.truncate(node.getSnippet().getLine().getCode(), cxProperties.getCodeSnippetLength()));
         return nodeData;
     }
 
@@ -868,7 +874,7 @@ public class CxService implements CxClient {
 
     private void prepareIssuesRemoveDuplicates(List<ScanResults.XIssue> cxIssueList, ResultType resultType, Map<Integer, ScanResults.IssueDetails> details,
                                                boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
-        if (cxIssueList.contains(issue)) {
+        if (!cxProperties.getDisableClubbing() && cxIssueList.contains(issue)) {
             /*Get existing issue of same vuln+filename*/
             ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
             /*If no reference exists for this particular line, append it to the details (line+snippet)*/
