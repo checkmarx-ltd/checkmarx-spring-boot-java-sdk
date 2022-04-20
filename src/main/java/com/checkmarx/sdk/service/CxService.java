@@ -35,6 +35,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -186,10 +189,16 @@ public class CxService implements CxClient {
 
         log.info("Finding last Scan Id for project Id {}", projectId);
         try {
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN)
-                            .concat("?projectId=").concat(projectId.toString().concat("&scanStatus=")
-                                    .concat(SCAN_STATUS_FINISHED.toString()).concat("&last=1")),
-                    HttpMethod.GET, requestEntity, String.class);
+
+            UriComponents uriComponents = UriComponentsBuilder
+                    .fromHttpUrl(cxProperties.getUrl())
+                    .path(SCAN)
+                    .queryParam("projectId", projectId.toString())
+                    .queryParam("scanStatus", SCAN_STATUS_FINISHED.toString())
+                    .queryParam("last", "1")
+                    .build();
+
+            ResponseEntity<String> response = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, requestEntity, String.class);
 
             JSONArray arr = new JSONArray(response.getBody());
             if (arr.length() < 1) {
@@ -236,12 +245,18 @@ public class CxService implements CxClient {
 
         log.info("Finding last Scan Id for project Id {}", projectId);
         try {
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN)
-                            .concat("?projectId=").concat(projectId.toString().concat("&scanStatus=").concat(SCAN_STATUS_FINISHED.toString())
-                                    .concat("&last=").concat(cxProperties.getIncrementalNumScans().toString())),
-                    HttpMethod.GET, requestEntity, String.class);
+            UriComponents uriComponents = UriComponentsBuilder
+                    .fromHttpUrl(cxProperties.getUrl())
+                    .path(SCAN)
+                    .queryParam("projectId", projectId.toString())
+                    .queryParam("scanStatus", SCAN_STATUS_FINISHED.toString())
+                    .queryParam("last",cxProperties.getIncrementalNumScans().toString())
+                    .build();
+
+            ResponseEntity<String> response = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, requestEntity, String.class);
 
             JSONArray arr = new JSONArray(response.getBody());
+
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject scan = arr.getJSONObject(i);
                 if (!scan.getBoolean("isIncremental")) {
@@ -1039,9 +1054,14 @@ public class CxService implements CxClient {
     public Integer getProjectId(String ownerId, String name) {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
-            ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS)
-                    .concat("?projectName=").concat(name).concat("&teamId=").concat(ownerId), HttpMethod.GET, httpEntity, String.class);
-            JSONArray arr = new JSONArray(projects.getBody());
+            UriComponents uriComponents = UriComponentsBuilder
+                    .fromHttpUrl(cxProperties.getUrl())
+                    .path(PROJECTS)
+                    .queryParam("projectName", name)
+                    .queryParam("teamId", ownerId)
+                    .build();
+            ResponseEntity<String> projects = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, httpEntity, String.class);
+           JSONArray arr = new JSONArray(projects.getBody());
             if (arr.length() > 1) {
                 return UNKNOWN_INT;
             }
@@ -1118,9 +1138,16 @@ public class CxService implements CxClient {
     public Integer getScanIdOfExistingScanIfExists(Integer projectId) {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
+            UriComponents uriComponents = UriComponentsBuilder
+                    .fromHttpUrl(cxProperties.getUrl())
+                    .path(SCAN_QUEUE)
+                    .queryParam("projectId", projectId.toString())
+                    .build();
 
-            ResponseEntity<String> scans = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_QUEUE).concat("?ProjectId=").concat(projectId.toString()), HttpMethod.GET, httpEntity, String.class);
-            JSONArray jsonArray = new JSONArray(scans.getBody());
+            ResponseEntity<String> response = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, httpEntity, String.class);
+
+            JSONArray jsonArray = new JSONArray(response.getBody());
+
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject scan = jsonArray.getJSONObject(i);
                 JSONObject stage = scan.getJSONObject("stage");
