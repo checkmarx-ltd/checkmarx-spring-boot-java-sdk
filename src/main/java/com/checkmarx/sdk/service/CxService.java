@@ -35,11 +35,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import java.net.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -186,10 +189,16 @@ public class CxService implements CxClient {
 
         log.info("Finding last Scan Id for project Id {}", projectId);
         try {
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN)
-                            .concat("?projectId=").concat(projectId.toString().concat("&scanStatus=")
-                                    .concat(SCAN_STATUS_FINISHED.toString()).concat("&last=1")),
-                    HttpMethod.GET, requestEntity, String.class);
+
+            UriComponents uriComponents = UriComponentsBuilder
+                    .fromHttpUrl(cxProperties.getUrl())
+                    .path(SCAN)
+                    .queryParam("projectId", projectId.toString())
+                    .queryParam("scanStatus", SCAN_STATUS_FINISHED.toString())
+                    .queryParam("last", "1")
+                    .build();
+
+            ResponseEntity<String> response = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, requestEntity, String.class);
 
             JSONArray arr = new JSONArray(response.getBody());
             if (arr.length() < 1) {
@@ -236,12 +245,18 @@ public class CxService implements CxClient {
 
         log.info("Finding last Scan Id for project Id {}", projectId);
         try {
-            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(SCAN)
-                            .concat("?projectId=").concat(projectId.toString().concat("&scanStatus=").concat(SCAN_STATUS_FINISHED.toString())
-                                    .concat("&last=").concat(cxProperties.getIncrementalNumScans().toString())),
-                    HttpMethod.GET, requestEntity, String.class);
+            UriComponents uriComponents = UriComponentsBuilder
+                    .fromHttpUrl(cxProperties.getUrl())
+                    .path(SCAN)
+                    .queryParam("projectId", projectId.toString())
+                    .queryParam("scanStatus", SCAN_STATUS_FINISHED.toString())
+                    .queryParam("last",cxProperties.getIncrementalNumScans().toString())
+                    .build();
+
+            ResponseEntity<String> response = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, requestEntity, String.class);
 
             JSONArray arr = new JSONArray(response.getBody());
+
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject scan = arr.getJSONObject(i);
                 if (!scan.getBoolean("isIncremental")) {
@@ -835,6 +850,10 @@ public class CxService implements CxClient {
             if (!nodes.isEmpty()) {
                 result.put("source", getNodeData(nodes, 0));
                 result.put("sink", getNodeData(nodes, nodes.size() - 1)); // Last node in dataFlow
+                AtomicInteger counter = new AtomicInteger(0);
+                nodes.forEach(node->{result.put(node.getNodeId(),getNodeData(nodes, counter.get()));
+                                        counter.getAndIncrement();
+                                    });
             } else {
                 log.debug(String.format("Result %s%s did not have node paths to process.", q.getName(), r.getNodeId()));
             }
@@ -860,6 +879,8 @@ public class CxService implements CxClient {
         nodeData.put("line", node.getLine());
         nodeData.put("column", node.getColumn());
         nodeData.put("object", node.getName());
+        nodeData.put("length", node.getLength());
+        nodeData.put("snippet",StringUtils.truncate(node.getSnippet().getLine().getCode(), cxProperties.getCodeSnippetLength()));
         return nodeData;
     }
 
@@ -868,7 +889,7 @@ public class CxService implements CxClient {
 
     private void prepareIssuesRemoveDuplicates(List<ScanResults.XIssue> cxIssueList, ResultType resultType, Map<Integer, ScanResults.IssueDetails> details,
                                                boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
-        if (cxIssueList.contains(issue)) {
+        if (!cxProperties.getDisableClubbing() && cxIssueList.contains(issue)) {
             /*Get existing issue of same vuln+filename*/
             ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
             /*If no reference exists for this particular line, append it to the details (line+snippet)*/
@@ -1039,9 +1060,14 @@ public class CxService implements CxClient {
     public Integer getProjectId(String ownerId, String name) {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
-            ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECTS)
-                    .concat("?projectName=").concat(name).concat("&teamId=").concat(ownerId), HttpMethod.GET, httpEntity, String.class);
-            JSONArray arr = new JSONArray(projects.getBody());
+            UriComponents uriComponents = UriComponentsBuilder
+                    .fromHttpUrl(cxProperties.getUrl())
+                    .path(PROJECTS)
+                    .queryParam("projectName", name)
+                    .queryParam("teamId", ownerId)
+                    .build();
+            ResponseEntity<String> projects = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, httpEntity, String.class);
+           JSONArray arr = new JSONArray(projects.getBody());
             if (arr.length() > 1) {
                 return UNKNOWN_INT;
             }
@@ -1118,9 +1144,16 @@ public class CxService implements CxClient {
     public Integer getScanIdOfExistingScanIfExists(Integer projectId) {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
+            UriComponents uriComponents = UriComponentsBuilder
+                    .fromHttpUrl(cxProperties.getUrl())
+                    .path(SCAN_QUEUE)
+                    .queryParam("projectId", projectId.toString())
+                    .build();
 
-            ResponseEntity<String> scans = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_QUEUE).concat("?ProjectId=").concat(projectId.toString()), HttpMethod.GET, httpEntity, String.class);
-            JSONArray jsonArray = new JSONArray(scans.getBody());
+            ResponseEntity<String> response = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, httpEntity, String.class);
+
+            JSONArray jsonArray = new JSONArray(response.getBody());
+
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject scan = jsonArray.getJSONObject(i);
                 JSONObject stage = scan.getJSONObject("stage");
@@ -1145,14 +1178,25 @@ public class CxService implements CxClient {
         return UNKNOWN_INT;
     }
 
+    /**
+     * Create Scan Settings
+     *
+     * @return Scan setting ID.
+     */
+    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId,
+                                     Integer postActionId, CxEmailNotifications emailNotifications) {
+        return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId, postActionId,
+                emailNotifications);
+    }
 
     /**
      * Create Scan Settings
      *
      * @return Scan setting ID.
      */
-    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId, Integer postActionId) {
-        return scanSettingsClient.createScanSettings(projectId, presetId, engineConfigId, postActionId);
+    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId,
+                                     Integer postActionId) {
+        return createScanSetting(projectId, presetId, engineConfigId, postActionId, null);
     }
 
     /**
@@ -1751,7 +1795,8 @@ public class CxService implements CxClient {
             log.debug("Updating project...");
             Integer presetId = getPresetId(params.getScanPreset());
             Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
-            createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId());
+            createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                    params.getEmailNotifications());
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
             if (params.getCustomFields() != null && !params.getCustomFields().isEmpty()) {
                 List<CxCustomField> fieldDefinitions = getCustomFields();

@@ -207,9 +207,12 @@ public interface CxClient extends ILegacyClient {
      * @param projectId
      * @param presetId
      * @param engineConfigId
+     * @param postBackId
+     * @param emailNotifications
      * @return ID for scan settings
      */
-    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId, Integer postBackId);
+    public Integer createScanSetting(Integer projectId, Integer presetId, Integer engineConfigId,
+                                     Integer postBackId, CxEmailNotifications emailNotifications);
 
     /**
      * Get Scan Settings for an existing project (JSON String)

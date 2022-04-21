@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.config;
 
-
+import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
 import javax.annotation.PostConstruct;
 
 public abstract class CxPropertiesBase {
@@ -33,6 +33,7 @@ public abstract class CxPropertiesBase {
     private Boolean enablePostActionMonitor = false;
     private String postCloneScript;
     private Boolean enablePostActionEvent = false;
+    private CxEmailNotifications emailNotifications;
 
     private Boolean scanQueuing = false;
     private Integer scanQueuingTimeout = 720;
@@ -294,6 +295,14 @@ public abstract class CxPropertiesBase {
 
     public void setPostCloneScript(String postCloneScript) {
         this.postCloneScript = postCloneScript;
+    }
+
+    public CxEmailNotifications getEmailNotifications() {
+        return emailNotifications;
+    }
+
+    public void setEmailNotifications(CxEmailNotifications emailNotifications) {
+        this.emailNotifications = emailNotifications;
     }
 }
 

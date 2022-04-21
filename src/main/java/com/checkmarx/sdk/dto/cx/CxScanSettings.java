@@ -19,14 +19,18 @@ public class CxScanSettings {
     public Integer engineConfigurationId;
     @JsonProperty("postScanActionId")
     public Integer postScanActionId;
+    @JsonProperty("emailNotifications")
+    public CxEmailNotifications emailNotifications;
 
 
     @java.beans.ConstructorProperties({"projectId", "presetId", "engineConfigurationId"})
-    CxScanSettings(Integer projectId, Integer presetId, Integer engineConfigurationId, Integer postScanActionId) {
+    CxScanSettings(Integer projectId, Integer presetId, Integer engineConfigurationId, Integer postScanActionId,
+                   CxEmailNotifications emailNotifications) {
         this.projectId = projectId;
         this.presetId = presetId;
         this.engineConfigurationId = engineConfigurationId;
         this.postScanActionId = postScanActionId;
+        this.emailNotifications = emailNotifications;
     }
 
     public static CxScanSettingsBuilder builder() {
@@ -74,6 +78,7 @@ public class CxScanSettings {
         private Integer presetId;
         private Integer engineConfigurationId;
         private Integer postScanActionId;
+        private CxEmailNotifications emailNotifications;
 
         CxScanSettingsBuilder() {
         }
@@ -98,12 +103,20 @@ public class CxScanSettings {
             return this;
         }
 
+        public CxScanSettings.CxScanSettingsBuilder emailNotifications(CxEmailNotifications emailNotifications) {
+            this.emailNotifications = emailNotifications;
+            return this;
+        }
+
         public CxScanSettings build() {
-            return new CxScanSettings(projectId, presetId, engineConfigurationId, postScanActionId);
+            return new CxScanSettings(projectId, presetId, engineConfigurationId, postScanActionId,
+                    emailNotifications);
         }
 
         public String toString() {
-            return "CxScanSettings.CxScanSettingsBuilder(projectId=" + this.projectId + ", presetId=" + this.presetId + ", engineConfigurationId=" + this.engineConfigurationId + ")";
+            return "CxScanSettings.CxScanSettingsBuilder(projectId=" + this.projectId + ", presetId=" +
+                    this.presetId + ", engineConfigurationId=" + this.engineConfigurationId +
+                    "this.emailNotifications=" + emailNotifications + ")";
         }
     }
 }

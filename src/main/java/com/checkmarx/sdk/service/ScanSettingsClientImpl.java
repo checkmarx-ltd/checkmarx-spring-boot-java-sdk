@@ -2,6 +2,7 @@ package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
+import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
 import com.checkmarx.sdk.dto.cx.CxPreset;
 import com.checkmarx.sdk.dto.cx.CxScanEngine;
 import com.checkmarx.sdk.dto.cx.CxScanSettings;
@@ -22,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -55,10 +57,17 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
 
     @Override
     public int createScanSettings(int projectId, int presetId, int engineConfigId, int postActionId) {
+        return createScanSettings(projectId, presetId, engineConfigId, postActionId, null);
+    }
+
+    @Override
+    public int createScanSettings(int projectId, int presetId, int engineConfigId, int postActionId,
+                                  CxEmailNotifications emailNotifications) {
         CxScanSettings scanSettings = CxScanSettings.builder()
                 .projectId(projectId)
                 .engineConfigurationId(engineConfigId)
                 .presetId(presetId)
+                .emailNotifications(emailNotifications)
                 .build();
         if(cxProperties.getEnablePostActionEvent() && postActionId != 0)
             scanSettings.setPostScanActionId(postActionId);
