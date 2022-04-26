@@ -2427,6 +2427,9 @@ public class CxService implements CxClient {
         }else{
             throw new CheckmarxException("No source type was provided for the scan");
         }
+        if(params.getEmailNotifications() == null && cxProperties.getEmailNotifications() != null) {
+            params.setEmailNotifications(cxProperties.getEmailNotifications());
+        }
     }
 
     /**
