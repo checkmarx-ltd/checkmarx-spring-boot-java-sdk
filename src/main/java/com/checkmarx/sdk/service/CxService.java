@@ -875,12 +875,20 @@ public class CxService implements CxClient {
         // Node data: file/line/object
         Map<String, String> nodeData = new HashMap<>();
         PathNodeType node = nodes.get(nodeIndex);
+        String code = "";
+        if(null!=node.getSnippet()){
+            if(null!=node.getSnippet().getLine()){
+                if(null!=node.getSnippet().getLine().getCode()) {
+                    code=node.getSnippet().getLine().getCode();
+                }
+            }
+        }
         nodeData.put("file", node.getFileName());
         nodeData.put("line", node.getLine());
         nodeData.put("column", node.getColumn());
         nodeData.put("object", node.getName());
         nodeData.put("length", node.getLength());
-        nodeData.put("snippet",StringUtils.truncate(node.getSnippet().getLine().getCode(), cxProperties.getCodeSnippetLength()));
+        nodeData.put("snippet",StringUtils.truncate(code, cxProperties.getCodeSnippetLength()));
         return nodeData;
     }
 
