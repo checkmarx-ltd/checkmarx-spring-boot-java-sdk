@@ -7,7 +7,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "projectId",
         "presetId",
         "engineConfigurationId",
-        "postScanActionId"
+        "postScanActionId",
+        "emailNotifications"
 })
 
 public class CxScanSettings {
@@ -53,6 +54,8 @@ public class CxScanSettings {
         return this.engineConfigurationId;
     }
 
+    public CxEmailNotifications getEmailNotifications() { return this.emailNotifications; }
+
     public void setProjectId(Integer projectId) {
         this.projectId = projectId;
     }
@@ -69,8 +72,16 @@ public class CxScanSettings {
         this.engineConfigurationId = engineConfigurationId;
     }
 
+    public void setEmailNotifications(CxEmailNotifications emailNotifications) {
+        this.emailNotifications = emailNotifications;
+    }
+
     public String toString() {
-        return "CxScanSettings(projectId=" + this.getProjectId() + ", presetId=" + this.getPresetId() + ", engineConfigurationId=" + this.getEngineConfigurationId() + ", postScanActionId=" + this.postScanActionId + ")";
+        return "CxScanSettings(projectId=" + this.getProjectId() +
+                ", presetId=" + this.getPresetId() +
+                ", engineConfigurationId=" + this.getEngineConfigurationId() +
+                ", postScanActionId=" + this.postScanActionId +
+                ", emailNotifications=" + this.getEmailNotifications() + ")";
     }
 
     public static class CxScanSettingsBuilder {
