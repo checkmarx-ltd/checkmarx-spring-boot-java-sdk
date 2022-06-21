@@ -39,7 +39,6 @@ public class Package implements Serializable {
     private List<String> locations = new ArrayList<>();
     private List<DependencyPath> dependencyPaths = new ArrayList<>();
     private String packageRepository;
-    //Added By Satyam : :
     @JsonProperty(value="isDirectDependency")
     public boolean IsDirectDependency;
 
