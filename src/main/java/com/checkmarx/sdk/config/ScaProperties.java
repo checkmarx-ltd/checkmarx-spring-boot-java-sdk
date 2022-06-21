@@ -37,4 +37,6 @@ public class ScaProperties {
     private String manifestsIncludePattern;
     private boolean preserveXml = false;
     private String filterPolicyViolation;
+    //Adding Filter For filterDependencyType : Satyam Chaurasia
+    private String filterdependencytype;
 }
