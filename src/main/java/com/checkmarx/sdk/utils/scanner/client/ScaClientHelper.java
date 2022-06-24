@@ -737,8 +737,8 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             packge.setSeverity(severity);
             packge.setLocations(packageTypeList.get(count).getLocations().getLocation());
             packge.setPackageRepository(packageTypeList.get(count).getPackageRepository());
-            packge.setDirectDependency(Boolean.parseBoolean(packageTypeList.get(count).getIsDirectDependency()));
-            packge.setDevelopment(Boolean.parseBoolean(packageTypeList.get(count).getIsDevelopmentDependency()));
+            packge.setIsDirectDependency(Boolean.parseBoolean(packageTypeList.get(count).getIsDirectDependency()));
+            packge.setIsDevelopment(Boolean.parseBoolean(packageTypeList.get(count).getIsDevelopmentDependency()));
 
             LicensesType licensesType=packageTypeList.get(count).getLicenses();
 

@@ -37,4 +37,5 @@ public class ScaProperties {
     private String manifestsIncludePattern;
     private boolean preserveXml = false;
     private String filterPolicyViolation;
+    private String filterdependencytype;
 }

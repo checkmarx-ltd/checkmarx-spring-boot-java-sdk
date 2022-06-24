@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.dto.sca.report;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -38,7 +39,11 @@ public class Package implements Serializable {
     private List<String> locations = new ArrayList<>();
     private List<DependencyPath> dependencyPaths = new ArrayList<>();
     private String packageRepository;
-    private boolean isDirectDependency;
-    private boolean isDevelopment;
+    @JsonProperty(value="isDirectDependency")
+    public boolean IsDirectDependency;
+
+    //public boolean isDirectDependency;
+    @JsonProperty(value="isDevelopmentDependency")
+    private boolean IsDevelopment;
     private PackageUsage packageUsage;
 }
