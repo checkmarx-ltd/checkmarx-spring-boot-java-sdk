@@ -927,10 +927,27 @@ public class CxService implements CxClient {
                     summary.put(resultType.getSeverity(), severityCount);
                 }
             }
+                //adding description if existing ref found
+
+            StringBuilder stringBuilder = new StringBuilder();
+            if(issue.getVulnerabilityStatus()==null)
+            {
+                cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(existingIssue.getDescription());
+            }
+            else if(existingIssue.getVulnerabilityStatus()!=null )
+            {
+                String existingIssueDescription = existingIssue.getDescription();
+                String newIssueDescription = issue.getDescription();
+                stringBuilder.append(existingIssueDescription).append("\r\n").append("\r\n").append(newIssueDescription);
+                cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(stringBuilder.toString());
+            }
+            else{
+                cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(issue.getDescription());
+            }
+
             // Copy additionalData.results from issue to existingIssue
             List<Map<String, Object>> results = (List<Map<String, Object>>) existingIssue.getAdditionalDetails().get("results");
             results.addAll((List<Map<String, Object>>)issue.getAdditionalDetails().get("results"));
-
         } else {
             if(falsePositive) {
                 issue.setFalsePositiveCount((issue.getFalsePositiveCount()+1));
