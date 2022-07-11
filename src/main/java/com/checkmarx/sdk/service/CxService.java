@@ -567,6 +567,10 @@ public class CxService implements CxClient {
                 if (scanState != null) {
                     additionalDetails.put("numFailedLoc", String.valueOf(scanState.getInt("failedLinesOfCode")));
                 }
+                JSONObject scanCustomFields = jsonObject.getJSONObject("customFields");
+                if (scanCustomFields != null) {
+                    additionalDetails.put("scanCustomFields", scanCustomFields.toMap());
+                }
             }
 
             // Add custom field values if requested
