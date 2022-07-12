@@ -70,22 +70,30 @@ public class CxXMLResultsType {
     protected String projectId;
     @XmlAttribute(name = "ProjectName")
     protected String projectName;
-    @XmlAttribute(name = "TeamFullPathOnReportDate")
-    protected String teamFullPathOnReportDate;
+
     @XmlAttribute(name = "DeepLink")
     protected String deepLink;
+
+    @XmlAttribute(name = "ScanTime")
+    protected String scanTime;
+
+    @XmlAttribute(name = "ReportCreationTime")
+    protected String reportCreationTime;
+
+
+    @XmlAttribute(name = "TeamFullPathOnReportDate")
+    protected String teamFullPathOnReportDate;
+
     @XmlAttribute(name = "ScanStart")
     protected String scanStart;
     @XmlAttribute(name = "Preset")
     protected String preset;
-    @XmlAttribute(name = "ScanTime")
-    protected String scanTime;
+
     @XmlAttribute(name = "LinesOfCodeScanned")
     protected String linesOfCodeScanned;
     @XmlAttribute(name = "FilesScanned")
     protected String filesScanned;
-    @XmlAttribute(name = "ReportCreationTime")
-    protected String reportCreationTime;
+
     @XmlAttribute(name = "Team")
     protected String team;
     @XmlAttribute(name = "CheckmarxVersion")
