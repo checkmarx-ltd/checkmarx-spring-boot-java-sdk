@@ -2,15 +2,13 @@ package com.checkmarx.sdk.config;
 
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.google.common.collect.ImmutableMap;
-
-import org.apache.commons.collections4.MapUtils;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.Map;
-
-import javax.annotation.PostConstruct;
 
 
 @Component
@@ -34,6 +32,18 @@ public class CxProperties extends CxPropertiesBase{
     private Integer incrementalNumScans = 5;
 
     private Boolean preserveXml = false;
+
+    @Getter
+    @Setter
+    private int corepoolsize;
+    @Getter
+    @Setter
+    private int maxpoolsize;
+    @Getter
+    @Setter
+    private int queuecapacityarg;
+
+
     
     private Integer httpConnectionTimeout = 30000;
     private Integer httpReadTimeout = 120000;

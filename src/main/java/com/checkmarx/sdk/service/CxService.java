@@ -455,8 +455,14 @@ public class CxService implements CxClient {
             cxScanBuilder.files(cxResults.getFilesScanned());
             cxScanBuilder.loc(cxResults.getLinesOfCodeScanned());
             cxScanBuilder.scanType(cxResults.getScanType());
+
+            cxScanBuilder.setScanTime(cxResults.getScanTime());
+            cxScanBuilder.setDeepLink(cxResults.getDeepLink());
+            cxScanBuilder.setReportCreationTime(cxResults.getReportCreationTime());
+
             Map<String, Integer> summary = getIssues(filter, session, xIssueList, cxResults);
             cxScanBuilder.xIssues(xIssueList);
+            cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
             CxScanSummary scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
             cxScanBuilder.scanSummary(scanSummary);
@@ -629,9 +635,13 @@ public class CxService implements CxClient {
             cxScanBuilder.team(cxResults.getTeam());
             cxScanBuilder.project(cxResults.getProjectName());
             cxScanBuilder.link(cxResults.getDeepLink());
+            cxScanBuilder.setScanTime(cxResults.getScanTime());
+            cxScanBuilder.setDeepLink(cxResults.getDeepLink());
+            cxScanBuilder.setReportCreationTime(cxResults.getReportCreationTime());
             cxScanBuilder.files(cxResults.getFilesScanned());
             cxScanBuilder.loc(cxResults.getLinesOfCodeScanned());
             cxScanBuilder.scanType(cxResults.getScanType());
+            cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
             Map<String, Integer> summary = getIssues(filter, session, issueList, cxResults);
             cxScanBuilder.xIssues(issueList);
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
