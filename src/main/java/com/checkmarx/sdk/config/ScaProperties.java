@@ -38,4 +38,10 @@ public class ScaProperties {
     private boolean preserveXml = false;
     private String filterPolicyViolation;
     private String filterdependencytype;
+
+
+
+
+
+
 }

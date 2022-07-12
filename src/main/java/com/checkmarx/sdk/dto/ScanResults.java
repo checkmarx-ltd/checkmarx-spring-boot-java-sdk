@@ -25,6 +25,18 @@ public class ScanResults{
 
     private Boolean osa = false;
     private String  projectId;
+
+    @Getter
+    @Setter
+    private String DeepLink;
+    @Getter
+    @Setter
+    private String ReportCreationTime;
+    @Getter
+    @Setter
+    private String ScanTime;
+
+
     private Integer SastScanId;
     private String  team;
     private String  project;
@@ -32,6 +44,10 @@ public class ScanResults{
     private String  files;
     private String  loc;
     private String  scanType;
+
+    @Getter
+    @Setter
+    private String  version;
     private List<XIssue> xIssues;
     private String output;
     private Map<String, Object> additionalDetails;
@@ -39,22 +55,29 @@ public class ScanResults{
     private SCAResults scaResults;
     private ASTResults astResults;
 
-    public ScanResults(Boolean osa, String projectId, String team, String project, String link, String files, String loc, String scanType,
+    public ScanResults(Boolean osa, String projectId,String deepLink, String reportCreationTime, String scanTime, String team, String project, String link, String files, String loc, String scanType,String version,
                        List<XIssue> xIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary, SCAResults scaResults, ASTResults astResults) {
         this.osa = osa;
         this.projectId = projectId;
+        this.DeepLink = deepLink;
+        this.ReportCreationTime = reportCreationTime;
+        this.ScanTime = scanTime;
         this.team = team;
         this.project = project;
         this.link = link;
         this.files = files;
         this.loc = loc;
         this.scanType = scanType;
+        this.version = version;
         this.xIssues = xIssues;
         this.additionalDetails = additionalDetails;
         this.scanSummary = scanSummary;
         this.scaResults = scaResults;
         this.astResults = astResults;
     }
+
+
+
 
     public ScanResults() {
     }
@@ -721,10 +744,22 @@ public class ScanResults{
         private String projectId;
         private String team;
         private String project;
+
+        @Getter
+        @Setter
+        private String DeepLink;
+        @Getter
+        @Setter
+        private String ReportCreationTime;
+        @Getter
+        @Setter
+        private String ScanTime;
+
         private String link;
         private String files;
         private String loc;
         private String scanType;
+        private String version;
         private List<XIssue> xIssues;
         private Map<String, Object> additionalDetails;
         private CxScanSummary scanSummary;
@@ -801,7 +836,15 @@ public class ScanResults{
         }
 
         public ScanResults build() {
-            return new ScanResults(osa, projectId, team, project, link, files, loc, scanType, xIssues, additionalDetails, scanSummary, scaResults, astResults);
+            return new ScanResults(osa, projectId, DeepLink,  ReportCreationTime, ScanTime, team, project, link, files, loc, scanType,version, xIssues, additionalDetails, scanSummary, scaResults, astResults);
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
         }
 
         @Override
