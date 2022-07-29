@@ -948,8 +948,11 @@ public class CxService implements CxClient {
             {
                 String existingIssueDescription = existingIssue.getDescription();
                 String newIssueDescription = issue.getDescription();
-                stringBuilder.append(existingIssueDescription).append("\r\n").append("\r\n").append(newIssueDescription);
-                cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(stringBuilder.toString());
+                if(!existingIssueDescription.contains(newIssueDescription))
+                {
+                    stringBuilder.append(existingIssueDescription).append("\r\n").append("\r\n").append(newIssueDescription);
+                    cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(stringBuilder.toString());
+                }
             }
             else{
                 cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(issue.getDescription());
