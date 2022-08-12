@@ -27,6 +27,7 @@ import javax.xml.bind.annotation.*;
  *       &lt;attribute name="Remark" type="{http://www.w3.org/2001/XMLSchema}string" />
  *       &lt;attribute name="DeepLink" type="{http://www.w3.org/2001/XMLSchema}string" />
  *       &lt;attribute name="SeverityIndex" type="{http://www.w3.org/2001/XMLSchema}string" />
+ *       &lt;attribute name="DetectionDate" type="{http://www.w3.org/2001/XMLSchema}string" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -66,6 +67,8 @@ public class ResultType {
     protected String deepLink;
     @XmlAttribute(name = "SeverityIndex")
     protected String severityIndex;
+    @XmlAttribute(name = "DetectionDate")
+    protected String detectionDate;
 
     /**
      * Gets the value of the path property.
@@ -377,6 +380,30 @@ public class ResultType {
      */
     public void setSeverityIndex(String value) {
         this.severityIndex = value;
+    }
+
+    /**
+     * Gets the value of the detectionDate property.
+     *
+     * @return
+     *     possible object is
+     *     {@link String }
+     *
+     */
+    public String getDetectionDate() {
+        return detectionDate;
+    }
+
+    /**
+     * Sets the value of the detectionDate property.
+     *
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *
+     */
+    public void setDetectionDate(String value) {
+        this.detectionDate = value;
     }
 
 }

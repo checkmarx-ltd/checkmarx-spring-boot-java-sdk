@@ -42,6 +42,9 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
@@ -775,6 +778,7 @@ public class CxService implements CxClient {
                 .map(FilterConfiguration::getSastFilters)
                 .orElse(null);
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(cxProperties.getDetectionDateFormat());
         for (QueryType result : cxResults.getQuery()) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
@@ -796,6 +800,14 @@ public class CxService implements CxClient {
                         xIssueBuilder.vulnerabilityStatus(cxProperties.getStateFullName(resultType.getState()));
                         xIssueBuilder.queryId(result.getId());
                         xIssueBuilder.groupBySeverity(cxProperties.getGroupBySeverity());
+                        try {
+                            if (resultType.getDetectionDate() != null) {
+                                LocalDateTime ldt = LocalDateTime.parse(resultType.getDetectionDate(), formatter);
+                                xIssueBuilder.detectionDate(ldt);
+                            }
+                        } catch (DateTimeParseException e) {
+                            log.warn("Error parsing detection date: {}", resultType.getDetectionDate(), e);
+                        }
 
  
                         // Add additional details
