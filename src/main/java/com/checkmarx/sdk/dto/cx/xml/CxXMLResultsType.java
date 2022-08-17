@@ -106,6 +106,8 @@ public class CxXMLResultsType {
     protected String sourceOrigin;
     @XmlAttribute(name = "Visibility")
     protected String visibility;
+    @XmlAttribute(name = "ScanCustomFields")
+    protected String scanCustomFields;
 
     /**
      * Gets the value of the query property.
@@ -591,5 +593,27 @@ public class CxXMLResultsType {
     public void setVisibility(String value) {
         this.visibility = value;
     }
+    /**
+     * Gets the value of the scanCustomFields property.
+     *
+     * @return
+     *     allowed object is
+     *     {@link String }
+     *
+     */
+    public String getScanCustomFields() {
+        return scanCustomFields;
+    }
 
+    /**
+     * Sets the value of the scanCustomFields property.
+     *
+     * @param scanCustomFields
+     *     allowed object is
+     *     {@link String }
+     *
+     */
+    public void setScanCustomFields(String scanCustomFields) {
+        this.scanCustomFields = scanCustomFields;
+    }
 }
