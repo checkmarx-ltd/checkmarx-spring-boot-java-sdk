@@ -382,7 +382,7 @@ public class CxService implements CxClient {
             waitForReportCreateOrFail(reportId);
             Thread.sleep(1000);
         } catch (InterruptedException e) {
-            log.error(ExceptionUtils.getStackTrace(e));
+            log.error("Error occurred while getting report content by Scan Id.", ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
             throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }
@@ -402,7 +402,7 @@ public class CxService implements CxClient {
             /* login to legacy SOAP CX Client to retrieve description */
             session = authClient.getLegacySession();
         } catch (InvalidCredentialsException e) {
-            log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
+            log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank", e);
         }
         log.info("Retrieving report contents of report Id {} in XML format", reportId);
         try {
@@ -521,7 +521,7 @@ public class CxService implements CxClient {
                 Unmarshaller unmarshaller = jc.createUnmarshaller();
                 return (CxXMLResultsType) unmarshaller.unmarshal(xsr);
             }catch (UnmarshalException e){
-                log.warn("Issue occurred performing unmashall step - trying again {}", ExceptionUtils.getMessage(e));
+                log.warn("Issue occurred performing unmarshall step - trying again {}", ExceptionUtils.getMessage(e));
                 if(resultsXML.getBody() != null) {
                     log.error("Writing raw response from CX to {}", "CX_".concat(String.valueOf(reportId)));
                     ScanUtils.writeByte("CX_".concat(String.valueOf(reportId)), resultsXML.getBody().getBytes());
@@ -622,7 +622,7 @@ public class CxService implements CxClient {
                 session = authClient.getLegacySession();
             }
         } catch (InvalidCredentialsException e) {
-            log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank");
+            log.error("Error occurring while logging into Legacy SOAP based WebService - issue description will remain blank", e);
         }
         try {
 
@@ -1318,7 +1318,7 @@ public class CxService implements CxClient {
             URL url = new URL(srcURL);
             gitURL = "git@github.com:" + url.getPath();
         } catch(java.net.MalformedURLException e) {
-            log.error("Bad GitHub repository URL {}", srcURL);
+            log.error("Bad GitHub repository URL {}", srcURL, e);
         }
         return gitURL;
     }
@@ -1970,7 +1970,7 @@ public class CxService implements CxClient {
             Thread.sleep(1000);
             return getXmlReportContent(reportId);
         } catch (InterruptedException e) {
-            log.error(ExceptionUtils.getStackTrace(e));
+            log.error("Error occurred in CxXMLResultsType method ", ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
             throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }
@@ -1994,7 +1994,7 @@ public class CxService implements CxClient {
             Thread.sleep(cxProperties.getScanPolling());
             return getReportContent(reportId, filters);
         } catch (InterruptedException e) {
-            log.error(ExceptionUtils.getStackTrace(e));
+            log.error("Error occurred while creating Scan and Report.", ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
             throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }
@@ -2055,7 +2055,7 @@ public class CxService implements CxClient {
             Thread.sleep(cxProperties.getScanPolling());
             return getXmlReportContent(reportId);
         } catch (InterruptedException e) {
-            log.error(ExceptionUtils.getStackTrace(e));
+            log.error("Error occurred while getting latest scan report.", ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
             throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }
@@ -2081,7 +2081,7 @@ public class CxService implements CxClient {
             Thread.sleep(cxProperties.getScanPolling());
             return getReportContent(reportId, filters);
         } catch (InterruptedException e) {
-            log.error(ExceptionUtils.getStackTrace(e));
+            log.error("Error occurred while getting latest scan results.", ExceptionUtils.getStackTrace(e));
             Thread.currentThread().interrupt();
             throw new CheckmarxException(INTERRUPTED_EXCEPTION_MESSAGE);
         }

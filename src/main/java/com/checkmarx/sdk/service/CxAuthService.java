@@ -109,7 +109,7 @@ public class CxAuthService implements CxAuthClient{
             }
         }
         catch (NullPointerException | HttpStatusCodeException e) {
-            log.error("Error occurred white obtaining Access Token.  Possibly incorrect credentials");
+            log.error("Error occurred while obtaining Access Token.  Possibly incorrect credentials");
             log.error(ExceptionUtils.getStackTrace(e));
             throw new InvalidCredentialsException();
         }
@@ -155,7 +155,7 @@ public class CxAuthService implements CxAuthClient{
             }
         }
         catch (NullPointerException | HttpStatusCodeException e) {
-            log.error("Error occurred white obtaining Access Token.  Possibly incorrect credentials");
+            log.error("Error occurred while obtaining Access Token.  Possibly incorrect credentials");
             log.error(ExceptionUtils.getStackTrace(e));
             throw new InvalidCredentialsException();
         }

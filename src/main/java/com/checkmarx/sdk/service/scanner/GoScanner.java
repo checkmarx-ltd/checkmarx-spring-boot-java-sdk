@@ -162,7 +162,7 @@ public class GoScanner implements ILegacyClient {
             createBody.put("licenseType", "standard");
             requestBody.put("businessApplication", createBody);
         } catch (JSONException e) {
-            log.error("Error generating JSON App create Request object - JSON object will be empty");
+            log.error("Error generating JSON App create Request object - JSON object will be empty", e);
         }
         return requestBody.toString();
     }
@@ -201,7 +201,7 @@ public class GoScanner implements ILegacyClient {
             createBody.put("criticality", 5);
             requestBody.put("project", createBody);
         } catch (JSONException e) {
-            log.error("Error generating JSON Project create Request object - JSON object will be empty");
+            log.error("Error generating JSON Project create Request object - JSON object will be empty", e);
         }
         return requestBody.toString();
     }
@@ -729,7 +729,7 @@ public class GoScanner implements ILegacyClient {
                 curLine++;
             }
         } catch(IOException e) {
-            log.error("Error parsing source file: {}.", filePath);
+            log.error("Error parsing source file: {}.", filePath, e);
         }
         assert codeLine != null;
         return codeLine.replace("\r","").replace("\n","");
@@ -805,7 +805,7 @@ public class GoScanner implements ILegacyClient {
                 }
             }
         } catch(InterruptedException e) {
-            log.error("Thread sleep error waiting for scan status!");
+            log.error("Thread sleep error waiting for scan status!", e);
         }
         log.info("scanId: {}, status: {}, progress: {}", scanId, scanStatus.getStatus(), scanStatus.getProgress());
         if (status.equals(ScanStatus.Status.FAILED)) {
@@ -817,7 +817,7 @@ public class GoScanner implements ILegacyClient {
                 Thread.sleep(cxGoProperties.getScanPolling());
                 waitForScanCompletion(scanId);
             } catch (InterruptedException e) {
-                log.error("Thread sleep error waiting for scan status!");
+                log.error("Thread sleep error waiting for scan status!", e);
             }
         }
     }
