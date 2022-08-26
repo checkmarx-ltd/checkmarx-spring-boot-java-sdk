@@ -579,12 +579,6 @@ public class CxService implements CxClient {
             Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
             additionalDetails.put("customFields", customFields);
         }
-        if (!ScanUtils.empty(cxResults.getScanCustomFields())) {
-            String customFieldsArray[] = cxResults.getScanCustomFields().split(":");
-            Map<String, String> scanCustomFields = new HashMap<String, String>();
-            scanCustomFields.put(customFieldsArray[0], customFieldsArray[1]);
-            additionalDetails.put("scanCustomFields", scanCustomFields);
-        }
         return additionalDetails;
     }
 
@@ -806,6 +800,14 @@ public class CxService implements CxClient {
  
                         // Add additional details
                         Map<String, Object> additionalDetails = getAdditionalIssueDetails(result, resultType);
+
+                        if (!ScanUtils.empty(cxResults.getScanCustomFields())) {
+                            String customFieldsArray[] = cxResults.getScanCustomFields().split(":");
+                            Map<String, String> scanCustomFields = new HashMap<String, String>();
+                            scanCustomFields.put(customFieldsArray[0], customFieldsArray[1]);
+                            additionalDetails.put("scanCustomFields", scanCustomFields);
+                        }
+
                         xIssueBuilder.additionalDetails(additionalDetails);
 
                         Map<Integer, ScanResults.IssueDetails> details = new HashMap<>();
