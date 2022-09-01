@@ -58,7 +58,7 @@ jobs:
           name: "Publish Release on GitHub"
           command: |
             go get github.com/tcnksm/ghr
-            go get github.com/google/go-github/v39
+            go get github.com/google/go-github/v39/github
             VERSION=$(cat ./target/version.txt)
             rm ./target/version.txt
             ghr -t ${GITHUB_TOKEN_CXFLOW} -u ${CIRCLE_PROJECT_USERNAME} -n ${VERSION} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./target/
