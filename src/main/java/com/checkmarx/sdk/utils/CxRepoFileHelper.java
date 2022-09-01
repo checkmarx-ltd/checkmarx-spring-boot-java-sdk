@@ -93,7 +93,7 @@ public class CxRepoFileHelper {
         return pathFile;
     }
 
-    private String getGitClonePath() {
+    public String getGitClonePath() {
         return cxProperties == null ? CxPropertiesBase.getDefaultOsPath() : cxProperties.getGitClonePath();
     }
 
