@@ -89,7 +89,7 @@ public class CxGoAuthService {
             requestBody.put("grant_type", GRANT_TYPE);
             requestBody.put("token", getEffectiveClientSecret(clientSecretOverride));
         } catch (JSONException e) {
-            log.error("Error creating JSON Token Request object - JSON object will be empty");
+            log.error("Error creating JSON Token Request object - JSON object will be empty", e);
         }
         return requestBody.toString();
     }

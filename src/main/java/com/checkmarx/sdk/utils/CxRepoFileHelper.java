@@ -51,7 +51,7 @@ public class CxRepoFileHelper {
             return zipFilePath;
 
         } catch (GitAPIException | IOException | URISyntaxException e)  {
-            log.error(ExceptionUtils.getRootCauseMessage(e));
+            log.error("Error occurred while preparing repo file", ExceptionUtils.getRootCauseMessage(e));
             throw new CheckmarxException("Unable to clone Git Url.");
         }
     }

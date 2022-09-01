@@ -121,7 +121,7 @@ public class ScanUtils {
             String config = new String(Files.readAllBytes(jsonConfig.toPath()));
             return getConfigAsCode(config);
         } catch (IOException e) {
-           log.error(ExceptionUtils.getStackTrace(e));
+           log.error("Error occurred in getConfigAsCode method.", ExceptionUtils.getStackTrace(e));
             return null;
         }
     }
