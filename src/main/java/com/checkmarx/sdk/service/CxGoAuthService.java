@@ -3,6 +3,7 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.config.CxGoProperties;
 import com.checkmarx.sdk.dto.cx.CxGoAuthResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
@@ -39,21 +41,26 @@ public class CxGoAuthService {
     }
 
     private void getAuthToken(String clientSecretOverride) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setCacheControl(CacheControl.noCache());
-        String request = getJSONTokenReq(clientSecretOverride);
-        HttpEntity<String> req = new HttpEntity<>(request, headers);
-        token = restTemplate.postForObject(
-                cxGoProperties.getUrl().concat(GET_SESSION_TOKEN),
-                req,
-                CxGoAuthResponse.class);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setCacheControl(CacheControl.noCache());
+            String request = getJSONTokenReq(clientSecretOverride);
+            HttpEntity<String> req = new HttpEntity<>(request, headers);
+            token = restTemplate.postForObject(
+                    cxGoProperties.getUrl().concat(GET_SESSION_TOKEN),
+                    req,
+                    CxGoAuthResponse.class);
 
-        final long SAFETY_INTERVAL_SECONDS = 500;
-        LocalDateTime now = LocalDateTime.now();
-        tokenExpires = Optional.ofNullable(token)
-                .map(t -> now.plusSeconds(t.getExpiresIn() - SAFETY_INTERVAL_SECONDS)) //expire 500 seconds early
-                .orElse(now);
+            final long SAFETY_INTERVAL_SECONDS = 500;
+            LocalDateTime now = LocalDateTime.now();
+            tokenExpires = Optional.ofNullable(token)
+                    .map(t -> now.plusSeconds(t.getExpiresIn() - SAFETY_INTERVAL_SECONDS)) //expire 500 seconds early
+                    .orElse(now);
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while getting AuthToken, http error {}", e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
     }
 
     public HttpHeaders createAuthHeaders() {

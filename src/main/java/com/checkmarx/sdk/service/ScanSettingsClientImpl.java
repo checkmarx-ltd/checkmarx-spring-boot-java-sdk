@@ -231,26 +231,34 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
 
     @Override
     public String getEngineConfigurationName(int configurationId) {
-        HttpEntity<String> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
-        String url = cxProperties.getUrl() + SCAN_CONFIGURATION_BY_ID;
-        ResponseEntity<JsonNode> response = restTemplate.exchange(url,
-                HttpMethod.GET,
-                httpEntity,
-                JsonNode.class,
-                configurationId);
+            HttpEntity<String> httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+            String url = cxProperties.getUrl() + SCAN_CONFIGURATION_BY_ID;
+            String result = null;
+            try {
+                ResponseEntity<JsonNode> response = restTemplate.exchange(url,
+                        HttpMethod.GET,
+                        httpEntity,
+                        JsonNode.class,
+                        configurationId);
 
-        String result = null;
-        if (response.getBody() != null) {
-            JsonNode nameNode = response.getBody().get("name");
-            if (nameNode != null) {
-                result = nameNode.textValue();
+
+                if (response.getBody() != null) {
+                    JsonNode nameNode = response.getBody().get("name");
+                    if (nameNode != null) {
+                        result = nameNode.textValue();
+                    }
+                }
+
+                if (result == null) {
+                    log.warn("Unable to get scan configuration by ID: {}.", configurationId);
+                }
+            } catch (HttpStatusCodeException e) {
+                log.error("Error occurred while retrieving engine configurations");
+                log.error(ExceptionUtils.getStackTrace(e));
+            } catch (JSONException e) {
+                log.error("Error occurred while parsing JSON Response.");
+                log.error(ExceptionUtils.getStackTrace(e));
             }
+            return result;
         }
-
-        if (result == null) {
-            log.warn("Unable to get scan configuration by ID: {}.", configurationId);
-        }
-
-        return result;
     }
-}
