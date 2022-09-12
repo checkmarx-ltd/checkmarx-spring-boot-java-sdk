@@ -71,6 +71,25 @@ public class CxServiceTest {
         }
     }
 
+    @Test
+    public void getReportContentWithDetectionDate() {
+        properties.setOffline(true);
+        File file = new File(
+                getClass().getClassLoader().getResource("ScanReportWithDetectionDate.xml").getFile()
+        );
+        try {
+            ScanResults results = service.getReportContent(file, null);
+            assertNotNull(results);
+            List<ScanResults.XIssue> issuesWithDetectionDate = results.getXIssues()
+                    .stream()
+                    .filter(x -> x.getDetectionDate() != null)
+                    .collect(Collectors.toList());
+            assertEquals(results.getXIssues().size(), issuesWithDetectionDate.size());
+        } catch (CheckmarxException e) {
+            fail("Unexpected Exception");
+        }
+    }
+
 
     @Test
     public void branchProject() {

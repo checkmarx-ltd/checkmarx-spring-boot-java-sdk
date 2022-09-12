@@ -6,6 +6,10 @@ import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.dto.sca.report.Package;
 import com.checkmarx.sdk.dto.cx.CxScanSummary;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,6 +18,7 @@ import org.modelmapper.Conditions;
 import org.modelmapper.ModelMapper;
 
 import java.beans.ConstructorProperties;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -246,10 +251,13 @@ public class ScanResults{
         private Map<String, Object> additionalDetails;
         private String queryId;
         private boolean groupBySeverity;
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        private LocalDateTime detectionDate;
 
         XIssue(String vulnerability, String vulnerabilityStatus, String similarityId, String cwe, String cve, String description, String language,
                String severity, String link, String filename, String gitUrl, List<OsaDetails> osaDetails, List<ScaDetails> scaDetails, Map<Integer, IssueDetails> details,
-               Map<String, Object> additionalDetails, String queryId, boolean groupBySeverity) {
+               Map<String, Object> additionalDetails, String queryId, boolean groupBySeverity, LocalDateTime detectionDate) {
             this.vulnerability = vulnerability;
             this.vulnerabilityStatus = vulnerabilityStatus;
             this.similarityId = similarityId;
@@ -267,6 +275,7 @@ public class ScanResults{
             this.additionalDetails = additionalDetails;
             this.queryId = queryId;
             this.groupBySeverity = groupBySeverity;
+            this.detectionDate = detectionDate;
         }
 
         public static XIssueBuilder builder() {
@@ -382,6 +391,8 @@ public class ScanResults{
             return this.gitUrl;
         }
 
+        public LocalDateTime getDetectionDate() { return this.detectionDate; }
+
         public List<OsaDetails> getOsaDetails() {
             return this.osaDetails;
         }
@@ -430,6 +441,8 @@ public class ScanResults{
             this.gitUrl = gitUrl;
         }
 
+        public void setDetectionDate(LocalDateTime detectionDate) { this.detectionDate = detectionDate; }
+
         public void setOsaDetails(List<OsaDetails> osaDetails) {
             this.osaDetails = osaDetails;
         }
@@ -463,6 +476,7 @@ public class ScanResults{
             private String file;
             private String queryId;
             private Boolean groupBySeverity;
+            private LocalDateTime detectionDate;
             private List<OsaDetails> osaDetails;
             private List<ScaDetails> scaDetails;
 
@@ -498,6 +512,11 @@ public class ScanResults{
 
             public XIssue.XIssueBuilder description(String description) {
                 this.description = description;
+                return this;
+            }
+
+            public XIssue.XIssueBuilder detectionDate(LocalDateTime detectionDate) {
+                this.detectionDate = detectionDate;
                 return this;
             }
 
@@ -552,12 +571,25 @@ public class ScanResults{
             }
 
             public XIssue build() {
-                return new XIssue(vulnerability,  vulnerabilityStatus, similarityId, cwe, cve, description, language, severity, link, file, "", osaDetails, scaDetails, details, additionalDetails, queryId, groupBySeverity);
+                return new XIssue(vulnerability,  vulnerabilityStatus, similarityId, cwe, cve, description, language, severity, link, file, "", osaDetails, scaDetails, details, additionalDetails, queryId, groupBySeverity, detectionDate);
             }
 
             @Override
             public String toString() {
-                return "ScanResults.XIssue.XIssueBuilder(simiarlityId="+ this.similarityId +",vulnerability=" + this.vulnerability + ", cwe=" + this.cwe + ", cve=" + this.cve + ", description=" + this.description + ", language=" + this.language + ", severity=" + this.severity + ", link=" + this.link + ", filename=" + this.file + ", osaDetails=" + this.osaDetails + ", details=" + this.details + ", additionalDetails=" + this.additionalDetails + ")";
+                return "ScanResults.XIssue.XIssueBuilder(similarityId="+ this.similarityId +
+                        ",vulnerability=" + this.vulnerability +
+                        ", cwe=" + this.cwe +
+                        ", cve=" + this.cve +
+                        ", description=" + this.description +
+                        ", language=" + this.language +
+                        ", severity=" + this.severity +
+                        ", link=" + this.link +
+                        ", filename=" + this.file +
+                        ", osaDetails=" + this.osaDetails +
+                        ", details=" + this.details +
+                        ", additionalDetails=" + this.additionalDetails +
+                        ", detectionDate=" + this.detectionDate +
+                        ")";
             }
         }
     }
