@@ -57,7 +57,7 @@ jobs:
       - run:
           name: "Publish Release on GitHub"
           command: |
-            go get github.com/tcnksm/ghr
+            go get github.com/cxflowtestuser/ghr
             go get github.com/google/go-github/v47/github
             VERSION=$(cat ./target/version.txt)
             rm ./target/version.txt
