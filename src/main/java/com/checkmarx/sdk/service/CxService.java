@@ -577,11 +577,11 @@ public class CxService implements CxClient {
      */
     protected Map<String, Object> getAdditionalScanDetails(CxXMLResultsType cxResults) {
         // Add additional data from the results
-            Map<String, Object> additionalDetails = new HashMap<String, Object>();
+        Map<String, Object> additionalDetails = new HashMap<String, Object>();
         try {
             additionalDetails.put("scanId", cxResults.getScanId());
             additionalDetails.put("scanStartDate", cxResults.getScanStart());
-            if (!cxProperties.getOffline()) {
+            if(!cxProperties.getOffline()) {
                 JSONObject jsonObject = getScanData(cxResults.getScanId());
                 if (jsonObject != null) {
                     additionalDetails.put("scanRisk", String.valueOf(jsonObject.getInt("scanRisk")));
@@ -595,21 +595,15 @@ public class CxService implements CxClient {
                 // Add custom field values if requested
                 Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
                 additionalDetails.put("customFields", customFields);
-            }
-            if (!ScanUtils.empty(cxResults.getScanCustomFields())) {
-                String customFieldsArray[] = cxResults.getScanCustomFields().split(":");
-                Map<String, String> scanCustomFields = new HashMap<String, String>();
-                scanCustomFields.put(customFieldsArray[0], customFieldsArray[1]);
-                additionalDetails.put("scanCustomFields", scanCustomFields);
-            }
+}
         } catch (JSONException e) {
-            log.error("Error Occurred in JSON Parsing");
-            log.error(ExceptionUtils.getStackTrace(e));
-        } catch (NullPointerException e) {
-            log.error("Null Pointer occurred while getting additional scan details.");
-            log.error(ExceptionUtils.getStackTrace(e));
-        }
-            return additionalDetails;
+                log.error("Error Occurred in JSON Parsing");
+                log.error(ExceptionUtils.getStackTrace(e));
+            } catch (NullPointerException e) {
+                log.error("Null Pointer occurred while getting additional scan details.");
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
+        return additionalDetails;
     }
 
     /**
@@ -831,6 +825,14 @@ public class CxService implements CxClient {
 
                         // Add additional details
                         Map<String, Object> additionalDetails = getAdditionalIssueDetails(result, resultType);
+
+                        if (!ScanUtils.empty(cxResults.getScanCustomFields())) {
+                            String customFieldsArray[] = cxResults.getScanCustomFields().split(":");
+                            Map<String, String> scanCustomFields = new HashMap<String, String>();
+                            scanCustomFields.put(customFieldsArray[0], customFieldsArray[1]);
+                            additionalDetails.put("scanCustomFields", scanCustomFields);
+                        }
+
                         xIssueBuilder.additionalDetails(additionalDetails);
 
                         Map<Integer, ScanResults.IssueDetails> details = new HashMap<>();
