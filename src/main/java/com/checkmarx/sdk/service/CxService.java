@@ -182,6 +182,9 @@ public class CxService implements CxClient {
         } catch (HttpStatusCodeException e) {
             log.error(SCAN_CREATION_ERROR, projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         return UNKNOWN_INT;
     }
@@ -214,6 +217,9 @@ public class CxService implements CxClient {
         } catch (HttpStatusCodeException e) {
             log.error(SCAN_CREATION_ERROR, projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error occurred while processing JSON");
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         return UNKNOWN_INT;
     }
@@ -236,6 +242,9 @@ public class CxService implements CxClient {
             scanData = new JSONObject(response.getBody());
         } catch (HttpStatusCodeException e) {
             log.error("Error occurred while fetching Scan data for scan Id {}, http error {}", scanId, e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error occurred while processing JSON");
             log.error(ExceptionUtils.getStackTrace(e));
         }
         return scanData;
@@ -285,6 +294,9 @@ public class CxService implements CxClient {
             log.error(ExceptionUtils.getStackTrace(e));
         } catch (NullPointerException e) {
             log.error("Error parsing JSON response for dateAndTime status. {}", ExceptionUtils.getMessage(e));
+        } catch (JSONException e) {
+            log.error("Error occurred while processing JSON");
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         return null;
     }
@@ -308,6 +320,10 @@ public class CxService implements CxClient {
             log.error(ExceptionUtils.getStackTrace(e));
         } catch (JSONException e) {
             log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        catch (Exception e) {
+            log.error("Error occurred while getting scan status");
             log.error(ExceptionUtils.getStackTrace(e));
         }
         return UNKNOWN_INT;
@@ -565,23 +581,31 @@ public class CxService implements CxClient {
     protected Map<String, Object> getAdditionalScanDetails(CxXMLResultsType cxResults) {
         // Add additional data from the results
         Map<String, Object> additionalDetails = new HashMap<String, Object>();
-        additionalDetails.put("scanId", cxResults.getScanId());
-        additionalDetails.put("scanStartDate", cxResults.getScanStart());
-        if(!cxProperties.getOffline()) {
-            JSONObject jsonObject = getScanData(cxResults.getScanId());
-            if (jsonObject != null) {
-                additionalDetails.put("scanRisk", String.valueOf(jsonObject.getInt("scanRisk")));
-                additionalDetails.put("scanRiskSeverity", String.valueOf(jsonObject.getInt("scanRiskSeverity")));
-                JSONObject scanState = jsonObject.getJSONObject("scanState");
-                if (scanState != null) {
-                    additionalDetails.put("numFailedLoc", String.valueOf(scanState.getInt("failedLinesOfCode")));
+        try {
+            additionalDetails.put("scanId", cxResults.getScanId());
+            additionalDetails.put("scanStartDate", cxResults.getScanStart());
+            if(!cxProperties.getOffline()) {
+                JSONObject jsonObject = getScanData(cxResults.getScanId());
+                if (jsonObject != null) {
+                    additionalDetails.put("scanRisk", String.valueOf(jsonObject.getInt("scanRisk")));
+                    additionalDetails.put("scanRiskSeverity", String.valueOf(jsonObject.getInt("scanRiskSeverity")));
+                    JSONObject scanState = jsonObject.getJSONObject("scanState");
+                    if (scanState != null) {
+                        additionalDetails.put("numFailedLoc", String.valueOf(scanState.getInt("failedLinesOfCode")));
+                    }
                 }
-            }
 
-            // Add custom field values if requested
-            Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
-            additionalDetails.put("customFields", customFields);
-        }
+                // Add custom field values if requested
+                Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
+                additionalDetails.put("customFields", customFields);
+}
+        } catch (JSONException e) {
+                log.error("Error Occurred in JSON Parsing");
+                log.error(ExceptionUtils.getStackTrace(e));
+            } catch (NullPointerException e) {
+                log.error("Null Pointer occurred while getting additional scan details.");
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
         return additionalDetails;
     }
 
@@ -661,7 +685,7 @@ public class CxService implements CxClient {
             log.error(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException(ERROR_PROCESSING_SCAN_RESULTS);
         } catch (NullPointerException e) {
-            log.info("Null error");
+            log.error("Null error");
             log.error(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException(ERROR_PROCESSING_SCAN_RESULTS);
         }
@@ -774,19 +798,20 @@ public class CxService implements CxClient {
      */
     private Map<String, Integer> getIssues(FilterConfiguration filter, String session, List<ScanResults.XIssue> cxIssueList, CxXMLResultsType cxResults) {
         Map<String, Integer> summary = new HashMap<>();
-        EngineFilterConfiguration sastFilters = Optional.ofNullable(filter)
-                .map(FilterConfiguration::getSastFilters)
-                .orElse(null);
+        try {
+            EngineFilterConfiguration sastFilters = Optional.ofNullable(filter)
+                    .map(FilterConfiguration::getSastFilters)
+                    .orElse(null);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(cxProperties.getDetectionDateFormat());
-        for (QueryType result : cxResults.getQuery()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(cxProperties.getDetectionDateFormat());
+            for (QueryType result : cxResults.getQuery()) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
                 for (ResultType resultType : result.getResult()) {
                     FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(result, resultType);
                     if (filterValidator.passesFilter(filterInput, sastFilters)) {
                         boolean falsePositive = false;
-                        if(!resultType.getFalsePositive().equalsIgnoreCase("FALSE")){
+                        if (!resultType.getFalsePositive().equalsIgnoreCase("FALSE")) {
                             falsePositive = true;
                         }
                         /*Map issue details*/
@@ -809,7 +834,7 @@ public class CxService implements CxClient {
                             log.warn("Error parsing detection date: {}", resultType.getDetectionDate(), e);
                         }
 
- 
+
                         // Add additional details
                         Map<String, Object> additionalDetails = getAdditionalIssueDetails(result, resultType);
 
@@ -857,6 +882,10 @@ public class CxService implements CxClient {
                         prepareIssuesRemoveDuplicates(cxIssueList, resultType, details, falsePositive, issue, summary);
                     }
                 }
+            }
+        } catch (NullPointerException e) {
+            log.error("Null Pointer Exception Occurred while getting issue");
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         return summary;
     }
@@ -927,74 +956,71 @@ public class CxService implements CxClient {
 
     private void prepareIssuesRemoveDuplicates(List<ScanResults.XIssue> cxIssueList, ResultType resultType, Map<Integer, ScanResults.IssueDetails> details,
                                                boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
-        if (!cxProperties.getDisableClubbing() && cxIssueList.contains(issue)) {
-            /*Get existing issue of same vuln+filename*/
-            ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
-            /*If no reference exists for this particular line, append it to the details (line+snippet)*/
-            if (!existingIssue.getDetails().containsKey(Integer.parseInt(resultType.getLine()))) {
-                if(falsePositive) {
-                    existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount()+1));
-                }
-                else{
-                    if(!summary.containsKey(resultType.getSeverity())){
-                        summary.put(resultType.getSeverity(), 0);
-                    }
-                    int severityCount = summary.get(resultType.getSeverity());
-                    severityCount++;
-                    summary.put(resultType.getSeverity(), severityCount);
-                }
-                existingIssue.getDetails().putAll(details);
-            }
-            else { //reference exists, ensure fp flag is maintained
-                ScanResults.IssueDetails existingDetails = existingIssue.getDetails().get(Integer.parseInt(resultType.getLine()));
-                ScanResults.IssueDetails newDetails = details.get(Integer.parseInt(resultType.getLine()));
-                if(newDetails.isFalsePositive() && !existingDetails.isFalsePositive()){
-                    existingDetails.setFalsePositive(true);
-                    existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount()+1));
-                    //bump down the count for the severity
-                    int severityCount = summary.get(resultType.getSeverity());
-                    severityCount--;
-                    summary.put(resultType.getSeverity(), severityCount);
-                }
-            }
-                //adding description if existing ref found
+       try {
+           if (!cxProperties.getDisableClubbing() && cxIssueList.contains(issue)) {
+               /*Get existing issue of same vuln+filename*/
+               ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
+               /*If no reference exists for this particular line, append it to the details (line+snippet)*/
+               if (!existingIssue.getDetails().containsKey(Integer.parseInt(resultType.getLine()))) {
+                   if (falsePositive) {
+                       existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
+                   } else {
+                       if (!summary.containsKey(resultType.getSeverity())) {
+                           summary.put(resultType.getSeverity(), 0);
+                       }
+                       int severityCount = summary.get(resultType.getSeverity());
+                       severityCount++;
+                       summary.put(resultType.getSeverity(), severityCount);
+                   }
+                   existingIssue.getDetails().putAll(details);
+               } else { //reference exists, ensure fp flag is maintained
+                   ScanResults.IssueDetails existingDetails = existingIssue.getDetails().get(Integer.parseInt(resultType.getLine()));
+                   ScanResults.IssueDetails newDetails = details.get(Integer.parseInt(resultType.getLine()));
+                   if (newDetails.isFalsePositive() && !existingDetails.isFalsePositive()) {
+                       existingDetails.setFalsePositive(true);
+                       existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
+                       //bump down the count for the severity
+                       int severityCount = summary.get(resultType.getSeverity());
+                       severityCount--;
+                       summary.put(resultType.getSeverity(), severityCount);
+                   }
+               }
+               //adding description if existing ref found
 
-            StringBuilder stringBuilder = new StringBuilder();
-            if(issue.getVulnerabilityStatus()==null)
-            {
-                cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(existingIssue.getDescription());
-            }
-            else if(existingIssue.getVulnerabilityStatus()!=null )
-            {
-                String existingIssueDescription = existingIssue.getDescription();
-                String newIssueDescription = issue.getDescription();
-                if(!existingIssueDescription.contains(newIssueDescription))
-                {
-                    stringBuilder.append(existingIssueDescription).append("\r\n").append("\r\n").append(newIssueDescription);
-                    cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(stringBuilder.toString());
-                }
-            }
-            else{
-                cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(issue.getDescription());
-            }
+               StringBuilder stringBuilder = new StringBuilder();
+               if (issue.getVulnerabilityStatus() == null) {
+                   cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(existingIssue.getDescription());
+               } else if (existingIssue.getVulnerabilityStatus() != null) {
+                   String existingIssueDescription = existingIssue.getDescription();
+                   String newIssueDescription = issue.getDescription();
+                   if (!existingIssueDescription.contains(newIssueDescription)) {
+                       stringBuilder.append(existingIssueDescription).append("\r\n").append("\r\n").append(newIssueDescription);
+                       cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(stringBuilder.toString());
+                   }
+               } else {
+                   cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(issue.getDescription());
+               }
 
-            // Copy additionalData.results from issue to existingIssue
-            List<Map<String, Object>> results = (List<Map<String, Object>>) existingIssue.getAdditionalDetails().get("results");
-            results.addAll((List<Map<String, Object>>)issue.getAdditionalDetails().get("results"));
-        } else {
-            if(falsePositive) {
-                issue.setFalsePositiveCount((issue.getFalsePositiveCount()+1));
-            }
-            else{
-                if(!summary.containsKey(resultType.getSeverity())){
-                    summary.put(resultType.getSeverity(), 0);
-                }
-                int severityCount = summary.get(resultType.getSeverity());
-                severityCount++;
-                summary.put(resultType.getSeverity(), severityCount);
-            }
-            cxIssueList.add(issue);
-        }
+               // Copy additionalData.results from issue to existingIssue
+               List<Map<String, Object>> results = (List<Map<String, Object>>) existingIssue.getAdditionalDetails().get("results");
+               results.addAll((List<Map<String, Object>>) issue.getAdditionalDetails().get("results"));
+           } else {
+               if (falsePositive) {
+                   issue.setFalsePositiveCount((issue.getFalsePositiveCount() + 1));
+               } else {
+                   if (!summary.containsKey(resultType.getSeverity())) {
+                       summary.put(resultType.getSeverity(), 0);
+                   }
+                   int severityCount = summary.get(resultType.getSeverity());
+                   severityCount++;
+                   summary.put(resultType.getSeverity(), severityCount);
+               }
+               cxIssueList.add(issue);
+           }
+       } catch (NullPointerException e) {
+           log.error("Null Error");
+           log.error(ExceptionUtils.getStackTrace(e));
+       }
     }
 
     private String getIssueDescription(String session, Long scanId, Long pathId) {
@@ -1138,6 +1164,10 @@ public class CxService implements CxClient {
             }
         } catch (JSONException e) {
             log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        catch (Exception e) {
+            log.error("Error occurred while getting projectId");
             log.error(ExceptionUtils.getStackTrace(e));
         }
         return UNKNOWN_INT;
@@ -1515,6 +1545,10 @@ public class CxService implements CxClient {
                 }
             }
         } catch (HttpStatusCodeException e) {
+            log.error(ERROR_GETTING_TEAMS);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        catch (Exception e) {
             log.error(ERROR_GETTING_TEAMS);
             log.error(ExceptionUtils.getStackTrace(e));
         }
@@ -1926,7 +1960,10 @@ public class CxService implements CxClient {
         } catch (HttpStatusCodeException e) {
             log.error(SCAN_CREATION_ERROR, projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
-        }finally {
+        } catch (JSONException e) {
+            log.error("Error Occurred While processing JSON");
+            log.error(ExceptionUtils.getStackTrace(e));
+        } finally {
             if (params.isGitSource() && cxProperties.getEnabledZipScan() || params.isFileSource()){
                 FileUtils.deleteQuietly(new File(params.getFilePath()));
             }
@@ -2247,6 +2284,9 @@ public class CxService implements CxClient {
         } catch (HttpStatusCodeException e) {
             log.error("Error occurred while retrieving ldap server mappings, http error {}", e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error occurred while processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         return UNKNOWN_INT;
     }
@@ -2409,6 +2449,9 @@ public class CxService implements CxClient {
         } catch (HttpStatusCodeException e) {
             log.error("Error occurred while retrieving ldap server mappings, http error {}", e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error occurred while processing JSON");
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         return UNKNOWN_INT;
     }
@@ -2438,6 +2481,9 @@ public class CxService implements CxClient {
                 log.info("No LDAP Server found for name {}", serverName);
             } catch (HttpStatusCodeException e) {
                 log.error("Error occurred while retrieving ldap servers, http error {}", e.getStatusCode());
+                log.error(ExceptionUtils.getStackTrace(e));
+            } catch (JSONException e) {
+                log.error("Error occurred while processing JSON");
                 log.error(ExceptionUtils.getStackTrace(e));
             }
             return UNKNOWN_INT;
@@ -2491,7 +2537,7 @@ public class CxService implements CxClient {
     }
 
     /**
-     * Wait for a for a scan with a given scan Id to complete with a finished or failure state
+     * Wait for a scan with a given scan Id to complete with a finished or failure state
      *
      * @param scanId
      * @throws CheckmarxException
@@ -2521,8 +2567,11 @@ public class CxService implements CxClient {
                     throw new CheckmarxException("Timeout exceeded during scan");
                 }
             }
-            if (status.equals(CxService.SCAN_STATUS_FAILED) || status.equals(CxService.SCAN_STATUS_CANCELED)) {
-                throw new CheckmarxException("Scan was cancelled or failed");
+            if (status.equals(CxService.SCAN_STATUS_FAILED)) {
+                throw new CheckmarxException("Scan was failed");
+            }
+            if (status.equals(CxService.SCAN_STATUS_CANCELED)) {
+                throw new CheckmarxException("Scan was cancelled");
             }
         }catch (InterruptedException e){
             throw new CheckmarxException("Thread interrupted");
