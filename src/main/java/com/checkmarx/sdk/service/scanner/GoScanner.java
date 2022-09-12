@@ -136,11 +136,16 @@ public class GoScanner implements ILegacyClient {
         HttpEntity<String> httpEntity = new HttpEntity<>(
                 getJSONCreateAppReq(appName, appDesc, baBuId),
                 authClient.createAuthHeaders());
-        ResponseEntity<OdApplicationCreate> createResp = restTemplate.exchange(
-                cxGoProperties.getUrl().concat(CREATE_APPLICATION),
-                HttpMethod.PUT,
-                httpEntity,
-                OdApplicationCreate.class);
+        ResponseEntity<OdApplicationCreate> createResp = null;
+        try {
+            createResp = restTemplate.exchange(
+                    cxGoProperties.getUrl().concat(CREATE_APPLICATION),
+                    HttpMethod.PUT,
+                    httpEntity,
+                    OdApplicationCreate.class);
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred in creating application ",e);
+        }
         OdApplicationCreate appCreate = createResp.getBody();
         assert appCreate != null;
         return appCreate.getData().getBaId();
@@ -172,12 +177,18 @@ public class GoScanner implements ILegacyClient {
         HttpEntity<?> httpEntity = new HttpEntity<>(
                 getJSONCreateProjectReq(appId, projectName, presets),
                 authClient.createAuthHeaders());
-        ResponseEntity<OdProjectCreate> createResp = restTemplate.exchange(
+        ResponseEntity<OdProjectCreate> createResp = null;
+        try {
+                createResp = restTemplate.exchange(
                 cxGoProperties.getUrl().concat(CREATE_PROJECT),
                 HttpMethod.PUT,
                 httpEntity,
                 OdProjectCreate.class);
-        OdProjectCreate appCreate = createResp.getBody();
+    } catch (HttpStatusCodeException e) {
+        log.info("Error occurred in creating CX GO Project ", e);
+        log.error(ExceptionUtils.getStackTrace(e));
+    }
+    OdProjectCreate appCreate = createResp.getBody();
         return appCreate.getData().getId();
     }
 
@@ -687,7 +698,7 @@ public class GoScanner implements ILegacyClient {
      *
      * @param projectId project to get source from
      * @param scanId specific scan within project to pull source file from
-     * @param filePath the path to the file int he code base
+     * @param filePath the path to the file in the code base
      * @return String containing the extracted source file
      */
     private String extractCodeSnippet(Integer projectId,
@@ -700,15 +711,21 @@ public class GoScanner implements ILegacyClient {
             sourceCode = (String)codeCache.get(filePath);
         } else {
             HttpEntity<?> httpEntity = new HttpEntity<>(null, authClient.createAuthHeaders());
-            ResponseEntity<OdScanFileResult> response = restTemplate.exchange(
-                    cxGoProperties.getUrl().concat(SCAN_FILE),
-                    HttpMethod.GET,
-                    httpEntity,
-                    OdScanFileResult.class,
-                    projectId,
-                    scanId,
-                    filePath
-            );
+            ResponseEntity<OdScanFileResult> response = null;
+           try {
+               response = restTemplate.exchange(
+                       cxGoProperties.getUrl().concat(SCAN_FILE),
+                       HttpMethod.GET,
+                       httpEntity,
+                       OdScanFileResult.class,
+                       projectId,
+                       scanId,
+                       filePath
+               );
+           } catch (HttpStatusCodeException e) {
+               log.info("Error occurred in Extracting code snippets.", e);
+               log.error(ExceptionUtils.getStackTrace(e));
+           }
             OdScanFileResult sfr = response.getBody();
             assert sfr != null;
             sourceCode = sfr.getData().getCode();
@@ -759,14 +776,20 @@ public class GoScanner implements ILegacyClient {
         long rcvItemCnt = 0;
         while(morePages) {
             // Fetch the current page
-            ResponseEntity<OdProjectList> response = restTemplate.exchange(
-                    cxGoProperties.getUrl().concat(GET_PROJECTS),
-                    HttpMethod.GET,
-                    httpEntity,
-                    OdProjectList.class,
-                    ownerId,
-                    curPage,
-                    pageSize);
+            ResponseEntity<OdProjectList> response = null;
+            try {
+                        response = restTemplate.exchange(
+                                cxGoProperties.getUrl().concat(GET_PROJECTS),
+                                HttpMethod.GET,
+                                httpEntity,
+                                OdProjectList.class,
+                                ownerId,
+                                curPage,
+                                pageSize);
+            } catch (HttpStatusCodeException e) {
+                log.info("Error occurred in creating CX GO Project ", e);
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
             // Are there more results
             OdProjectList curList = response.getBody();
             if(curPage == 0) totalCount = curList.getData().getTotalCount();
@@ -832,14 +855,20 @@ public class GoScanner implements ILegacyClient {
         long rcvItemCnt = 0;
         while(morePages) {
             // Fetch the current page
-            ResponseEntity<OdScanList> response = restTemplate.exchange(
-                    cxGoProperties.getUrl().concat(GET_SCAN_STATUS),
-                    HttpMethod.GET,
-                    httpEntity,
-                    OdScanList.class,
-                    projectId,
-                    curPage,
-                    pageSize);
+            ResponseEntity<OdScanList> response = null;
+            try {
+                response = restTemplate.exchange(
+                        cxGoProperties.getUrl().concat(GET_SCAN_STATUS),
+                        HttpMethod.GET,
+                        httpEntity,
+                        OdScanList.class,
+                        projectId,
+                        curPage,
+                        pageSize);
+            }  catch (HttpStatusCodeException e) {
+                log.info("Error occurred in getting scan status page ", e);
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
             // Are there more results
             OdScanList curList = response.getBody();
             if(curPage == 0) totalCount = curList.getData().getTotalCount();
@@ -1024,16 +1053,22 @@ public class GoScanner implements ILegacyClient {
         long rcvItemCnt = 0;
         while(morePages) {
             // Fetch the current page
-            ResponseEntity<OdScanResults> response = restTemplate.exchange(
-                    cxGoProperties.getUrl().concat(SCAN_RESULTS_ENCODED),
-                    HttpMethod.GET,
-                    httpEntity,
-                    OdScanResults.class,
-                    projectId,
-                    scanId,
-                    curPage,
-                    pageSize
-            );
+            ResponseEntity<OdScanResults> response = null;
+            try {
+                response = restTemplate.exchange(
+                        cxGoProperties.getUrl().concat(SCAN_RESULTS_ENCODED),
+                        HttpMethod.GET,
+                        httpEntity,
+                        OdScanResults.class,
+                        projectId,
+                        scanId,
+                        curPage,
+                        pageSize
+                );
+            } catch(HttpStatusCodeException e) {
+                log.error("Error occurred while getting scan results page");
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
             // Are there more results
             OdScanResults curList = response.getBody();
             if(curPage == 0) totalCount = curList.getData().getTotalCount();

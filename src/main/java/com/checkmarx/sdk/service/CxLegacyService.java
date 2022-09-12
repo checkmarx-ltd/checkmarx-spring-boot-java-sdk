@@ -182,7 +182,7 @@ public class CxLegacyService {
             user.setRole8x(role); //validate
         }
         else{
-            log.warn("Uknown role id {}", u.getRoleData().getID());
+            log.warn("Unknown role id {}", u.getRoleData().getID());
         }
         user.setAuditor(u.isAuditUser());
         return user;
