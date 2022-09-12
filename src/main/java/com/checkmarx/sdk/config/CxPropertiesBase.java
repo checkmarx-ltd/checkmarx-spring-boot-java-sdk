@@ -34,6 +34,7 @@ public abstract class CxPropertiesBase {
     private String postCloneScript;
     private Boolean enablePostActionEvent = false;
     private CxEmailNotifications emailNotifications;
+    private String detectionDateFormat = "M/d/y h:m:s a";
 
     private Boolean scanQueuing = false;
     private Integer scanQueuingTimeout = 720;
@@ -303,6 +304,12 @@ public abstract class CxPropertiesBase {
 
     public void setEmailNotifications(CxEmailNotifications emailNotifications) {
         this.emailNotifications = emailNotifications;
+    }
+
+    public String getDetectionDateFormat() { return this.detectionDateFormat; }
+
+    public void setDetectionDateFormat(String detectionDateFormat) {
+        this.detectionDateFormat = detectionDateFormat;
     }
 }
 
