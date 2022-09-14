@@ -70,7 +70,8 @@ public class ScaResolverUtils {
 
         log.debug("Finished created CMD command");
         try {
-            log.info("Executing next command: " + Arrays.toString(scaResolverCommand));
+            //log.info("Executing next command: " + Arrays.toString(scaResolverCommand));
+            log.info("Executing SCA Resolver Command");
             Process process;
             if (!SystemUtils.IS_OS_UNIX) {
                 log.debug("Executing cmd command on windows. ");
