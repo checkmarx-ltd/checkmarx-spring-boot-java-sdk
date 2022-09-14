@@ -10,7 +10,9 @@
 	</parent>
 	<groupId>com.github.checkmarx-ltd</groupId>
 	<artifactId>cx-spring-boot-sdk</artifactId>
+
 	<version>0.5.27</version> 
+
 	<name>cx-spring-boot-sdk</name>
 	<description>Checkmarx Java Spring Boot SDK</description>
 	<properties>
