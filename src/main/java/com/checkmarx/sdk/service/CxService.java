@@ -85,6 +85,7 @@ public class CxService implements CxClient {
     private static final Integer SCAN_STATUS_SOURCE_PULLING = 10;
     private static final Integer SCAN_STATUS_NONE = 1001;
 
+    private static final Integer MESSAGE_CODE_BRANCH_NOT_FOUND = 49805;
     
     /*
     report statuses - there are only 2:
@@ -110,6 +111,7 @@ public class CxService implements CxClient {
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
     private static final String PROJECT_SOURCE_FILE = "/projects/{id}/sourceCode/attachments";
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
+    private static final String PROJECT_BRANCH_DETAILS = "/projects/branch/{id}";
     private static final String SCAN = "/sast/scans";
     private static final String SCAN_SUMMARY = "/sast/scans/{id}/resultsStatistics";
     private static final String PROJECT_SCANS = "/sast/scans?projectId={pid}";
@@ -126,6 +128,7 @@ public class CxService implements CxClient {
     public static final String ERROR_WITH_XML_REPORT = "Error with XML report";
     public static final String ERROR_PROCESSING_SCAN_RESULTS = "Error while processing scan results";
     public static final String ERROR_GETTING_PROJECT = "Error occurred while retrieving project with id {}, http error {}";
+    public static final String ERROR_GETTING_PROJECT_BRANCH = "Error occurred while retrieving branch details for project with id {}, http error {}";
     public static final String PROJECT_REMOTE_SETTINGS_NOT_FOUND = "Project's remote settings were not found, http message {}";
     public static final String FOUND_TEAM = "Found team {} with ID {}";
     public static final String ONLY_SUPPORTED_IN_90_PLUS = "Operation only supported in 9.0+";
@@ -1193,6 +1196,55 @@ public class CxService implements CxClient {
         return null;
     }
 
+
+    /**
+     * Return project branch based on projectId
+     *
+     * @return
+     */
+    public CxProjectBranch getProjectBranch(Integer projectId) {
+        log.debug("Retrieving branch details for project {}", projectId);
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            ResponseEntity<CxProjectBranch> project = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_BRANCH_DETAILS), HttpMethod.GET, httpEntity, CxProjectBranch.class, projectId);
+            return project.getBody();
+        } catch (HttpStatusCodeException e) {
+            if (e.getStatusCode() != HttpStatus.NOT_FOUND) {
+                log.error(ERROR_GETTING_PROJECT_BRANCH, projectId, e.getStatusCode());
+                log.error(ExceptionUtils.getStackTrace(e));
+            } else {
+                /*
+                 * For version 2.2 and higher of the SAST API, if a project is not branched, a 404 response
+                 * will be returned and the body of the response will be JSON data:
+                 *
+                 * {
+                 *     "messageCode": 49805,
+                 *     "messageDetails": "Branch with id 168 was not found"
+                 * }
+                 *
+                 * For earlier versions of the SAST API, the body will be a HTML document with a generic
+                 * "resource not found" message.
+                 */
+                String responseBody = e.getResponseBodyAsString();
+                try {
+                    JSONObject obj = new JSONObject(responseBody);
+                    int messageCode = obj.optInt("messageCode");
+                    if (messageCode == MESSAGE_CODE_BRANCH_NOT_FOUND) {
+                        log.debug("Project {} is not a branched project", projectId);
+                    } else {
+                        String messageDetails = obj.optString("messageDetails");
+                        log.debug("{}: unexpected message code in response (messageDetails: {})", messageCode, messageDetails);
+                    }
+                } catch (JSONException je) {
+                    log.debug("Response payload is not JSON. Assuming a version of SAST that does not support the GET /projects/branch/{id} API");
+                }
+            }
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return null;
+    }
 
     /**
      * Check if a scan exists for a projectId
