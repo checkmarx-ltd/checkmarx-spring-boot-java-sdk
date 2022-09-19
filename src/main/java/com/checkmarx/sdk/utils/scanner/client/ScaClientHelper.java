@@ -60,6 +60,8 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import static com.checkmarx.sdk.config.Constants.ENCODING;
 
@@ -117,6 +119,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final String FINGERPRINT_FILE_NAME = ".cxsca.sig";
     public static final String SCA_RESOLVER_RESULT_FILE_NAME = ".cxsca-results.json";
 
+    public static final String SAST_RESOLVER_RESULT_FILE_NAME =".cxsca-sast-results.json";
 
     public ScaClientHelper(RestClientConfig config, Logger log, ScaProperties scaProperties) {
         super(config, log);
@@ -304,14 +307,20 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     }
     private HttpResponse submitScaResolverEvidenceFile(ScaConfig scaConfig) throws IOException
     {
+        //varibles required
         CxRepoFileHelper cxRepoFileHelper = new CxRepoFileHelper();
         File file = new File(config.getSourceDir());
         String sourceDir = file.getAbsolutePath();
         String projectName = config.getProjectName();
         String resultPath = cxRepoFileHelper.getGitClonePath();
+        String sastresultpath ="";
+        ArrayList<File> resultToZip = new ArrayList<>();
+
+        //file creation
         while (resultPath.contains("\""))
             resultPath = resultPath.replace("\"", "");
         resultPath=resultPath + File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
+
         String mandatoryFields = "-s "+sourceDir +" "+"-n "+projectName+" "+"-r "+resultPath;
         log.debug("mandatory {}",mandatoryFields);
         log.info("Executing SCA Resolver flow.");
@@ -322,36 +331,63 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         if (exitCode == 0) {
             log.info("***************SCA resolution completed successfully.******************");
             File resultFilePath = new File(resultPath);
-            zipFile = zipEvidenceFile(resultFilePath);
+            resultToZip.add(resultFilePath);
+            //check for exploitable path
+            if(scaProperties.getScaResolverAddParameters().contains("--sast-result-path"))
+            {
+                sastresultpath = getSastResultFilePathFromAdditionalParams(scaProperties.getScaResolverAddParameters());
+                File sastResultFile = new File(sastresultpath);
+                resultToZip.add(sastResultFile);
+            }
+
+                zipFile = zipEvidenceFile(resultToZip);
+
         }else{
             throw new CxHTTPClientException("Error while running sca resolver executable. Exit code: "+exitCode);
         }
         return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), config.getScaConfig());
     }
 
+    private  String getSastResultFilePathFromAdditionalParams(String scaResolverAddParams)
+    {
+        String pathToEvidenceDir ="";
+        List<String> arguments = new ArrayList<String>();
+        Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(scaResolverAddParams);
+        while (m.find())
+            arguments.add(m.group(1));
 
-    private File zipEvidenceFile(File filePath) throws IOException {
+        for (int i = 0; i <  arguments.size() ; i++) {
+            if (arguments.get(i).equals("--sast-result-path") )
+                pathToEvidenceDir =  arguments.get(i+1);
+        }
+        return pathToEvidenceDir ;
+    }
+
+    private File zipEvidenceFile(ArrayList<File> filePath) throws IOException {
         File tempUploadFile = File.createTempFile(TEMP_FILE_NAME_TO_SCA_RESOLVER_RESULTS_ZIP, ".zip");
-        String sourceDir = filePath.getParent();
-
         log.info("Collecting files to zip archive: {}", tempUploadFile.getAbsolutePath());
-
         long maxZipSizeBytes = CxZipUtils.MAX_ZIP_SIZE_BYTES;
 
-        List<String> paths = new ArrayList <>();
-        paths.add(filePath.getName());
-
-        try (NewCxZipFile zipper = new NewCxZipFile(tempUploadFile, maxZipSizeBytes, log)) {
-            zipper.addMultipleFilesToArchive(new File(sourceDir), paths);
-            log.info("Added {} files to zip.",  zipper.getFileCount());
-            log.info("The sources were zipped to {}", tempUploadFile.getAbsolutePath());
-            return tempUploadFile;
-        } catch (Zipper.MaxZipSizeReached e) {
-            throw handleFileDeletion(filePath, new IOException("Reached maximum upload size limit of " + FileUtils.byteCountToDisplaySize(maxZipSizeBytes)));
-        } catch (IOException ioException) {
-            throw handleFileDeletion(filePath, ioException);
-        }
+            try (NewCxZipFile zipper = new NewCxZipFile(tempUploadFile, maxZipSizeBytes, log)) {
+                for(File file : filePath)
+                {
+                    String sourceDir = file.getParent();
+                    List<String> paths = new ArrayList <>();
+                    paths.add(file.getName());
+                    log.debug("Source dir:{}",sourceDir);
+                    log.debug("paths:{}",paths);
+                    zipper.addMultipleFilesToArchive(new File(sourceDir), paths);
+                }
+                log.info("Added {} files to zip.",  zipper.getFileCount());
+                log.info("The sources were zipped to {}", tempUploadFile.getAbsolutePath());
+                return tempUploadFile;
+            } catch (Zipper.MaxZipSizeReached e) {
+                throw handleFileDeletion(filePath.get(0), new IOException("Reached maximum upload size limit of " + FileUtils.byteCountToDisplaySize(maxZipSizeBytes)));
+            } catch (IOException ioException) {
+                throw handleFileDeletion(filePath.get(0), ioException);
+            }
     }
+
     public void deleteProjectById(String projectId) throws IOException {
         log.info("Deleting project with id: {}", projectId);
         httpClient.deleteRequest(String.format(PROJECTS_BY_ID, projectId), HttpStatus.SC_NO_CONTENT, "delete a project");
