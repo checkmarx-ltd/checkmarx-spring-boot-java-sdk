@@ -58,6 +58,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -305,6 +306,12 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         }
         return scaResults;
     }
+
+
+    public int gen() {
+        Random r = new Random( System.currentTimeMillis() );
+        return 10000 + r.nextInt(20000);
+    }
     private HttpResponse submitScaResolverEvidenceFile(ScaConfig scaConfig) throws IOException
     {
         //varibles required
@@ -319,7 +326,18 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         //file creation
         while (resultPath.contains("\""))
             resultPath = resultPath.replace("\"", "");
-        resultPath=resultPath + File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
+
+
+
+//Adding Unique File Name
+        Date date = new Date();
+        Timestamp ts=new Timestamp(date.getTime());
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        String prefixFolderNameSCA=formatter.format(ts)+gen();
+
+        //End
+
+        resultPath=resultPath + File.separator +prefixFolderNameSCA +File.separator +SCA_RESOLVER_RESULT_FILE_NAME;
 
         String mandatoryFields = "-s "+sourceDir +" "+"-n "+projectName+" "+"-r "+resultPath;
         log.debug("mandatory {}",mandatoryFields);
@@ -327,21 +345,34 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         log.info("Path to Sca Resolver: {}", scaProperties.getPathToScaResolver());
         //log.info("Sca Resolver Additional Parameters: {}", scaProperties.getScaResolverAddParameters());
         File zipFile =null;
-        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,scaProperties.getScaResolverAddParameters(),resultPath,log);
+        File sastResultFile=null;
+        String sastDirectoryName="";
+        if(scaProperties.getScaResolverAddParameters().contains("--sast-result-path"))
+        {
+            String prefixFolderNameSAST=formatter.format(ts)+gen();
+            sastresultpath = getSastResultFilePathFromAdditionalParams(scaProperties.getScaResolverAddParameters());
+            sastResultFile = new File(sastresultpath);
+            if(sastResultFile.isDirectory()){
+                sastDirectoryName=sastresultpath+File.separator+prefixFolderNameSAST;
+            }else{
+                sastDirectoryName=sastResultFile.getParent()+File.separator+prefixFolderNameSAST;
+                }
+            sastResultFile.delete();
+            sastResultFile = new File(sastDirectoryName+File.separator+SAST_RESOLVER_RESULT_FILE_NAME);
+        }
+
+
+        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,scaProperties.getScaResolverAddParameters(),resultPath,log,sastDirectoryName);
         if (exitCode == 0) {
             log.info("***************SCA resolution completed successfully.******************");
             File resultFilePath = new File(resultPath);
             resultToZip.add(resultFilePath);
             //check for exploitable path
-            if(scaProperties.getScaResolverAddParameters().contains("--sast-result-path"))
+            if(sastresultpath!="")
             {
-                sastresultpath = getSastResultFilePathFromAdditionalParams(scaProperties.getScaResolverAddParameters());
-                File sastResultFile = new File(sastresultpath);
                 resultToZip.add(sastResultFile);
             }
-
                 zipFile = zipEvidenceFile(resultToZip);
-
         }else{
             throw new CxHTTPClientException("Error while running sca resolver executable. Exit code: "+exitCode);
         }

@@ -3,6 +3,7 @@ import com.checkmarx.sdk.exception.CxHTTPClientException;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -10,13 +11,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.checkmarx.sdk.utils.scanner.client.ScaClientHelper.SAST_RESOLVER_RESULT_FILE_NAME;
+
 public class ScaResolverUtils {
 
     public static final String SCA_RESOLVER_EXE = "\\" + "ScaResolver" + ".exe";
     public static final String SCA_RESOLVER_FOR_LINUX = "/" + "ScaResolver";
     public static final String OFFLINE = "offline";
 
-    public static int runScaResolver(String pathToScaResolver,String mandatoryParameters ,String scaResolverAddParams, String pathToResultJSONFile, Logger log)
+    public static int runScaResolver(String pathToScaResolver,String mandatoryParameters ,String scaResolverAddParams, String pathToResultJSONFile, Logger log,String sastresulthpath)
             throws CxHTTPClientException {
         int exitCode = -100;
         String[] scaResolverCommand;
@@ -66,6 +70,18 @@ public class ScaResolverUtils {
                 scaResolverCommand[i + 3] = pathToResultJSONFile;
                 i++;
             }
+        }
+
+        int index=-1;
+        for(int i=0;i<scaResolverCommand.length;i++){
+            if(scaResolverCommand[i].equalsIgnoreCase("--sast-result-path")){
+                index=i;
+                break;
+            }
+        }
+
+        if(index!=-1){
+            scaResolverCommand[index+1]=sastresulthpath+ File.separator+SAST_RESOLVER_RESULT_FILE_NAME;
         }
 
         log.debug("Finished created CMD command");
