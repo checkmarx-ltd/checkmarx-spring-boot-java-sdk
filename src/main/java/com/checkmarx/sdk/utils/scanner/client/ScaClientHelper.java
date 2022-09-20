@@ -58,6 +58,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -313,13 +314,12 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         String sourceDir = file.getAbsolutePath();
         String projectName = config.getProjectName();
         String resultPath = cxRepoFileHelper.getGitClonePath();
-        String sastresultpath ="";
+        String additionalParameters = manageParameters(scaProperties.getScaResolverAddParameters());
+        String sastResultPath ="";
         ArrayList<File> resultToZip = new ArrayList<>();
 
         //file creation
-        while (resultPath.contains("\""))
-            resultPath = resultPath.replace("\"", "");
-        resultPath=resultPath + File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
+        resultPath=resultPath+File.separator+ uniqueFolderName() + File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
 
         String mandatoryFields = "-s "+sourceDir +" "+"-n "+projectName+" "+"-r "+resultPath;
         log.debug("mandatory {}",mandatoryFields);
@@ -327,16 +327,17 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         log.info("Path to Sca Resolver: {}", scaProperties.getPathToScaResolver());
         //log.info("Sca Resolver Additional Parameters: {}", scaProperties.getScaResolverAddParameters());
         File zipFile =null;
-        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,scaProperties.getScaResolverAddParameters(),resultPath,log);
+        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,additionalParameters,resultPath,log,scaConfig);
         if (exitCode == 0) {
             log.info("***************SCA resolution completed successfully.******************");
             File resultFilePath = new File(resultPath);
             resultToZip.add(resultFilePath);
-            //check for exploitable path
+
+            //check if sast-result-path is present, if exists add to zip.
             if(scaProperties.getScaResolverAddParameters().contains("--sast-result-path"))
             {
-                sastresultpath = getSastResultFilePathFromAdditionalParams(scaProperties.getScaResolverAddParameters());
-                File sastResultFile = new File(sastresultpath);
+                sastResultPath = getSastResultFilePathFromAdditionalParams(additionalParameters);
+                File sastResultFile = new File(sastResultPath);
                 resultToZip.add(sastResultFile);
             }
 
@@ -348,6 +349,38 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), config.getScaConfig());
     }
 
+    private String manageParameters(String additionalParameters)
+    {
+        String newAdditionalParameters="";
+        if(additionalParameters.contains("--sast-result-path"))
+        {
+            String sastResultPath =getSastResultFilePathFromAdditionalParams(additionalParameters);
+            File sastResultFile = new File(sastResultPath);
+            if(sastResultFile.isDirectory())
+            {
+                sastResultPath = sastResultPath + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME;
+            }
+            else {
+                String parentName = sastResultFile.getParent();
+                sastResultPath = parentName + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME;
+            }
+            newAdditionalParameters = setSastResultFilePathFromAdditionalParams(additionalParameters,sastResultPath);
+        }
+        return newAdditionalParameters;
+    }
+
+    private String uniqueFolderName()
+    {
+        Date date = new Date();
+        Timestamp ts=new Timestamp(date.getTime());
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        String prefixFolderNameSCA=formatter.format(ts)+gen();
+        return prefixFolderNameSCA;
+    }
+    private int gen() {
+        Random r = new Random( System.currentTimeMillis() );
+        return 10000 + r.nextInt(20000);
+    }
     private  String getSastResultFilePathFromAdditionalParams(String scaResolverAddParams)
     {
         String pathToEvidenceDir ="";
@@ -363,6 +396,37 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         return pathToEvidenceDir ;
     }
 
+    private  String setSastResultFilePathFromAdditionalParams(String scaResolverAddParams,String valueToSet)
+    {
+        StringBuilder newAdditionalParams = new StringBuilder();
+        List<String> arguments = new ArrayList<String>();
+        Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(scaResolverAddParams);
+        while (m.find())
+            arguments.add(m.group(1));
+
+        for (int i = 0; i <  arguments.size() ; i++) {
+            if (arguments.get(i).equals("--sast-result-path") )
+            {
+                if(arguments.size()-1==i)
+                {
+                    arguments.add(valueToSet);
+                }
+                else {
+                    arguments.set(i+1,valueToSet);
+                }
+
+            }
+            if(arguments.size()-1==i)
+            {
+                newAdditionalParams.append(arguments.get(i));
+            }
+            else {
+                newAdditionalParams.append(arguments.get(i)).append(" ");
+            }
+
+        }
+        return newAdditionalParams.toString() ;
+    }
     private File zipEvidenceFile(ArrayList<File> filePath) throws IOException {
         File tempUploadFile = File.createTempFile(TEMP_FILE_NAME_TO_SCA_RESOLVER_RESULTS_ZIP, ".zip");
         log.info("Collecting files to zip archive: {}", tempUploadFile.getAbsolutePath());

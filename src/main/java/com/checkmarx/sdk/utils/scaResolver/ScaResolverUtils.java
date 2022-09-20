@@ -1,4 +1,5 @@
 package com.checkmarx.sdk.utils.scaResolver;
+import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.exception.CxHTTPClientException;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
@@ -16,7 +17,7 @@ public class ScaResolverUtils {
     public static final String SCA_RESOLVER_FOR_LINUX = "/" + "ScaResolver";
     public static final String OFFLINE = "offline";
 
-    public static int runScaResolver(String pathToScaResolver,String mandatoryParameters ,String scaResolverAddParams, String pathToResultJSONFile, Logger log)
+    public static int runScaResolver(String pathToScaResolver, String mandatoryParameters , String scaResolverAddParams, String pathToResultJSONFile, Logger log, ScaConfig scaConfig)
             throws CxHTTPClientException {
         int exitCode = -100;
         String[] scaResolverCommand;
@@ -29,7 +30,11 @@ public class ScaResolverUtils {
         Matcher m1 = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(scaResolverAddParams);
         while (m1.find())
                 arguments.add(m1.group(1));
-//
+
+        /*
+            As every time mandatoryParameters are getting added to start of the list looping from end till element.
+            Checks if mandatoryParameters are added in Additional parameter, if exists remove extra.
+         */
         for(int i=arguments.size()-1;i>=6;i=i-2)
         {
             if(arguments.get(i-1).equals("-s") ||arguments.get(i-1).equals("-r") || arguments.get(i-1).equals("-n") )
@@ -37,6 +42,25 @@ public class ScaResolverUtils {
                 log.debug("-s, -r, -n are mandatory values, please provide any another additional parameters");
                 arguments.remove(i);
                 arguments.remove(i-1);
+            }
+        }
+
+        //Code as Config Overriding
+        if(scaConfig.getExpPathSastProjectName()!=null)
+        {
+            for(int i=0;i<arguments.size();i++)
+            {
+                if(arguments.get(i).equals("--cxprojectname"))
+                {
+                    log.debug("Overriding SAST project name");
+                    if(arguments.size()-1==i)
+                    {
+                        arguments.add(scaConfig.getExpPathSastProjectName());
+                    }
+                    else {
+                        arguments.set(i+1,scaConfig.getExpPathSastProjectName());
+                    }
+                }
             }
         }
 		/*
