@@ -143,6 +143,7 @@ public class ScaScanner extends AbstractScanner {
             scaConfig.setManifestsIncludePattern(scaProperties.getManifestsIncludePattern());
             scaConfig.setTeam(sdkScaConfig.getTeam());
             scaConfig.setScanTimeout(sdkScaConfig.getScanTimeout());
+            scaConfig.setExpPathSastProjectName(sdkScaConfig.getExpPathSastProjectName());
             String zipPath = scanParams.getZipPath();
             if (StringUtils.isNotEmpty(zipPath)) {
                 scaConfig.setZipFilePath(zipPath);

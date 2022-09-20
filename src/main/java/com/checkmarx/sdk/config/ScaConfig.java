@@ -45,6 +45,9 @@ public class ScaConfig {
     @Optional
     private Integer scanTimeout;
 
+    @Optional
+    private String expPathSastProjectName;
+
     /**
      * This setter allows to avoid ConfigProvider error: Map&lt;Severity,Integer&gt; is not supported.
      */
