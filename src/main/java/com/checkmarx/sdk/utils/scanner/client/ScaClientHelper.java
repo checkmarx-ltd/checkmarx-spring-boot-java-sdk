@@ -58,8 +58,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import static com.checkmarx.sdk.config.Constants.ENCODING;
 
@@ -117,6 +120,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final String FINGERPRINT_FILE_NAME = ".cxsca.sig";
     public static final String SCA_RESOLVER_RESULT_FILE_NAME = ".cxsca-results.json";
 
+    public static final String SAST_RESOLVER_RESULT_FILE_NAME =".cxsca-sast-results.json";
 
     public ScaClientHelper(RestClientConfig config, Logger log, ScaProperties scaProperties) {
         super(config, log);
@@ -304,54 +308,150 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     }
     private HttpResponse submitScaResolverEvidenceFile(ScaConfig scaConfig) throws IOException
     {
+        //varibles required
         CxRepoFileHelper cxRepoFileHelper = new CxRepoFileHelper();
         File file = new File(config.getSourceDir());
         String sourceDir = file.getAbsolutePath();
         String projectName = config.getProjectName();
         String resultPath = cxRepoFileHelper.getGitClonePath();
-        while (resultPath.contains("\""))
-            resultPath = resultPath.replace("\"", "");
-        resultPath=resultPath + File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
+        String additionalParameters = manageParameters(scaProperties.getScaResolverAddParameters());
+        String sastResultPath ="";
+        ArrayList<File> resultToZip = new ArrayList<>();
+
+        //file creation
+        resultPath=resultPath+File.separator+ uniqueFolderName() + File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
+
         String mandatoryFields = "-s "+sourceDir +" "+"-n "+projectName+" "+"-r "+resultPath;
         log.debug("mandatory {}",mandatoryFields);
         log.info("Executing SCA Resolver flow.");
         log.info("Path to Sca Resolver: {}", scaProperties.getPathToScaResolver());
         //log.info("Sca Resolver Additional Parameters: {}", scaProperties.getScaResolverAddParameters());
         File zipFile =null;
-        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,scaProperties.getScaResolverAddParameters(),resultPath,log);
+        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,additionalParameters,resultPath,log,scaConfig);
         if (exitCode == 0) {
             log.info("***************SCA resolution completed successfully.******************");
             File resultFilePath = new File(resultPath);
-            zipFile = zipEvidenceFile(resultFilePath);
+            resultToZip.add(resultFilePath);
+
+            //check if sast-result-path is present, if exists add to zip.
+            if(scaProperties.getScaResolverAddParameters().contains("--sast-result-path"))
+            {
+                sastResultPath = getSastResultFilePathFromAdditionalParams(additionalParameters);
+                File sastResultFile = new File(sastResultPath);
+                resultToZip.add(sastResultFile);
+            }
+
+                zipFile = zipEvidenceFile(resultToZip);
+
         }else{
             throw new CxHTTPClientException("Error while running sca resolver executable. Exit code: "+exitCode);
         }
         return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), config.getScaConfig());
     }
 
+    private String manageParameters(String additionalParameters)
+    {
+        String newAdditionalParameters="";
+        if(additionalParameters.contains("--sast-result-path"))
+        {
+            String sastResultPath =getSastResultFilePathFromAdditionalParams(additionalParameters);
+            File sastResultFile = new File(sastResultPath);
+            if(sastResultFile.isDirectory())
+            {
+                sastResultPath = sastResultPath + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME;
+            }
+            else {
+                String parentName = sastResultFile.getParent();
+                sastResultPath = parentName + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME;
+            }
+            newAdditionalParameters = setSastResultFilePathFromAdditionalParams(additionalParameters,sastResultPath);
+        }
+        return newAdditionalParameters;
+    }
 
-    private File zipEvidenceFile(File filePath) throws IOException {
+    private String uniqueFolderName()
+    {
+        Date date = new Date();
+        Timestamp ts=new Timestamp(date.getTime());
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        String prefixFolderNameSCA=formatter.format(ts)+gen();
+        return prefixFolderNameSCA;
+    }
+    private int gen() {
+        Random r = new Random( System.currentTimeMillis() );
+        return 10000 + r.nextInt(20000);
+    }
+    private  String getSastResultFilePathFromAdditionalParams(String scaResolverAddParams)
+    {
+        String pathToEvidenceDir ="";
+        List<String> arguments = new ArrayList<String>();
+        Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(scaResolverAddParams);
+        while (m.find())
+            arguments.add(m.group(1));
+
+        for (int i = 0; i <  arguments.size() ; i++) {
+            if (arguments.get(i).equals("--sast-result-path") )
+                pathToEvidenceDir =  arguments.get(i+1);
+        }
+        return pathToEvidenceDir ;
+    }
+
+    private  String setSastResultFilePathFromAdditionalParams(String scaResolverAddParams,String valueToSet)
+    {
+        StringBuilder newAdditionalParams = new StringBuilder();
+        List<String> arguments = new ArrayList<String>();
+        Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(scaResolverAddParams);
+        while (m.find())
+            arguments.add(m.group(1));
+
+        for (int i = 0; i <  arguments.size() ; i++) {
+            if (arguments.get(i).equals("--sast-result-path") )
+            {
+                if(arguments.size()-1==i)
+                {
+                    arguments.add(valueToSet);
+                }
+                else {
+                    arguments.set(i+1,valueToSet);
+                }
+
+            }
+            if(arguments.size()-1==i)
+            {
+                newAdditionalParams.append(arguments.get(i));
+            }
+            else {
+                newAdditionalParams.append(arguments.get(i)).append(" ");
+            }
+
+        }
+        return newAdditionalParams.toString() ;
+    }
+    private File zipEvidenceFile(ArrayList<File> filePath) throws IOException {
         File tempUploadFile = File.createTempFile(TEMP_FILE_NAME_TO_SCA_RESOLVER_RESULTS_ZIP, ".zip");
-        String sourceDir = filePath.getParent();
-
         log.info("Collecting files to zip archive: {}", tempUploadFile.getAbsolutePath());
-
         long maxZipSizeBytes = CxZipUtils.MAX_ZIP_SIZE_BYTES;
 
-        List<String> paths = new ArrayList <>();
-        paths.add(filePath.getName());
-
-        try (NewCxZipFile zipper = new NewCxZipFile(tempUploadFile, maxZipSizeBytes, log)) {
-            zipper.addMultipleFilesToArchive(new File(sourceDir), paths);
-            log.info("Added {} files to zip.",  zipper.getFileCount());
-            log.info("The sources were zipped to {}", tempUploadFile.getAbsolutePath());
-            return tempUploadFile;
-        } catch (Zipper.MaxZipSizeReached e) {
-            throw handleFileDeletion(filePath, new IOException("Reached maximum upload size limit of " + FileUtils.byteCountToDisplaySize(maxZipSizeBytes)));
-        } catch (IOException ioException) {
-            throw handleFileDeletion(filePath, ioException);
-        }
+            try (NewCxZipFile zipper = new NewCxZipFile(tempUploadFile, maxZipSizeBytes, log)) {
+                for(File file : filePath)
+                {
+                    String sourceDir = file.getParent();
+                    List<String> paths = new ArrayList <>();
+                    paths.add(file.getName());
+                    log.debug("Source dir:{}",sourceDir);
+                    log.debug("paths:{}",paths);
+                    zipper.addMultipleFilesToArchive(new File(sourceDir), paths);
+                }
+                log.info("Added {} files to zip.",  zipper.getFileCount());
+                log.info("The sources were zipped to {}", tempUploadFile.getAbsolutePath());
+                return tempUploadFile;
+            } catch (Zipper.MaxZipSizeReached e) {
+                throw handleFileDeletion(filePath.get(0), new IOException("Reached maximum upload size limit of " + FileUtils.byteCountToDisplaySize(maxZipSizeBytes)));
+            } catch (IOException ioException) {
+                throw handleFileDeletion(filePath.get(0), ioException);
+            }
     }
+
     public void deleteProjectById(String projectId) throws IOException {
         log.info("Deleting project with id: {}", projectId);
         httpClient.deleteRequest(String.format(PROJECTS_BY_ID, projectId), HttpStatus.SC_NO_CONTENT, "delete a project");

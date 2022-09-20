@@ -38,5 +38,7 @@ public class Sca implements Serializable {
     protected boolean includeSources;
     @JsonProperty
     protected String team;
+    @JsonProperty
+    protected  String expPathSastProjectName;
 
 }
