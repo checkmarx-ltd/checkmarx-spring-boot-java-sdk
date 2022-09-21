@@ -176,14 +176,18 @@ public class CxRepoFileHelper {
             log.info("credentialsProvider without password");
         }
         log.info("Cloning code locally to {}", pathFile);
-        Git.cloneRepository()
-                .setURI(gitURL)
-                .setBranch(branch)
-                .setBranchesToClone(Collections.singleton(branch))
-                .setDirectory(pathFile)
-                .setCredentialsProvider(credentialsProvider)
-                .call()
-                .close();
+        try {
+            Git.cloneRepository()
+                    .setURI(gitURL)
+                    .setBranch(branch)
+                    .setBranchesToClone(Collections.singleton(branch))
+                    .setDirectory(pathFile)
+                    .setCredentialsProvider(credentialsProvider)
+                    .call()
+                    .close();
+        } catch (GitAPIException e) {
+            log.error("API Exception : ",e);
+        }
     }
 
     private void runPostCloneScript(CxScanParams params, String path) {
