@@ -38,6 +38,8 @@ public abstract class CxPropertiesBase {
 
     private Boolean scanQueuing = false;
     private Integer scanQueuingTimeout = 720;
+
+    private Boolean restrictResultsToBranch;
     
     public abstract Boolean getEnableOsa();
 
@@ -310,6 +312,12 @@ public abstract class CxPropertiesBase {
 
     public void setDetectionDateFormat(String detectionDateFormat) {
         this.detectionDateFormat = detectionDateFormat;
+    }
+
+    public Boolean getRestrictResultsToBranch() { return this.restrictResultsToBranch; }
+
+    public void setRestrictResultsToBranch(Boolean restrictResultsToBranch) {
+        this.restrictResultsToBranch = restrictResultsToBranch;
     }
 }
 

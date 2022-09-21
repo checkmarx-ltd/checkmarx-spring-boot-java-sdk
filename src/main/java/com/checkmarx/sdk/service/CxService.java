@@ -105,6 +105,7 @@ public class CxService implements CxClient {
     private static final String ROLE_LDAP_MAPPINGS = "/auth/LDAPRoleMappings?ldapServerId={id}";
     private static final String ROLE_LDAP_MAPPINGS_DELETE = "/auth/LDAPRoleMappings/{id}";
     private static final String LDAP_SERVER = "/auth/LDAPServers";
+    private static final String ODATA_SCAN_SIMILARITY_IDS = "/cxwebinterface/odata/v1/Scans({id})?$select=Id&$expand=Results($select=SimilarityId)";
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
     private static final String PROJECT_BRANCH = "/projects/{id}/branch";
@@ -304,6 +305,36 @@ public class CxService implements CxClient {
         return null;
     }
 
+    /**
+     * Return the similarity id's for the specified scan.
+     */
+    public Set<Integer> getScanSimilarityIds(Integer scanId) {
+        log.debug("Getting similarity ids for scan {}", scanId);
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        Set<Integer> similarityIds = new HashSet<>();
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getBaseUrl().concat(ODATA_SCAN_SIMILARITY_IDS),
+                    HttpMethod.GET, requestEntity, String.class, scanId);
+            JSONObject obj = new JSONObject(response.getBody());
+            JSONArray value = obj.getJSONArray("value");
+            // We only expect a single entry in the array
+            JSONObject scan = value.getJSONObject(0);
+            JSONArray results = scan.getJSONArray("Results");
+            for (int i = 0; i < results.length(); i++) {
+                JSONObject result = results.getJSONObject(i);
+                int similarityId = result.getInt("SimilarityId");
+                similarityIds.add(similarityId);
+            }
+            return similarityIds;
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while fetching results for scan {}, http error {}", scanId, e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error occurred while processing JSON");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return null;
+    }
 
     /**
      * Get the status of a given scanId
@@ -806,11 +837,30 @@ public class CxService implements CxClient {
                     .map(FilterConfiguration::getSastFilters)
                     .orElse(null);
 
+            Set<Integer> similarityIdsToExclude = null;
+            if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                log.debug("Restricting results to current branch");
+                int projectId = Integer.parseInt(cxResults.getProjectId());
+                CxProjectBranch branch = getProjectBranch(projectId);
+                if (branch != null) {
+                    log.debug("Excluding results from scan {} (and earlier)", branch.getBranchedOnScanId());
+                    similarityIdsToExclude = getScanSimilarityIds(branch.getBranchedOnScanId());
+                    log.trace("similarityIdsToExclude: {}", similarityIdsToExclude);
+                } else {
+                    log.debug("Cannot get branch details for project {}", cxResults.getProjectId());
+                }
+            }
+
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(cxProperties.getDetectionDateFormat());
             for (QueryType result : cxResults.getQuery()) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
                 for (ResultType resultType : result.getResult()) {
+                    int similarityId = Integer.parseInt(resultType.getPath().getSimilarityId());
+                    if (similarityIdsToExclude != null && similarityIdsToExclude.contains(similarityId)) {
+                        log.trace("Excluding result {} (with similarityId {})", resultType.getNodeId(), similarityId);
+                        continue;
+                    }
                     FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(result, resultType);
                     if (filterValidator.passesFilter(filterInput, sastFilters)) {
                         boolean falsePositive = false;
