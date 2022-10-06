@@ -851,6 +851,7 @@ public class CxService implements CxClient {
                 }
             }
 
+            log.debug("similarityIdsToExclude: {}", similarityIdsToExclude);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(cxProperties.getDetectionDateFormat());
             for (QueryType result : cxResults.getQuery()) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
@@ -860,6 +861,8 @@ public class CxService implements CxClient {
                     if (similarityIdsToExclude != null && similarityIdsToExclude.contains(similarityId)) {
                         log.trace("Excluding result {} (with similarityId {})", resultType.getNodeId(), similarityId);
                         continue;
+                    } else {
+                        log.trace("Not excluding result {} (with similarityId {})", resultType.getNodeId(), similarityId);
                     }
                     FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(result, resultType);
                     if (filterValidator.passesFilter(filterInput, sastFilters)) {
