@@ -517,7 +517,13 @@ public class CxService implements CxClient {
             cxScanBuilder.xIssues(xIssueList);
             cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
-            CxScanSummary scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+            CxScanSummary scanSummary = null;
+            if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                scanSummary = new CxScanSummary(summary);
+            } else {
+                scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+            }
+            log.debug("scanSummary: {}", scanSummary);
             cxScanBuilder.scanSummary(scanSummary);
             ScanResults results = cxScanBuilder.build();
             //Add the summary map (severity, count)
@@ -708,7 +714,12 @@ public class CxService implements CxClient {
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
             ScanResults results = cxScanBuilder.build();
             if (!cxProperties.getOffline() && !ScanUtils.empty(cxResults.getScanId())) {
-                CxScanSummary scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                CxScanSummary scanSummary = null;
+                if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                    scanSummary = new CxScanSummary(summary);
+                } else {
+                    scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                }
                 results.setScanSummary(scanSummary);
             }
             results.getAdditionalDetails().put(Constants.SUMMARY_KEY, summary);

@@ -1,5 +1,7 @@
 package com.checkmarx.sdk.dto.cx;
 
+import java.time.LocalDateTime;
+import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -27,6 +29,14 @@ public class CxScanSummary {
 
     public CxScanSummary() { }
 
+    public CxScanSummary(Map<String, Integer> summary) {
+        highSeverity = summary.getOrDefault("High", 0);
+        mediumSeverity = summary.getOrDefault("Medium", 0);
+        lowSeverity = summary.getOrDefault("Low", 0);
+        infoSeverity = summary.getOrDefault("Info", 0);
+        LocalDateTime now = LocalDateTime.now();
+        statisticsCalculationDate = now.toString();
+    }
     public Integer getHighSeverity() {
         return highSeverity;
     }
