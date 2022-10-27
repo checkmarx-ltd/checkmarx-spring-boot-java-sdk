@@ -327,8 +327,17 @@ public class CxService implements CxClient {
             }
             return similarityIds;
         } catch (HttpStatusCodeException e) {
-            log.error("Error occurred while fetching results for scan {}, http error {}", scanId, e.getStatusCode());
-            log.error(ExceptionUtils.getStackTrace(e));
+            // If we get a 403, then the likely explanation is that either
+            // the user does not have a role with the API permission, or the
+            // client-id or scope have not been set correctly (for OData).
+            if (e.getStatusCode() == HttpStatus.FORBIDDEN) {
+                log.error("User is not permitted to access the Checkmarx SAST OData API");
+                log.error("OData access is required if the restrict-results-to-branch option is enabled.");
+                log.error("See https://checkmarx.com/resource/documents/en/34965-46554-cxsast--odata--api-authentication.html");
+            } else {
+                log.error("Error occurred while fetching results for scan {}, http error {}", scanId, e.getStatusCode());
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
         } catch (JSONException e) {
             log.error("Error occurred while processing JSON");
             log.error(ExceptionUtils.getStackTrace(e));
