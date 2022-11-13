@@ -40,7 +40,7 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
-      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
+      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --full-generate-key
       - run: chmod u+x mvnw
       - run: ./mvnw -s .circleci/maven.settings.xml clean deploy -DskipTests
       - save_cache:
