@@ -12,7 +12,7 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
-      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --version --batch --no-tty --import --yes
+      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --version --batch --no-tty --import --yes --gen-key
       - run: chmod u+x mvnw
       - run: ./mvnw -s .circleci/maven.settings.xml clean verify
       - run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout > target/version.txt
