@@ -14,7 +14,7 @@ jobs:
             - v1-dependencies-
       - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --version --batch --no-tty --import --yes --gen-key --sign-key
       - run: chmod u+x mvnw
-      - run: ./mvnw -s .circleci/maven.settings.xml clean verify
+      - run: ./mvnw -s .circleci/maven.settings.xml clean verify -DskipTests
       - run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout > target/version.txt
       - save_cache:
           paths:
