@@ -12,7 +12,9 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
-      - run: echo $GPG_ASC_BASE64NEW | gpg --batch --no-tty --import --yes
+      - run: apt-get update
+      - run: apt-get install ca-certificates
+      - run: echo $GPG_ASC_BASE64NEW | base64 --decode | gpg --batch --no-tty --import --yes
       - run: chmod u+x mvnw
       - run: ./mvnw -s .circleci/maven.settings.xml clean verify -DskipTests
       - run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout > target/version.txt
