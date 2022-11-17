@@ -20,7 +20,7 @@
         <profile>
             <id>gpg</id>
             <properties>
-                <gpg.executable>gpg2</gpg.executable>
+                <gpg.executable>gpg</gpg.executable>
                 <gpg.passphrase>${env.GPG_PASSPHRASENEW}</gpg.passphrase>
             </properties>
         </profile>
