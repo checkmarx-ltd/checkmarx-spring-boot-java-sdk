@@ -12,7 +12,7 @@
 	<artifactId>cx-spring-boot-sdk</artifactId>
 
 
-	<version>0.5.29</version>
+	<version>0.5.30</version>
 
 
 	<name>cx-spring-boot-sdk</name>
@@ -193,6 +193,7 @@
 							<goal>sign</goal>
 						</goals>
 						<configuration>
+							<executable>gpg2</executable>
 							<gpgArguments>
 								<arg>--pinentry-mode</arg>
 								<arg>loopback</arg>
@@ -268,13 +269,7 @@
 		</repository>
 	</distributionManagement>
 
-	<licenses>
-		<license>
-			<name>GNU General Public License, version 3</name>
-			<url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
+
 
 	<scm>
 		<connection>scm:git:https://github.com/checkmarx-ts/checkmarx-spring-boot-java-sdk.git</connection>
