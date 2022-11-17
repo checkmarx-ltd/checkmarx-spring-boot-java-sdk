@@ -268,7 +268,13 @@
 		</repository>
 	</distributionManagement>
 
-
+	<licenses>
+		<license>
+			<name>GNU General Public License, version 3</name>
+			<url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
 
 	<scm>
 		<connection>scm:git:https://github.com/checkmarx-ts/checkmarx-spring-boot-java-sdk.git</connection>
