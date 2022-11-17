@@ -1,4 +1,6 @@
-version: 2
+version: '2.1'
+orbs:
+  circleci-maven-release-orb: sonatype-nexus-community/circleci-maven-release-orb@0.0.18
 jobs:
   build:
     docker:
