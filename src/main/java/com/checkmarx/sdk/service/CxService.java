@@ -85,7 +85,7 @@ public class CxService implements CxClient {
     private static final Integer SCAN_STATUS_SOURCE_PULLING = 10;
     private static final Integer SCAN_STATUS_NONE = 1001;
 
-    
+
     /*
     report statuses - there are only 2:
     InProcess (1)
@@ -140,7 +140,7 @@ public class CxService implements CxClient {
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
     private final CxRepoFileHelper cxRepoFileHelper;
-    
+
     public CxService(CxAuthService authClient,
                      CxProperties cxProperties,
                      CxLegacyService cxLegacyService,
@@ -148,7 +148,7 @@ public class CxService implements CxClient {
                      ScanSettingsClient scanSettingsClient,
                      FilterInputFactory filterInputFactory,
                      FilterValidator filterValidator) {
-        
+
         this.cxRepoFileHelper = new CxRepoFileHelper(cxProperties);
         this.authClient = authClient;
         this.cxProperties = cxProperties;
@@ -598,14 +598,14 @@ public class CxService implements CxClient {
                 // Add custom field values if requested
                 Map<String, String> customFields = getCustomFields(Integer.valueOf(cxResults.getProjectId()));
                 additionalDetails.put("customFields", customFields);
-}
-        } catch (JSONException e) {
-                log.error("Error Occurred in JSON Parsing");
-                log.error(ExceptionUtils.getStackTrace(e));
-            } catch (NullPointerException e) {
-                log.error("Null Pointer occurred while getting additional scan details.");
-                log.error(ExceptionUtils.getStackTrace(e));
             }
+        } catch (JSONException e) {
+            log.error("Error Occurred in JSON Parsing");
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (NullPointerException e) {
+            log.error("Null Pointer occurred while getting additional scan details.");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
         return additionalDetails;
     }
 
@@ -889,7 +889,7 @@ public class CxService implements CxClient {
         }
         return summary;
     }
-    
+
     private Map<String, Object> getAdditionalIssueDetails(QueryType q, ResultType r) {
         Map<String, Object> additionalDetails = new HashMap<>();
         additionalDetails.put("categories", q.getCategories());
@@ -911,8 +911,8 @@ public class CxService implements CxClient {
                 result.put("sink", getNodeData(nodes, nodes.size() - 1)); // Last node in dataFlow
                 AtomicInteger counter = new AtomicInteger(0);
                 nodes.forEach(node->{result.put(node.getNodeId(),getNodeData(nodes, counter.get()));
-                                        counter.getAndIncrement();
-                                    });
+                    counter.getAndIncrement();
+                });
             } else {
                 log.debug(String.format("Result %s%s did not have node paths to process.", q.getName(), r.getNodeId()));
             }
@@ -956,71 +956,71 @@ public class CxService implements CxClient {
 
     private void prepareIssuesRemoveDuplicates(List<ScanResults.XIssue> cxIssueList, ResultType resultType, Map<Integer, ScanResults.IssueDetails> details,
                                                boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
-       try {
-           if (!cxProperties.getDisableClubbing() && cxIssueList.contains(issue)) {
-               /*Get existing issue of same vuln+filename*/
-               ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
-               /*If no reference exists for this particular line, append it to the details (line+snippet)*/
-               if (!existingIssue.getDetails().containsKey(Integer.parseInt(resultType.getLine()))) {
-                   if (falsePositive) {
-                       existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
-                   } else {
-                       if (!summary.containsKey(resultType.getSeverity())) {
-                           summary.put(resultType.getSeverity(), 0);
-                       }
-                       int severityCount = summary.get(resultType.getSeverity());
-                       severityCount++;
-                       summary.put(resultType.getSeverity(), severityCount);
-                   }
-                   existingIssue.getDetails().putAll(details);
-               } else { //reference exists, ensure fp flag is maintained
-                   ScanResults.IssueDetails existingDetails = existingIssue.getDetails().get(Integer.parseInt(resultType.getLine()));
-                   ScanResults.IssueDetails newDetails = details.get(Integer.parseInt(resultType.getLine()));
-                   if (newDetails.isFalsePositive() && !existingDetails.isFalsePositive()) {
-                       existingDetails.setFalsePositive(true);
-                       existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
-                       //bump down the count for the severity
-                       int severityCount = summary.get(resultType.getSeverity());
-                       severityCount--;
-                       summary.put(resultType.getSeverity(), severityCount);
-                   }
-               }
-               //adding description if existing ref found
+        try {
+            if (!cxProperties.getDisableClubbing() && cxIssueList.contains(issue)) {
+                /*Get existing issue of same vuln+filename*/
+                ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
+                /*If no reference exists for this particular line, append it to the details (line+snippet)*/
+                if (!existingIssue.getDetails().containsKey(Integer.parseInt(resultType.getLine()))) {
+                    if (falsePositive) {
+                        existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
+                    } else {
+                        if (!summary.containsKey(resultType.getSeverity())) {
+                            summary.put(resultType.getSeverity(), 0);
+                        }
+                        int severityCount = summary.get(resultType.getSeverity());
+                        severityCount++;
+                        summary.put(resultType.getSeverity(), severityCount);
+                    }
+                    existingIssue.getDetails().putAll(details);
+                } else { //reference exists, ensure fp flag is maintained
+                    ScanResults.IssueDetails existingDetails = existingIssue.getDetails().get(Integer.parseInt(resultType.getLine()));
+                    ScanResults.IssueDetails newDetails = details.get(Integer.parseInt(resultType.getLine()));
+                    if (newDetails.isFalsePositive() && !existingDetails.isFalsePositive()) {
+                        existingDetails.setFalsePositive(true);
+                        existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
+                        //bump down the count for the severity
+                        int severityCount = summary.get(resultType.getSeverity());
+                        severityCount--;
+                        summary.put(resultType.getSeverity(), severityCount);
+                    }
+                }
+                //adding description if existing ref found
 
-               StringBuilder stringBuilder = new StringBuilder();
-               if (issue.getVulnerabilityStatus() == null) {
-                   cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(existingIssue.getDescription());
-               } else if (existingIssue.getVulnerabilityStatus() != null) {
-                   String existingIssueDescription = existingIssue.getDescription();
-                   String newIssueDescription = issue.getDescription();
-                   if (!existingIssueDescription.contains(newIssueDescription)) {
-                       stringBuilder.append(existingIssueDescription).append("\r\n").append("\r\n").append(newIssueDescription);
-                       cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(stringBuilder.toString());
-                   }
-               } else {
-                   cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(issue.getDescription());
-               }
+                StringBuilder stringBuilder = new StringBuilder();
+                if (issue.getVulnerabilityStatus() == null) {
+                    cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(existingIssue.getDescription());
+                } else if (existingIssue.getVulnerabilityStatus() != null) {
+                    String existingIssueDescription = existingIssue.getDescription();
+                    String newIssueDescription = issue.getDescription();
+                    if (!existingIssueDescription.contains(newIssueDescription)) {
+                        stringBuilder.append(existingIssueDescription).append("\r\n").append("\r\n").append(newIssueDescription);
+                        cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(stringBuilder.toString());
+                    }
+                } else {
+                    cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(issue.getDescription());
+                }
 
-               // Copy additionalData.results from issue to existingIssue
-               List<Map<String, Object>> results = (List<Map<String, Object>>) existingIssue.getAdditionalDetails().get("results");
-               results.addAll((List<Map<String, Object>>) issue.getAdditionalDetails().get("results"));
-           } else {
-               if (falsePositive) {
-                   issue.setFalsePositiveCount((issue.getFalsePositiveCount() + 1));
-               } else {
-                   if (!summary.containsKey(resultType.getSeverity())) {
-                       summary.put(resultType.getSeverity(), 0);
-                   }
-                   int severityCount = summary.get(resultType.getSeverity());
-                   severityCount++;
-                   summary.put(resultType.getSeverity(), severityCount);
-               }
-               cxIssueList.add(issue);
-           }
-       } catch (NullPointerException e) {
-           log.error("Null Error");
-           log.error(ExceptionUtils.getStackTrace(e));
-       }
+                // Copy additionalData.results from issue to existingIssue
+                List<Map<String, Object>> results = (List<Map<String, Object>>) existingIssue.getAdditionalDetails().get("results");
+                results.addAll((List<Map<String, Object>>) issue.getAdditionalDetails().get("results"));
+            } else {
+                if (falsePositive) {
+                    issue.setFalsePositiveCount((issue.getFalsePositiveCount() + 1));
+                } else {
+                    if (!summary.containsKey(resultType.getSeverity())) {
+                        summary.put(resultType.getSeverity(), 0);
+                    }
+                    int severityCount = summary.get(resultType.getSeverity());
+                    severityCount++;
+                    summary.put(resultType.getSeverity(), severityCount);
+                }
+                cxIssueList.add(issue);
+            }
+        } catch (NullPointerException e) {
+            log.error("Null Error");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
     }
 
     private String getIssueDescription(String session, Long scanId, Long pathId) {
@@ -1151,7 +1151,7 @@ public class CxService implements CxClient {
                     .queryParam("teamId", ownerId)
                     .build();
             ResponseEntity<String> projects = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, httpEntity, String.class);
-           JSONArray arr = new JSONArray(projects.getBody());
+            JSONArray arr = new JSONArray(projects.getBody());
             if (arr.length() > 1) {
                 return UNKNOWN_INT;
             }
@@ -1339,18 +1339,18 @@ public class CxService implements CxClient {
         String sshKey = "";
         if(!StringUtils.isEmpty(params.getSshKeyIdentifier())){
             if( MapUtils.isNotEmpty(cxProperties.getSshKeyList()) && !StringUtils.isEmpty(cxProperties.getSshKeyList().get(params.getSshKeyIdentifier()))) {
-           	 log.debug("Using SSH Key configured for the repository.");
-            	sshKey = cxProperties.getSshKeyList().get(params.getSshKeyIdentifier());
+                log.debug("Using SSH Key configured for the repository.");
+                sshKey = cxProperties.getSshKeyList().get(params.getSshKeyIdentifier());
                 cxProperties.setSshKey(sshKey);
             }else {
-            	throw new CheckmarxException("SSH Key corresponding to the identifier configured for the repository is not found.");
+                throw new CheckmarxException("SSH Key corresponding to the identifier configured for the repository is not found.");
             }
         }
         if(cxProperties.getSshKey() != null) {
             // THe readString() method is much nicer but not introduced until Java 11
             // Path fileName = Path.of(cxProperties.getSshKey());
             // sshKey = Files.readString(fileName);
-        	 log.debug("Using SSH Key configured at the CxFlow server level.");
+            log.debug("Using SSH Key configured at the CxFlow server level.");
             sshKey = readKeyFile(cxProperties.getSshKey());
         }
         return sshKey;
@@ -1372,18 +1372,18 @@ public class CxService implements CxClient {
      */
     public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch, CxScanParams params) throws CheckmarxException {
         String sshKey = getSshKey(params);
-        CxProjectSource projectSource;        
+        CxProjectSource projectSource;
         if(sshKey.length() > 0) {
-            projectSource = CxProjectSource.builder()                
-                .url(createGitURL(gitUrl))
-                .privateKey(sshKey)
-                .branch(branch)
-                .build();
+            projectSource = CxProjectSource.builder()
+                    .url(createGitURL(gitUrl))
+                    .privateKey(sshKey)
+                    .branch(branch)
+                    .build();
         } else {
             projectSource = CxProjectSource.builder()
-                .url(gitUrl)
-                .branch(branch)
-                .build();
+                    .url(gitUrl)
+                    .branch(branch)
+                    .build();
         }
         log.debug("branch {}", branch);
         log.debug("project {}", projectId);
@@ -1697,7 +1697,7 @@ public class CxService implements CxClient {
         String session = authClient.getLegacySession();
         cxLegacyService.createTeam(session, parentTeamId, teamName);
         return getTeamId(parentTeamId, teamName);
-   }
+    }
 
 
     /**
@@ -1785,7 +1785,7 @@ public class CxService implements CxClient {
      */
     public Integer getScanConfiguration(String configuration) throws CheckmarxException {
         return scanSettingsClient.getEngineConfigurationId(configuration);
-     }
+    }
 
     @Override
     public String getScanConfigurationName(int configurationId) {
@@ -1866,7 +1866,13 @@ public class CxService implements CxClient {
                         defaultBranch = defaultBranch.replaceAll("[^a-zA-Z0-9-_.]+", "-");
                         log.debug("Normalized name for current branch is {} and target/default branch is {}", currentBranch, defaultBranch);
                     }
-                    derivedProjectName = params.getProjectName().replace(currentBranch,defaultBranch);
+
+                    if(params.getProjectName().contains(currentBranch)){
+                        derivedProjectName = params.getProjectName().replace(currentBranch,defaultBranch);
+                    }else{
+                        derivedProjectName = params.getProjectName().replace(params.getModifiedProjectName(),defaultBranch);
+                    }
+
                     log.debug("Derived project name : {}", derivedProjectName);
                     baseProjectId = getProjectId(teamId,derivedProjectName);
                     if(baseProjectId.equals(UNKNOWN_INT)){
@@ -1918,7 +1924,7 @@ public class CxService implements CxClient {
                 log.debug("cxProject: {}", cxProject);
                 updateProjectCustomFields(cxProject);
             }
-        }        
+        }
         prepareSources(params, projectId);
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
@@ -1975,7 +1981,7 @@ public class CxService implements CxClient {
     private void prepareSources(CxScanParams params, Integer projectId) throws CheckmarxException {
         if (params.isFileSource()) {
             uploadProjectSource(projectId, new File(params.getFilePath()));
-        }            
+        }
         else if (params.isGitSource()) {
             if (cxProperties.getEnabledZipScan()) {
                 String clonedRepoPath = cxRepoFileHelper.prepareRepoFile(params);
@@ -2489,7 +2495,7 @@ public class CxService implements CxClient {
             return UNKNOWN_INT;
         }
     }
-    
+
     private void validateScanParams(CxScanParams params) throws CheckmarxException {
         log.debug(params.toString());
         if(ScanUtils.empty(params.getProjectName())){
@@ -2555,7 +2561,7 @@ public class CxService implements CxClient {
                 timer += cxProperties.getScanPolling();
 
                 //Scan Queuing Timeout = '0' and Scan Queuing = true would be waiting forever with the scan in the queue
-                 if(cxProperties.getScanQueuing() && status.equals(CxService.SCAN_STATUS_QUEUED)){
+                if(cxProperties.getScanQueuing() && status.equals(CxService.SCAN_STATUS_QUEUED)){
                     queueTimer += cxProperties.getScanPolling();
                     if (cxProperties.getScanQueuingTimeout() != 0 && queueTimer >= (cxProperties.getScanQueuingTimeout() * 60000)) {
                         log.error("Scan queued time exceded. {} minutes ", cxProperties.getScanQueuingTimeout());
@@ -2585,9 +2591,9 @@ public class CxService implements CxClient {
         return cxProperties;
     }
 
-	@Override
-	public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setProjectRepositoryDetails(Integer projectId, String gitUrl, String branch) throws CheckmarxException {
+        // TODO Auto-generated method stub
+
+    }
 }
