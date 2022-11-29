@@ -856,6 +856,7 @@ public class CxService implements CxClient {
             EngineFilterConfiguration sastFilters = Optional.ofNullable(filter)
                     .map(FilterConfiguration::getSastFilters)
                     .orElse(null);
+            log.debug("sastFilters: {}", sastFilters);
 
             Set<Integer> similarityIdsToExclude = null;
             if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
@@ -956,6 +957,8 @@ public class CxService implements CxClient {
                         xIssueBuilder.details(details);
                         ScanResults.XIssue issue = xIssueBuilder.build();
                         prepareIssuesRemoveDuplicates(cxIssueList, resultType, details, falsePositive, issue, summary);
+                    } else {
+                        log.trace("Result with similarityId {} did not pass filter", similarityId);
                     }
                 }
             }
