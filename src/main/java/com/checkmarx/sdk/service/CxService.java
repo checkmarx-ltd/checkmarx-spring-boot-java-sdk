@@ -1112,7 +1112,10 @@ public class CxService implements CxClient {
         try {
             ResponseEntity<CxProjectBranchingStatus> response = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_BRANCH_STATUS),
                     HttpMethod.GET, httpEntity, CxProjectBranchingStatus.class, projectId);
-            return response.getBody();
+            CxProjectBranchingStatus branchingStatus = response.getBody();
+            log.debug("Branching status is {} ({})", branchingStatus.getStatus().getId(),
+                    branchingStatus.getStatus().getValue());
+            return branchingStatus;
         } catch (HttpStatusCodeException e) {
             if (e.getStatusCode() != HttpStatus.NOT_FOUND) {
                 log.error(ERROR_GETTING_PROJECT, projectId, e.getStatusCode());
