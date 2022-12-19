@@ -3,6 +3,7 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
+import com.checkmarx.sdk.dto.cx.CxProjectBranchingStatus;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
@@ -85,6 +86,9 @@ public class CxService implements CxClient {
     private static final Integer SCAN_STATUS_SOURCE_PULLING = 10;
     private static final Integer SCAN_STATUS_NONE = 1001;
 
+    private static final Integer MESSAGE_CODE_BRANCH_NOT_FOUND = 49805;
+    private static final Integer BRANCHING_STATUS_COMPLETED = 2;
+    private static final Integer BRANCHING_STATUS_FAILED = 4;
 
     /*
     report statuses - there are only 2:
@@ -107,6 +111,7 @@ public class CxService implements CxClient {
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
     private static final String PROJECT_BRANCH = "/projects/{id}/branch";
+    private static final String PROJECT_BRANCH_STATUS = "/projects/branch/{id}";
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
     private static final String PROJECT_SOURCE_FILE = "/projects/{id}/sourceCode/attachments";
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
@@ -1084,11 +1089,14 @@ public class CxService implements CxClient {
             String response = restTemplate.postForObject(cxProperties.getUrl().concat(PROJECT_BRANCH), requestEntity, String.class, projectId);
             if (response != null) {
                 JSONObject obj = new JSONObject(response);
-                String id = obj.get("id").toString();
-                return Integer.parseInt(id);
+                int id = obj.getInt("id");
+                waitForBranching(id);
+                return id;
             } else {
                 log.error("CX Response for branch project request with name '{}' from existing project with ID {} was null", name, projectId);
             }
+        } catch (CheckmarxException e) {
+            log.error("Checkmarx error: {}", e.getMessage(), e);
         } catch (HttpStatusCodeException e) {
             log.error("HTTP error code {} while creating branched project with name '{}' from existing project with ID {}", e.getStatusCode(), name, projectId);
             log.error(ExceptionUtils.getStackTrace(e));
@@ -1099,6 +1107,92 @@ public class CxService implements CxClient {
         return UNKNOWN_INT;
     }
 
+    /*
+     * Waits for the branching of a project to complete.
+     */
+    private void waitForBranching(Integer projectId) throws CheckmarxException {
+        log.debug("Waiting for branching to complete for project {}", projectId);
+        CxProjectBranchingStatus branchingStatus = getProjectBranchingStatus(projectId);
+        int count = 1;
+        if (branchingStatus != null) {
+            while (branchingStatus.getStatus().getId() != BRANCHING_STATUS_COMPLETED
+            && count++ < cxProperties.getProjectBranchingCheckCount()) {
+                if (branchingStatus.getStatus().getId() == BRANCHING_STATUS_FAILED) {
+                    String msg = String.format("Branching of project %d failed", projectId);
+                    log.error(msg);
+                    throw new CheckmarxException(msg);
+                }
+                try {
+                    Thread.sleep(cxProperties.getProjectBranchingCheckInterval() * 1000);
+                } catch (InterruptedException ie) {
+                    log.debug("waitForBranching: sleep interrupted: {}", ie.getMessage());
+                    break;
+                }
+                branchingStatus = getProjectBranchingStatus(projectId);
+            }
+        } else {
+            // Most likely, this version of SAST does not support checking the branching status. We pause for one
+            // interval and hope for the best.
+            log.debug("Unable to retrieve project branching status");
+            try {
+                Thread.sleep(cxProperties.getProjectBranchingCheckInterval() * 1000);
+            } catch (InterruptedException ie) {
+                log.debug("waitForBranching: sleep interrupted: {}", ie.getMessage());
+            }
+        }
+    }
+    /**
+     * @param projectId the ID of the project whose branching status is to be retrieved
+     * @return the branching status of the specified project (will return null if the relevant API is not available)
+     */
+    public CxProjectBranchingStatus getProjectBranchingStatus(Integer projectId) {
+        log.debug("Retrieving branching status of project {}", projectId);
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            ResponseEntity<CxProjectBranchingStatus> response = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_BRANCH_STATUS),
+                    HttpMethod.GET, httpEntity, CxProjectBranchingStatus.class, projectId);
+            CxProjectBranchingStatus branchingStatus = response.getBody();
+            log.debug("Branching status is {} ({})", branchingStatus.getStatus().getId(),
+                    branchingStatus.getStatus().getValue());
+            return branchingStatus;
+        } catch (HttpStatusCodeException e) {
+            if (e.getStatusCode() != HttpStatus.NOT_FOUND) {
+                log.error(ERROR_GETTING_PROJECT, projectId, e.getStatusCode());
+                log.error(ExceptionUtils.getStackTrace(e));
+            } else {
+                /*
+                 * For version X.Y and higher of the SAST API, if a project is not branched, a 404 response will
+                 * be returned and the body of the response will be JSON data:
+                 *
+                 * {
+                 *     "messageCode": 48905,
+                 *     "messageDetails": "Branch with id 168 was not found"
+                 * }
+                 *
+                 * For earlier versions of the SAST API, the body will be a HTML document with a generic
+                 * "resource not found" message.
+                 */
+                String responseBody = e.getResponseBodyAsString();
+                try {
+                    JSONObject obj = new JSONObject(responseBody);
+                    int messageCode = obj.optInt("messageCode");
+                    if (messageCode == MESSAGE_CODE_BRANCH_NOT_FOUND) {
+                        log.debug("Project {} is not a branched project", projectId);
+                    } else {
+                        String messageDetails = obj.optString("messageDetails");
+                        log.debug("{}: unexpected message code in response (messageDetails: {})", messageCode, messageDetails);
+                    }
+                } catch (JSONException je) {
+                    log.debug("Response payload is not JSON. Assuming a version of SAST that does not support the GET /projects/branch/{id} API");
+                }
+            }
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+
+        return null;
+    }
     /**
      * Get All Projects in Checkmarx
      */
