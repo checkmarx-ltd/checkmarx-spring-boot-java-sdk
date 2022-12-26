@@ -55,6 +55,8 @@ public class ScanResults{
     private String  version;
     private List<XIssue> xIssues;
 
+    @Getter
+    @Setter
     private List<XIssue> unFilteredIssues;
     private String output;
     private Map<String, Object> additionalDetails;
@@ -153,7 +155,6 @@ public class ScanResults{
     public List<XIssue> getXIssues() {
         return this.xIssues;
     }
-    public List<XIssue> getUnFilteredIssues() { return unFilteredIssues;}
 
     public Map<String, Object> getAdditionalDetails() { return this.additionalDetails; }
 
@@ -191,9 +192,6 @@ public class ScanResults{
 
     public void setXIssues(List<XIssue> xIssues) {
         this.xIssues = xIssues;
-    }
-    public void setUnFilteredIssues(List<XIssue> unFilteredIssues) {
-        this.unFilteredIssues = unFilteredIssues;
     }
 
     public void setAdditionalDetails(Map<String, Object> additionalDetails) {
