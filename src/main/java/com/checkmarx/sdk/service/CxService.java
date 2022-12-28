@@ -1987,8 +1987,15 @@ public class CxService implements CxClient {
             log.debug("Updating project...");
             Integer presetId = getPresetId(params.getScanPreset());
             Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
-            createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
-                    params.getEmailNotifications());
+
+            if(params.getPostBackActionId()!=null){
+                createScanSetting(projectId, presetId, engineConfigurationId, params.getPostBackActionId(),
+                        params.getEmailNotifications());
+            }else{
+                createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                        params.getEmailNotifications());
+            }
+
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
             if (params.getCustomFields() != null && !params.getCustomFields().isEmpty()) {
                 List<CxCustomField> fieldDefinitions = getCustomFields();
