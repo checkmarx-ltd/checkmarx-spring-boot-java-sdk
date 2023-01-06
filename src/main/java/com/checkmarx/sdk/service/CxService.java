@@ -480,8 +480,7 @@ public class CxService implements CxClient {
             cxScanBuilder.setDeepLink(cxResults.getDeepLink());
             cxScanBuilder.setReportCreationTime(cxResults.getReportCreationTime());
 
-            Map<String, Integer> summary = getIssues(filter, session, xIssueList, cxResults);
-            Map<String, Integer> unFilteredSummary = getIssues(filter, session, unFilteredIssueList, cxResults);
+            Map<String, Integer> summary = getIssues(filter, session, xIssueList,unFilteredIssueList, cxResults);
             cxScanBuilder.xIssues(xIssueList);
             cxScanBuilder.unFilteredIssues(unFilteredIssueList);
             cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
@@ -659,6 +658,7 @@ public class CxService implements CxClient {
             Unmarshaller unmarshaller = jc.createUnmarshaller();
 
             List<ScanResults.XIssue> issueList = new ArrayList<>();
+            List<ScanResults.XIssue> unFilteredList = new ArrayList<>();
             CxXMLResultsType cxResults = (CxXMLResultsType) unmarshaller.unmarshal(file);
             ScanResults.ScanResultsBuilder cxScanBuilder = ScanResults.builder();
             cxScanBuilder.projectId(cxResults.getProjectId());
@@ -672,8 +672,9 @@ public class CxService implements CxClient {
             cxScanBuilder.loc(cxResults.getLinesOfCodeScanned());
             cxScanBuilder.scanType(cxResults.getScanType());
             cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
-            Map<String, Integer> summary = getIssues(filter, session, issueList, cxResults);
+            Map<String, Integer> summary = getIssues(filter, session, issueList,unFilteredList, cxResults);
             cxScanBuilder.xIssues(issueList);
+            cxScanBuilder.unFilteredIssues(unFilteredList);
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
             ScanResults results = cxScanBuilder.build();
             if (!cxProperties.getOffline() && !ScanUtils.empty(cxResults.getScanId())) {
@@ -799,7 +800,7 @@ public class CxService implements CxClient {
      * @param cxIssueList list that will be populated during this method execution.
      * @param cxResults SAST-specific scan results based on SAST XML report.
      */
-    private Map<String, Integer> getIssues(FilterConfiguration filter, String session, List<ScanResults.XIssue> cxIssueList, CxXMLResultsType cxResults) {
+    private Map<String, Integer> getIssues(FilterConfiguration filter, String session, List<ScanResults.XIssue> cxIssueList,List<ScanResults.XIssue> unFilteredList, CxXMLResultsType cxResults) {
         Map<String, Integer> summary = new HashMap<>();
         try {
             EngineFilterConfiguration sastFilters = Optional.ofNullable(filter)
@@ -813,8 +814,9 @@ public class CxService implements CxClient {
                 for (ResultType resultType : result.getResult()) {
                     FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(result, resultType);
                     if (filterValidator.passesFilter(filterInput, sastFilters)) {
-                        buildIssue(xIssueBuilder,resultType,result,formatter,cxResults,session,cxIssueList,summary);
+                        buildIssue(xIssueBuilder,resultType,result,formatter,cxResults,session,cxIssueList,summary,true);
                     }
+                    buildIssue(xIssueBuilder,resultType,result,formatter,cxResults,session,unFilteredList,summary,false);
                 }
             }
         } catch (NullPointerException e) {
@@ -824,7 +826,7 @@ public class CxService implements CxClient {
         return summary;
     }
 
-    private ScanResults.XIssue buildIssue(ScanResults.XIssue.XIssueBuilder xIssueBuilder,ResultType resultType,QueryType result,DateTimeFormatter formatter,CxXMLResultsType cxResults,String session,List<ScanResults.XIssue> cxIssueList,Map<String, Integer> summary){
+    private ScanResults.XIssue buildIssue(ScanResults.XIssue.XIssueBuilder xIssueBuilder,ResultType resultType,QueryType result,DateTimeFormatter formatter,CxXMLResultsType cxResults,String session,List<ScanResults.XIssue> cxIssueList,Map<String, Integer> summary,boolean flag){
         boolean falsePositive = false;
         if (!resultType.getFalsePositive().equalsIgnoreCase("FALSE")) {
             falsePositive = true;
@@ -861,40 +863,56 @@ public class CxService implements CxClient {
         }
 
         xIssueBuilder.additionalDetails(additionalDetails);
-
         Map<Integer, ScanResults.IssueDetails> details = new HashMap<>();
-        try {
-            /* Call the CX SOAP Service to get Issue Description*/
-            if (session != null) {
-                try {
-                    xIssueBuilder.description(this.getIssueDescription(session, Long.parseLong(cxResults.getScanId()), Long.parseLong(resultType.getPath().getPathId())));
-                } catch (HttpStatusCodeException e) {
+        ScanResults.XIssue issue = null;
+        if(flag)
+        {
+            try {
+                /* Call the CX SOAP Service to get Issue Description*/
+                if (session != null) {
+                    try {
+                        xIssueBuilder.description(this.getIssueDescription(session, Long.parseLong(cxResults.getScanId()), Long.parseLong(resultType.getPath().getPathId())));
+                    } catch (HttpStatusCodeException e) {
+                        xIssueBuilder.description("");
+                    }
+                } else {
                     xIssueBuilder.description("");
                 }
-            } else {
-                xIssueBuilder.description("");
+                String snippet = resultType.getPath().getPathNode().get(0).getSnippet().getLine().getCode();
+                snippet = StringUtils.truncate(snippet, cxProperties.getCodeSnippetLength());
+                ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
+                        .codeSnippet(snippet)
+                        .comment(resultType.getRemark())
+                        .falsePositive(falsePositive);
+                details.put(Integer.parseInt(resultType.getPath().getPathNode().get(0).getLine()),
+                        issueDetails);
+                xIssueBuilder.similarityId(resultType.getPath().getSimilarityId());
+            } catch (NullPointerException e) {
+                log.warn("Problem grabbing snippet.  Snippet may not exist for finding for Node ID");
+                /*Defaulting to initial line number with no snippet*/
+                ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
+                        .codeSnippet(null)
+                        .comment(resultType.getRemark())
+                        .falsePositive(falsePositive);
+                details.put(Integer.parseInt(resultType.getLine()), issueDetails);
             }
-            String snippet = resultType.getPath().getPathNode().get(0).getSnippet().getLine().getCode();
-            snippet = StringUtils.truncate(snippet, cxProperties.getCodeSnippetLength());
-            ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
-                    .codeSnippet(snippet)
-                    .comment(resultType.getRemark())
-                    .falsePositive(falsePositive);
-            details.put(Integer.parseInt(resultType.getPath().getPathNode().get(0).getLine()),
-                    issueDetails);
-            xIssueBuilder.similarityId(resultType.getPath().getSimilarityId());
-        } catch (NullPointerException e) {
-            log.warn("Problem grabbing snippet.  Snippet may not exist for finding for Node ID");
-            /*Defaulting to initial line number with no snippet*/
+            xIssueBuilder.details(details);
+            issue = xIssueBuilder.build();
+            prepareIssuesRemoveDuplicates(cxIssueList, resultType, details, falsePositive, issue, summary);
+        }
+        else
+        {
+            xIssueBuilder.description("");
             ScanResults.IssueDetails issueDetails = new ScanResults.IssueDetails()
                     .codeSnippet(null)
                     .comment(resultType.getRemark())
                     .falsePositive(falsePositive);
             details.put(Integer.parseInt(resultType.getLine()), issueDetails);
+            xIssueBuilder.details(details);
+            issue = xIssueBuilder.build();
+            prepareIssuesRemoveDuplicates(cxIssueList, resultType, details, falsePositive, issue, summary);
         }
-        xIssueBuilder.details(details);
-        ScanResults.XIssue issue = xIssueBuilder.build();
-        prepareIssuesRemoveDuplicates(cxIssueList, resultType, details, falsePositive, issue, summary);
+
         return issue;
     }
 
