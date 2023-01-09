@@ -40,6 +40,9 @@ public class CxScanParams {
     @Getter @Setter
     private String modifiedProjectName;
 
+    @Getter @Setter
+    private Integer postBackActionId;
+
     public String getTeamName() {
         return teamName;
     }
@@ -339,6 +342,11 @@ public class CxScanParams {
 
     public CxScanParams withEmailNotifications(CxEmailNotifications emailNotifications) {
         this.emailNotifications = emailNotifications;
+        return this;
+    }
+
+    public CxScanParams withPostbackActionId(Integer postbackActionId) {
+        this.postBackActionId = postbackActionId;
         return this;
     }
 
