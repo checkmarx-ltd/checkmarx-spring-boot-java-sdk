@@ -365,8 +365,9 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 sastResultPath = parentName + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME;
             }
             newAdditionalParameters = setSastResultFilePathFromAdditionalParams(additionalParameters,sastResultPath);
+            return newAdditionalParameters;
         }
-        return newAdditionalParameters;
+        return additionalParameters;
     }
 
     private String uniqueFolderName()
