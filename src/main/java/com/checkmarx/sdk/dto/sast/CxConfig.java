@@ -46,6 +46,9 @@ public class CxConfig implements Serializable {
     @JsonProperty("emailNotifications")
     private CxEmailNotifications emailNotifications;
 
+    @JsonProperty("postActionPostbackId")
+    private Integer postActionPostbackId;
+
     private static final long serialVersionUID = 2851455437649831239L;
 
     public Sca getSca() {
@@ -182,5 +185,16 @@ public class CxConfig implements Serializable {
     @JsonProperty("emailNotifications")
     public void setEmailNotifications(CxEmailNotifications emailNotifications) {
         this.emailNotifications = emailNotifications;
+    }
+
+
+    @JsonProperty("postActionPostbackId")
+    public Integer getPostActionPostbackId() {
+        return postActionPostbackId;
+    }
+
+    @JsonProperty("postActionPostbackId")
+    public void setPostActionPostbackId(Integer postActionPostbackId) {
+        this.postActionPostbackId = postActionPostbackId;
     }
 }

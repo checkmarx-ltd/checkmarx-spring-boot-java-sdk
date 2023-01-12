@@ -54,6 +54,10 @@ public class ScanResults{
     @Setter
     private String  version;
     private List<XIssue> xIssues;
+
+    @Getter
+    @Setter
+    private List<XIssue> unFilteredIssues;
     private String output;
     private Map<String, Object> additionalDetails;
     private CxScanSummary scanSummary;
@@ -61,7 +65,7 @@ public class ScanResults{
     private ASTResults astResults;
 
     public ScanResults(Boolean osa, String projectId,String deepLink, String reportCreationTime, String scanTime, String team, String project, String link, String files, String loc, String scanType,String version,
-                       List<XIssue> xIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary, SCAResults scaResults, ASTResults astResults) {
+                       List<XIssue> xIssues,List<XIssue> unFilteredIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary, SCAResults scaResults, ASTResults astResults) {
         this.osa = osa;
         this.projectId = projectId;
         this.DeepLink = deepLink;
@@ -75,6 +79,7 @@ public class ScanResults{
         this.scanType = scanType;
         this.version = version;
         this.xIssues = xIssues;
+        this.unFilteredIssues = unFilteredIssues;
         this.additionalDetails = additionalDetails;
         this.scanSummary = scanSummary;
         this.scaResults = scaResults;
@@ -793,6 +798,7 @@ public class ScanResults{
         private String scanType;
         private String version;
         private List<XIssue> xIssues;
+        private List<XIssue> unFilteredIssues;
         private Map<String, Object> additionalDetails;
         private CxScanSummary scanSummary;
         private SCAResults scaResults;
@@ -846,6 +852,10 @@ public class ScanResults{
             this.xIssues = xIssues;
             return this;
         }
+        public ScanResults.ScanResultsBuilder unFilteredIssues(List<XIssue> unFilteredIssues) {
+            this.unFilteredIssues = unFilteredIssues;
+            return this;
+        }
 
         public ScanResults.ScanResultsBuilder additionalDetails(Map<String, Object> additionalDetails) {
             this.additionalDetails = additionalDetails;
@@ -868,7 +878,7 @@ public class ScanResults{
         }
 
         public ScanResults build() {
-            return new ScanResults(osa, projectId, DeepLink,  ReportCreationTime, ScanTime, team, project, link, files, loc, scanType,version, xIssues, additionalDetails, scanSummary, scaResults, astResults);
+            return new ScanResults(osa, projectId, DeepLink,  ReportCreationTime, ScanTime, team, project, link, files, loc, scanType,version, xIssues,unFilteredIssues ,additionalDetails, scanSummary, scaResults, astResults);
         }
 
         public String getVersion() {

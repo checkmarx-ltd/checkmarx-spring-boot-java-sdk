@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.dto.cx;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,12 @@ public class CxScanParams {
 
     @Getter
     private String clientSecret;
+
+    @Getter @Setter
+    private String modifiedProjectName;
+
+    @Getter @Setter
+    private Integer postBackActionId;
 
     public String getTeamName() {
         return teamName;
@@ -247,6 +254,11 @@ public class CxScanParams {
         return this;
     }
 
+    public CxScanParams withModifiedProjectName(String modifiedProjectName) {
+        this.modifiedProjectName = modifiedProjectName;
+        return this;
+    }
+
     public CxScanParams withScanConfiguration(String scanConfiguration) {
         this.scanConfiguration = scanConfiguration;
         return this;
@@ -333,6 +345,11 @@ public class CxScanParams {
         return this;
     }
 
+    public CxScanParams withPostbackActionId(Integer postbackActionId) {
+        this.postBackActionId = postbackActionId;
+        return this;
+    }
+
     public enum Type {
         GIT("GIT"),
         FILE("FILE");
@@ -354,7 +371,7 @@ public class CxScanParams {
     public boolean isFileSource(){
         return getSourceType().equals(Type.FILE);
     }
-    
+
     @Override
     public String toString() {
         return "CxScanParams{" +

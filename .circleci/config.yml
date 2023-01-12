@@ -1,4 +1,6 @@
-version: 2
+version: '2.1'
+orbs:
+  circleci-maven-release-orb: sonatype-nexus-community/circleci-maven-release-orb@0.0.18
 jobs:
   build:
     docker:
@@ -12,9 +14,9 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
-      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
+      - run: echo $GPG_ASC_BASE64NEW | base64 --decode |  gpg --batch --no-tty --import --yes
       - run: chmod u+x mvnw
-      - run: ./mvnw -s .circleci/maven.settings.xml clean verify
+      - run: ./mvnw -s .circleci/maven.settings.xml clean verify -X
       - run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout > target/version.txt
       - save_cache:
           paths:
@@ -40,7 +42,7 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
             - v1-dependencies-
-      - run: echo $GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
+      - run: echo $GPG_ASC_BASE64NEW | base64 --decode | gpg --batch --no-tty --import --yes
       - run: chmod u+x mvnw
       - run: ./mvnw -s .circleci/maven.settings.xml clean deploy -DskipTests
       - save_cache:

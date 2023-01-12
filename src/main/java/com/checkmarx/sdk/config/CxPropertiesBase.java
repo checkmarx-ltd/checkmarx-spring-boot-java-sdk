@@ -39,7 +39,9 @@ public abstract class CxPropertiesBase {
     private Boolean scanQueuing = false;
     private Integer scanQueuingTimeout = 720;
 
-    private Boolean restrictResultsToBranch;
+    private Integer projectBranchingCheckCount = 3;
+    private Integer projectBranchingCheckInterval = 5;
+    private Boolean restrictResultsToBranch = false;
     
     public abstract Boolean getEnableOsa();
 
@@ -312,6 +314,22 @@ public abstract class CxPropertiesBase {
 
     public void setDetectionDateFormat(String detectionDateFormat) {
         this.detectionDateFormat = detectionDateFormat;
+    }
+
+    public Integer getProjectBranchingCheckCount() {
+        return projectBranchingCheckCount;
+    }
+
+    public void setProjectBranchingCheckCount(Integer projectBranchingCheckCount) {
+        this.projectBranchingCheckCount = projectBranchingCheckCount;
+    }
+
+    public Integer getProjectBranchingCheckInterval() {
+        return projectBranchingCheckInterval;
+    }
+
+    public void setProjectBranchingCheckInterval(Integer projectBranchingCheckInterval) {
+        this.projectBranchingCheckInterval = projectBranchingCheckInterval;
     }
 
     public Boolean getRestrictResultsToBranch() { return this.restrictResultsToBranch; }
