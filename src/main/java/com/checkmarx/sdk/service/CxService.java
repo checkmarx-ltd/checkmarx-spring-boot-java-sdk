@@ -3,7 +3,6 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
-import com.checkmarx.sdk.dto.cx.CxProjectBranchingStatus;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
