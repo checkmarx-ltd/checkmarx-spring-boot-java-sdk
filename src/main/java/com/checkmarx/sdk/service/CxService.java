@@ -870,7 +870,7 @@ public class CxService implements CxClient {
             if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
                 log.debug("Restricting results to current branch");
                 int projectId = Integer.parseInt(cxResults.getProjectId());
-                CxProjectBranch branch = getProjectBranch(projectId);
+                CxProjectBranchingStatus branch = getProjectBranchingStatus(projectId);
                 if (branch != null) {
                     log.debug("Excluding results from scan {} (and earlier)", branch.getBranchedOnScanId());
                     similarityIdsToExclude = getScanSimilarityIds(branch.getBranchedOnScanId());
@@ -1382,56 +1382,6 @@ public class CxService implements CxClient {
         } catch (HttpStatusCodeException e) {
             log.error(ERROR_GETTING_PROJECT, projectId, e.getStatusCode());
             log.error(ExceptionUtils.getStackTrace(e));
-        } catch (JSONException e) {
-            log.error("Error processing JSON Response");
-            log.error(ExceptionUtils.getStackTrace(e));
-        }
-        return null;
-    }
-
-
-    /**
-     * Return project branch based on projectId
-     *
-     * @return
-     */
-    public CxProjectBranch getProjectBranch(Integer projectId) {
-        log.debug("Retrieving branch details for project {}", projectId);
-        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
-        try {
-            ResponseEntity<CxProjectBranch> project = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_BRANCH_DETAILS), HttpMethod.GET, httpEntity, CxProjectBranch.class, projectId);
-            return project.getBody();
-        } catch (HttpStatusCodeException e) {
-            if (e.getStatusCode() != HttpStatus.NOT_FOUND) {
-                log.error(ERROR_GETTING_PROJECT_BRANCH, projectId, e.getStatusCode());
-                log.error(ExceptionUtils.getStackTrace(e));
-            } else {
-                /*
-                 * For version 2.2 and higher of the SAST API, if a project is not branched, a 404 response
-                 * will be returned and the body of the response will be JSON data:
-                 *
-                 * {
-                 *     "messageCode": 49805,
-                 *     "messageDetails": "Branch with id 168 was not found"
-                 * }
-                 *
-                 * For earlier versions of the SAST API, the body will be a HTML document with a generic
-                 * "resource not found" message.
-                 */
-                String responseBody = e.getResponseBodyAsString();
-                try {
-                    JSONObject obj = new JSONObject(responseBody);
-                    int messageCode = obj.optInt("messageCode");
-                    if (messageCode == MESSAGE_CODE_BRANCH_NOT_FOUND) {
-                        log.debug("Project {} is not a branched project", projectId);
-                    } else {
-                        String messageDetails = obj.optString("messageDetails");
-                        log.debug("{}: unexpected message code in response (messageDetails: {})", messageCode, messageDetails);
-                    }
-                } catch (JSONException je) {
-                    log.debug("Response payload is not JSON. Assuming a version of SAST that does not support the GET /projects/branch/{id} API");
-                }
-            }
         } catch (JSONException e) {
             log.error("Error processing JSON Response");
             log.error(ExceptionUtils.getStackTrace(e));
