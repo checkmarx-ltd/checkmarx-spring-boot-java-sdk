@@ -328,7 +328,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         log.debug("mandatory {}",mandatoryFields);
         log.info("Executing SCA Resolver flow.");
         log.info("Path to Sca Resolver: {}", scaProperties.getPathToScaResolver());
-        log.info("Sca Resolver Additional Parameters: {}", additionalParameters);
+        //log.info("Sca Resolver Additional Parameters: {}", additionalParameters);
         File zipFile =null;
         int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,additionalParameters,resultPath,log,scaConfig,scaProperties);
         if (exitCode == 0) {

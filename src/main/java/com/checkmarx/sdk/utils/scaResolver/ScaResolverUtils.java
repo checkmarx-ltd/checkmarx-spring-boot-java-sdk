@@ -64,6 +64,7 @@ public class ScaResolverUtils {
                 }
             }
         }
+        //Overridng sca properties project name params
         if(scaProperties.getScaResolverOverrideProjectName()!=null)
         {
             for(int i=0;i<arguments.size();i++)
