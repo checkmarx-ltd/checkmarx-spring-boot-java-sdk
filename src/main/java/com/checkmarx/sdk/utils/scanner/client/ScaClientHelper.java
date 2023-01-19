@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
 import com.checkmarx.sdk.config.ContentType;
+import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.RestClientConfig;
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.*;
@@ -34,7 +35,6 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -111,6 +111,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
     private final ScaConfig scaConfig;
     private final ScaProperties scaProperties;
+    private  final CxProperties cxProperties;
 
 
     private String projectId;
@@ -122,11 +123,12 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
     public static final String SAST_RESOLVER_RESULT_FILE_NAME =".cxsca-sast-results.json";
 
-    public ScaClientHelper(RestClientConfig config, Logger log, ScaProperties scaProperties) {
+    public ScaClientHelper(RestClientConfig config, Logger log, ScaProperties scaProperties, CxProperties cxProperties) {
         super(config, log);
 
         this.scaConfig = config.getScaConfig();
         this.scaProperties = scaProperties;
+        this.cxProperties = cxProperties;
         validate(scaConfig);
 
         httpClient = createHttpClient(scaConfig.getApiUrl());
@@ -313,28 +315,29 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         File file = new File(config.getSourceDir());
         String sourceDir = file.getAbsolutePath();
         String projectName = config.getProjectName();
-        String resultPath = cxRepoFileHelper.getGitClonePath();
-        String additionalParameters = manageParameters(scaProperties.getScaResolverAddParameters());
+        String FolderName = uniqueFolderName();
+        String resultPath = cxRepoFileHelper.getGitClonePath()+File.separator+ FolderName ;
+        String additionalParameters = manageParameters(scaProperties.getScaResolverAddParameters(),projectName,resultPath );
         String sastResultPath ="";
         ArrayList<File> resultToZip = new ArrayList<>();
 
         //file creation
-        resultPath=resultPath+File.separator+ uniqueFolderName() + File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
+        resultPath=resultPath+ File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
 
         String mandatoryFields = "-s "+sourceDir +" "+"-n "+projectName+" "+"-r "+resultPath;
         log.debug("mandatory {}",mandatoryFields);
         log.info("Executing SCA Resolver flow.");
         log.info("Path to Sca Resolver: {}", scaProperties.getPathToScaResolver());
-        //log.info("Sca Resolver Additional Parameters: {}", scaProperties.getScaResolverAddParameters());
+        log.info("Sca Resolver Additional Parameters: {}", additionalParameters);
         File zipFile =null;
-        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,additionalParameters,resultPath,log,scaConfig);
+        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,additionalParameters,resultPath,log,scaConfig,scaProperties);
         if (exitCode == 0) {
             log.info("***************SCA resolution completed successfully.******************");
             File resultFilePath = new File(resultPath);
             resultToZip.add(resultFilePath);
 
             //check if sast-result-path is present, if exists add to zip.
-            if(scaProperties.getScaResolverAddParameters().contains("--sast-result-path"))
+            if(additionalParameters.contains("--sast-result-path"))
             {
                 sastResultPath = getSastResultFilePathFromAdditionalParams(additionalParameters);
                 File sastResultFile = new File(sastResultPath);
@@ -349,12 +352,26 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), config.getScaConfig());
     }
 
-    private String manageParameters(String additionalParameters)
+    private String manageParameters(Map<String,String> additionalParametersMap,String projectName,String path)
     {
         String newAdditionalParameters="";
-        if(additionalParameters.contains("--sast-result-path"))
+        String convertedAddParams = convertMapToString(additionalParametersMap);
+        String cxUser = "--cxuser ".concat(cxProperties.getUsername());
+        String cxServer = "--cxserver ".concat(cxProperties.getBaseUrl());
+        String cxPassword = "--cxpassword ".concat(cxProperties.getPassword());
+        String cxProjectName = "--cxprojectname ".concat(projectName);
+        String temp = convertedAddParams;
+        String exploitableParams = temp.concat(cxServer).concat(" ").concat(cxUser).concat(" ").concat(" ")
+                .concat(cxPassword).concat(" ").concat(cxProjectName).concat(" ");
+        if(scaProperties.isEnableExploitablePath() && !convertedAddParams.contains("--sast-result-path")) {
+            String finalPath = path + File.separator +SAST_RESOLVER_RESULT_FILE_NAME;
+            String resultPath = "--sast-result-path ".concat(finalPath);
+            convertedAddParams = exploitableParams.concat(resultPath).concat(" ");
+        }
+        else if(scaProperties.isEnableExploitablePath() && convertedAddParams.contains("--sast-result-path"))
         {
-            String sastResultPath =getSastResultFilePathFromAdditionalParams(additionalParameters);
+            convertedAddParams = exploitableParams;
+            String sastResultPath =getSastResultFilePathFromAdditionalParams(convertedAddParams);
             File sastResultFile = new File(sastResultPath);
             if(sastResultFile.isDirectory())
             {
@@ -364,10 +381,28 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 String parentName = sastResultFile.getParent();
                 sastResultPath = parentName + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME;
             }
-            newAdditionalParameters = setSastResultFilePathFromAdditionalParams(additionalParameters,sastResultPath);
+            newAdditionalParameters = setSastResultFilePathFromAdditionalParams(convertedAddParams,sastResultPath);
             return newAdditionalParameters;
         }
-        return additionalParameters;
+        return convertedAddParams;
+    }
+
+    private String convertMapToString(Map<String,String> addParams)
+    {
+        String newAddParams= "";
+        for (Map.Entry<String, String> entry : addParams.entrySet()) {
+            String key= null;
+            if(entry.getKey().length()>1)
+            {
+                key = "--".concat(entry.getKey());
+            }
+            else {
+                key = "-".concat(entry.getKey());
+            }
+            String value = entry.getValue();
+            newAddParams = newAddParams.concat(key).concat(" ").concat(value).concat(" ");
+        }
+        return newAddParams;
     }
 
     private String uniqueFolderName()
