@@ -1,4 +1,5 @@
 package com.checkmarx.sdk.utils.scaResolver;
+import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.exception.CxHTTPClientException;
 import org.apache.commons.lang3.SystemUtils;
@@ -17,7 +18,7 @@ public class ScaResolverUtils {
     public static final String SCA_RESOLVER_FOR_LINUX = "/" + "ScaResolver";
     public static final String OFFLINE = "offline";
 
-    public static int runScaResolver(String pathToScaResolver, String mandatoryParameters , String scaResolverAddParams, String pathToResultJSONFile, Logger log, ScaConfig scaConfig)
+    public static int runScaResolver(String pathToScaResolver, String mandatoryParameters , String scaResolverAddParams, String pathToResultJSONFile, Logger log, ScaConfig scaConfig, ScaProperties scaProperties)
             throws CxHTTPClientException {
         int exitCode = -100;
         String[] scaResolverCommand;
@@ -59,6 +60,24 @@ public class ScaResolverUtils {
                     }
                     else {
                         arguments.set(i+1,scaConfig.getExpPathSastProjectName());
+                    }
+                }
+            }
+        }
+        //Overridng sca properties project name params
+        if(scaProperties.getScaResolverOverrideProjectName()!=null)
+        {
+            for(int i=0;i<arguments.size();i++)
+            {
+                if(arguments.get(i).equals("--cxprojectname"))
+                {
+                    log.debug("Overriding SAST project name");
+                    if(arguments.size()-1==i)
+                    {
+                        arguments.add(scaProperties.getScaResolverOverrideProjectName());
+                    }
+                    else {
+                        arguments.set(i+1,scaProperties.getScaResolverOverrideProjectName());
                     }
                 }
             }
