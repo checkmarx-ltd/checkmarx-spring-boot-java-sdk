@@ -96,6 +96,11 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final String ENGINE_TYPE_FOR_API = "sca";
 
     private static final String TENANT_HEADER_NAME = "Account-Name";
+    private static  final String CX_USER_NAME ="--cxuser ";
+    private static  final String CX_SERVER ="--cxserver ";
+    private static  final String CX_PASSWORD = "--cxpassword ";
+    private static  final String CX_PROJECT_NAME = "--cxprojectname ";
+    private static  final String CX_SAST_RESULT_PATH ="--sast-result-path ";
 
 
     public static final String CX_REPORT_LOCATION = File.separator + "Checkmarx" + File.separator + "Reports";
@@ -356,16 +361,16 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     {
         String newAdditionalParameters="";
         String convertedAddParams = convertMapToString(additionalParametersMap);
-        String cxUser = "--cxuser ".concat(cxProperties.getUsername());
-        String cxServer = "--cxserver ".concat(cxProperties.getBaseUrl());
-        String cxPassword = "--cxpassword ".concat(cxProperties.getPassword());
-        String cxProjectName = "--cxprojectname ".concat(projectName);
+        String cxUser = CX_USER_NAME.concat(cxProperties.getUsername());
+        String cxServer = CX_SERVER.concat(cxProperties.getBaseUrl());
+        String cxPassword = CX_PASSWORD.concat(cxProperties.getPassword());
+        String cxProjectName = CX_PROJECT_NAME.concat(projectName);
         String temp = convertedAddParams;
         String exploitableParams = temp.concat(cxServer).concat(" ").concat(cxUser).concat(" ").concat(" ")
                 .concat(cxPassword).concat(" ").concat(cxProjectName).concat(" ");
         if(scaProperties.isEnableExploitablePath() && !convertedAddParams.contains("--sast-result-path")) {
             String finalPath = path + File.separator +SAST_RESOLVER_RESULT_FILE_NAME;
-            String resultPath = "--sast-result-path ".concat(finalPath);
+            String resultPath = CX_SAST_RESULT_PATH.concat(finalPath);
             convertedAddParams = exploitableParams.concat(resultPath).concat(" ");
         }
         else if(scaProperties.isEnableExploitablePath() && convertedAddParams.contains("--sast-result-path"))
@@ -392,15 +397,23 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         String newAddParams= "";
         for (Map.Entry<String, String> entry : addParams.entrySet()) {
             String key= null;
-            if(entry.getKey().length()>1)
+            if(entry.getKey().contains("custom-parameter"))
             {
-                key = "--".concat(entry.getKey());
+                String value = entry.getValue();
+                if(value!=null){
+                    newAddParams = newAddParams.concat(value).concat(" ");
+                }
+
             }
             else {
-                key = "-".concat(entry.getKey());
+                if (entry.getKey().length() > 1) {
+                    key = "--".concat(entry.getKey());
+                } else {
+                    key = "-".concat(entry.getKey());
+                }
+                String value = entry.getValue();
+                newAddParams = newAddParams.concat(key).concat(" ").concat(value).concat(" ");
             }
-            String value = entry.getValue();
-            newAddParams = newAddParams.concat(key).concat(" ").concat(value).concat(" ");
         }
         return newAddParams;
     }
