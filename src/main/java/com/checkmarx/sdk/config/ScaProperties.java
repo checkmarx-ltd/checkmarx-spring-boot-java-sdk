@@ -40,10 +40,7 @@ public class ScaProperties {
     private String filterdependencytype;
     private boolean enableScaResolver;
     private String pathToScaResolver="/app";
-    private String scaResolverAddParameters="";
-
-
-
-
-
+    private Map<String,String> scaResolverAddParameters;
+    private boolean enableExploitablePath= false;
+    private String scaResolverOverrideProjectName;
 }

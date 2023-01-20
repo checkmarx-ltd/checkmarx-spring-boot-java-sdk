@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.service.scanner;
 
+import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.ScaProperties;
 import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.sca.Summary;
@@ -33,6 +34,7 @@ public class ScaScanner extends AbstractScanner {
     private final ScaProperties scaProperties;
     private final FilterInputFactory filterInputFactory;
     private final FilterValidator filterValidator;
+    private final CxProperties cxProperties;
 
     @Override
     protected void applyFilterToResults(AstScaResults combinedResults, ScanParams scanParams) {
@@ -86,7 +88,7 @@ public class ScaScanner extends AbstractScanner {
 
     @Override
     protected IScanClientHelper allocateClient(RestClientConfig restClientConfig) {
-        return new ScaClientHelper(restClientConfig, log, scaProperties);
+        return new ScaClientHelper(restClientConfig, log, scaProperties, cxProperties);
     }
     
     public AstScaResults getLatestScanResults(ScanParams scanParams) {
