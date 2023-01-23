@@ -807,6 +807,7 @@ public class CxService implements CxClient {
      */
     private Map<String, Integer> getIssues(FilterConfiguration filter, String session, List<ScanResults.XIssue> cxIssueList,List<ScanResults.XIssue> unFilteredList, CxXMLResultsType cxResults) {
         Map<String, Integer> summary = new HashMap<>();
+        Map<String, Integer> summary1 = new HashMap<>();
         try {
             EngineFilterConfiguration sastFilters = Optional.ofNullable(filter)
                     .map(FilterConfiguration::getSastFilters)
@@ -821,7 +822,7 @@ public class CxService implements CxClient {
                     if (filterValidator.passesFilter(filterInput, sastFilters)) {
                         buildIssue(xIssueBuilder,resultType,result,formatter,cxResults,session,cxIssueList,summary,true);
                     }
-                    buildIssue(xIssueBuilder,resultType,result,formatter,cxResults,session,unFilteredList,summary,false);
+                    buildIssue(xIssueBuilder,resultType,result,formatter,cxResults,session,unFilteredList,summary1,false);
                 }
             }
         } catch (NullPointerException e) {
@@ -901,9 +902,6 @@ public class CxService implements CxClient {
                         .falsePositive(falsePositive);
                 details.put(Integer.parseInt(resultType.getLine()), issueDetails);
             }
-            xIssueBuilder.details(details);
-            issue = xIssueBuilder.build();
-            prepareIssuesRemoveDuplicates(cxIssueList, resultType, details, falsePositive, issue, summary);
         }
         else
         {
@@ -913,10 +911,10 @@ public class CxService implements CxClient {
                     .comment(resultType.getRemark())
                     .falsePositive(falsePositive);
             details.put(Integer.parseInt(resultType.getLine()), issueDetails);
-            xIssueBuilder.details(details);
-            issue = xIssueBuilder.build();
-            prepareIssuesRemoveDuplicates(cxIssueList, resultType, details, falsePositive, issue, summary);
         }
+        xIssueBuilder.details(details);
+        issue = xIssueBuilder.build();
+        prepareIssuesRemoveDuplicates(cxIssueList, resultType, details, falsePositive, issue, summary);
 
         return issue;
     }
