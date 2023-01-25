@@ -3,7 +3,6 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
-import com.checkmarx.sdk.dto.cx.CxProjectBranchingStatus;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
@@ -108,6 +107,7 @@ public class CxService implements CxClient {
     private static final String ROLE_LDAP_MAPPINGS = "/auth/LDAPRoleMappings?ldapServerId={id}";
     private static final String ROLE_LDAP_MAPPINGS_DELETE = "/auth/LDAPRoleMappings/{id}";
     private static final String LDAP_SERVER = "/auth/LDAPServers";
+    private static final String ODATA_SCAN_SIMILARITY_IDS = "/cxwebinterface/odata/v1/Scans({id})?$select=Id&$expand=Results($select=SimilarityId)";
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
     private static final String PROJECT_BRANCH = "/projects/{id}/branch";
@@ -115,6 +115,7 @@ public class CxService implements CxClient {
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
     private static final String PROJECT_SOURCE_FILE = "/projects/{id}/sourceCode/attachments";
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
+    private static final String PROJECT_BRANCH_DETAILS = "/projects/branch/{id}";
     private static final String SCAN = "/sast/scans";
     private static final String SCAN_SUMMARY = "/sast/scans/{id}/resultsStatistics";
     private static final String PROJECT_SCANS = "/sast/scans?projectId={pid}";
@@ -131,6 +132,7 @@ public class CxService implements CxClient {
     public static final String ERROR_WITH_XML_REPORT = "Error with XML report";
     public static final String ERROR_PROCESSING_SCAN_RESULTS = "Error while processing scan results";
     public static final String ERROR_GETTING_PROJECT = "Error occurred while retrieving project with id {}, http error {}";
+    public static final String ERROR_GETTING_PROJECT_BRANCH = "Error occurred while retrieving branch details for project with id {}, http error {}";
     public static final String PROJECT_REMOTE_SETTINGS_NOT_FOUND = "Project's remote settings were not found, http message {}";
     public static final String FOUND_TEAM = "Found team {} with ID {}";
     public static final String ONLY_SUPPORTED_IN_90_PLUS = "Operation only supported in 9.0+";
@@ -306,6 +308,45 @@ public class CxService implements CxClient {
         return null;
     }
 
+    /**
+     * Return the similarity id's for the specified scan.
+     */
+    public Set<Integer> getScanSimilarityIds(Integer scanId) {
+        log.debug("Getting similarity ids for scan {}", scanId);
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        Set<Integer> similarityIds = new HashSet<>();
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getBaseUrl().concat(ODATA_SCAN_SIMILARITY_IDS),
+                    HttpMethod.GET, requestEntity, String.class, scanId);
+            JSONObject obj = new JSONObject(response.getBody());
+            JSONArray value = obj.getJSONArray("value");
+            // We only expect a single entry in the array
+            JSONObject scan = value.getJSONObject(0);
+            JSONArray results = scan.getJSONArray("Results");
+            for (int i = 0; i < results.length(); i++) {
+                JSONObject result = results.getJSONObject(i);
+                int similarityId = result.getInt("SimilarityId");
+                similarityIds.add(similarityId);
+            }
+            return similarityIds;
+        } catch (HttpStatusCodeException e) {
+            // If we get a 403, then the likely explanation is that either
+            // the user does not have a role with the API permission, or the
+            // client-id or scope have not been set correctly (for OData).
+            if (e.getStatusCode() == HttpStatus.FORBIDDEN) {
+                log.error("User is not permitted to access the Checkmarx SAST OData API");
+                log.error("OData access is required if the restrict-results-to-branch option is enabled.");
+                log.error("See https://checkmarx.com/resource/documents/en/34965-46554-cxsast--odata--api-authentication.html");
+            } else {
+                log.error("Error occurred while fetching results for scan {}, http error {}", scanId, e.getStatusCode());
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
+        } catch (JSONException e) {
+            log.error("Error occurred while processing JSON");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return null;
+    }
 
     /**
      * Get the status of a given scanId
@@ -490,7 +531,13 @@ public class CxService implements CxClient {
             cxScanBuilder.unFilteredIssues(unFilteredIssueList);
             cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
-            CxScanSummary scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+            CxScanSummary scanSummary = null;
+            if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                scanSummary = new CxScanSummary(summary);
+            } else {
+                scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+            }
+            log.debug("scanSummary: {}", scanSummary);
             cxScanBuilder.scanSummary(scanSummary);
             ScanResults results = cxScanBuilder.build();
             //Add the summary map (severity, count)
@@ -683,7 +730,12 @@ public class CxService implements CxClient {
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
             ScanResults results = cxScanBuilder.build();
             if (!cxProperties.getOffline() && !ScanUtils.empty(cxResults.getScanId())) {
-                CxScanSummary scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                CxScanSummary scanSummary = null;
+                if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                    scanSummary = new CxScanSummary(summary);
+                } else {
+                    scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                }
                 results.setScanSummary(scanSummary);
             }
             results.getAdditionalDetails().put(Constants.SUMMARY_KEY, summary);
@@ -812,12 +864,35 @@ public class CxService implements CxClient {
             EngineFilterConfiguration sastFilters = Optional.ofNullable(filter)
                     .map(FilterConfiguration::getSastFilters)
                     .orElse(null);
+            log.debug("sastFilters: {}", sastFilters);
 
+            Set<Integer> similarityIdsToExclude = null;
+            if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                log.debug("Restricting results to current branch");
+                int projectId = Integer.parseInt(cxResults.getProjectId());
+                CxProjectBranchingStatus branch = getProjectBranchingStatus(projectId);
+                if (branch != null) {
+                    log.debug("Excluding results from scan {} (and earlier)", branch.getBranchedOnScanId());
+                    similarityIdsToExclude = getScanSimilarityIds(branch.getBranchedOnScanId());
+                    log.trace("similarityIdsToExclude: {}", similarityIdsToExclude);
+                } else {
+                    log.debug("Cannot get branch details for project {}", cxResults.getProjectId());
+                }
+            }
+
+            log.debug("similarityIdsToExclude: {}", similarityIdsToExclude);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(cxProperties.getDetectionDateFormat());
             for (QueryType result : cxResults.getQuery()) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/
                 for (ResultType resultType : result.getResult()) {
+                    int similarityId = Integer.parseInt(resultType.getPath().getSimilarityId());
+                    if (similarityIdsToExclude != null && similarityIdsToExclude.contains(similarityId)) {
+                        log.trace("Excluding result {} (with similarityId {})", resultType.getNodeId(), similarityId);
+                        continue;
+                    } else {
+                        log.trace("Not excluding result {} (with similarityId {})", resultType.getNodeId(), similarityId);
+                    }
                     FilterInput filterInput = filterInputFactory.createFilterInputForCxSast(result, resultType);
                     if (filterValidator.passesFilter(filterInput, sastFilters)) {
                         buildIssue(xIssueBuilder,resultType,result,formatter,cxResults,session,cxIssueList,summary,true);
@@ -1310,7 +1385,6 @@ public class CxService implements CxClient {
         }
         return null;
     }
-
 
     /**
      * Check if a scan exists for a projectId

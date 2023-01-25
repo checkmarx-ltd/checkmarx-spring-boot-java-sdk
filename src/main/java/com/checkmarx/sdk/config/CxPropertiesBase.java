@@ -41,6 +41,7 @@ public abstract class CxPropertiesBase {
 
     private Integer projectBranchingCheckCount = 3;
     private Integer projectBranchingCheckInterval = 5;
+    private Boolean restrictResultsToBranch = false;
     
     public abstract Boolean getEnableOsa();
 
@@ -329,6 +330,12 @@ public abstract class CxPropertiesBase {
 
     public void setProjectBranchingCheckInterval(Integer projectBranchingCheckInterval) {
         this.projectBranchingCheckInterval = projectBranchingCheckInterval;
+    }
+
+    public Boolean getRestrictResultsToBranch() { return this.restrictResultsToBranch; }
+
+    public void setRestrictResultsToBranch(Boolean restrictResultsToBranch) {
+        this.restrictResultsToBranch = restrictResultsToBranch;
     }
 }
 
