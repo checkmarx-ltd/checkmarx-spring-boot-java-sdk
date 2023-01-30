@@ -37,6 +37,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -328,7 +329,8 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
         //file creation
         resultPath=resultPath+ File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
-
+        File resultFilePath = new File(resultPath);
+        File sastResultFile = null;
         String mandatoryFields = "-s "+sourceDir +" "+"-n "+projectName+" "+"-r "+resultPath;
         log.debug("mandatory {}",mandatoryFields);
         log.info("Executing SCA Resolver flow.");
@@ -336,25 +338,55 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         //log.info("Sca Resolver Additional Parameters: {}", additionalParameters);
         File zipFile =null;
         int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,additionalParameters,resultPath,log,scaConfig,scaProperties);
-        if (exitCode == 0) {
-            log.info("***************SCA resolution completed successfully.******************");
-            File resultFilePath = new File(resultPath);
-            resultToZip.add(resultFilePath);
-
-            //check if sast-result-path is present, if exists add to zip.
-            if(additionalParameters.contains("--sast-result-path"))
-            {
-                sastResultPath = getSastResultFilePathFromAdditionalParams(additionalParameters);
-                File sastResultFile = new File(sastResultPath);
-                resultToZip.add(sastResultFile);
-            }
+        try {
+            if (exitCode == 0) {
+                log.info("***************SCA resolution completed successfully.******************");
+                resultToZip.add(resultFilePath);
+                //check if sast-result-path is present, if exists add to zip.
+                if(additionalParameters.contains("--sast-result-path"))
+                {
+                    sastResultPath = getSastResultFilePathFromAdditionalParams(additionalParameters);
+                    sastResultFile = new File(sastResultPath);
+                    resultToZip.add(sastResultFile);
+                }
 
                 zipFile = zipEvidenceFile(resultToZip);
 
-        }else{
+            }else{
+                throw new CxHTTPClientException("Error while running sca resolver executable. Exit code: "+exitCode);
+            }
+            return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), config.getScaConfig());
+
+        }catch (CxHTTPClientException e)
+        {
             throw new CxHTTPClientException("Error while running sca resolver executable. Exit code: "+exitCode);
         }
-        return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), config.getScaConfig());
+        finally {
+            log.debug("deleting all files ");
+            log.debug("clone path :{}",file.toPath());
+            cxRepoFileHelper.deleteCloneLocalDir(file);
+            log.debug("result path :{}",resultFilePath.getParentFile());
+            FileUtils.deleteDirectory(resultFilePath.getParentFile());
+            if(sastResultFile!=null )
+            {
+                log.debug("sastResultFile path :{}",Objects.requireNonNull(sastResultFile).getParentFile());
+                FileUtils.deleteDirectory(Objects.requireNonNull(sastResultFile).getParentFile());
+            }
+            if(zipFile!=null)
+            {
+                log.debug("zipFile path :{}",Objects.requireNonNull(zipFile).toPath());
+                Files.deleteIfExists(Objects.requireNonNull(zipFile).toPath());
+            }
+            if (!SystemUtils.IS_OS_UNIX) {
+                log.debug("SCA resolver logs path :{}", scaProperties.getPathToScaResolver() + "\\" + "Logs");
+                FileUtils.deleteDirectory(new File(scaProperties.getPathToScaResolver()+ "\\" + "Logs"));
+            }
+            else {
+                log.debug("SCA resolver logs path :{}", scaProperties.getPathToScaResolver() + "/" + "logs");
+                FileUtils.deleteDirectory(new File(scaProperties.getPathToScaResolver()+ "/" + "logs"));
+            }
+
+        }
     }
 
     private String manageParameters(Map<String,String> additionalParametersMap,String projectName,String path)
@@ -395,24 +427,27 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private String convertMapToString(Map<String,String> addParams)
     {
         String newAddParams= "";
-        for (Map.Entry<String, String> entry : addParams.entrySet()) {
-            String key= null;
-            if(entry.getKey().contains("custom-parameter"))
-            {
-                String value = entry.getValue();
-                if(value!=null){
-                    newAddParams = newAddParams.concat(value).concat(" ");
-                }
+        if(addParams!=null)
+        {
+            for (Map.Entry<String, String> entry : addParams.entrySet()) {
+                String key= null;
+                if(entry.getKey().contains("custom-parameter"))
+                {
+                    String value = entry.getValue();
+                    if(value!=null){
+                        newAddParams = newAddParams.concat(value).concat(" ");
+                    }
 
-            }
-            else {
-                if (entry.getKey().length() > 1) {
-                    key = "--".concat(entry.getKey());
-                } else {
-                    key = "-".concat(entry.getKey());
                 }
-                String value = entry.getValue();
-                newAddParams = newAddParams.concat(key).concat(" ").concat(value).concat(" ");
+                else {
+                    if (entry.getKey().length() > 1) {
+                        key = "--".concat(entry.getKey());
+                    } else {
+                        key = "-".concat(entry.getKey());
+                    }
+                    String value = entry.getValue();
+                    newAddParams = newAddParams.concat(key).concat(" ").concat(value).concat(" ");
+                }
             }
         }
         return newAddParams;
