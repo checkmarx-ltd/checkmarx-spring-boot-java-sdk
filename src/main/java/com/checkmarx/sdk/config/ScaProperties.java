@@ -38,6 +38,7 @@ public class ScaProperties {
     private boolean preserveXml = false;
     private String filterPolicyViolation;
     private String filterdependencytype;
+    private boolean filterOutDevdependency=false;
     private boolean enableScaResolver;
     private String pathToScaResolver="/app";
     private Map<String,String> scaResolverAddParameters;
