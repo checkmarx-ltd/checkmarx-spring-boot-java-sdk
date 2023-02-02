@@ -43,7 +43,7 @@ public class Package implements Serializable {
     public boolean IsDirectDependency;
 
     //public boolean isDirectDependency;
-    @JsonProperty(value="isDevelopmentDependency")
-    private boolean IsDevelopment;
+    @JsonProperty(value="isDevelopment")
+    private boolean IsDevelopmentDependency;
     private PackageUsage packageUsage;
 }
