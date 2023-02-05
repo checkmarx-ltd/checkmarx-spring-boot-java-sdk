@@ -2059,7 +2059,7 @@ public class CxService implements CxClient {
                         log.debug("Normalized name for current branch is {} and target/default branch is {}", currentBranch, defaultBranch);
                     }
 
-                    if(params.getProjectName().contains(currentBranch)){
+                    if(currentBranch != null && currentBranch != "" && params.getProjectName().contains(currentBranch)){
                         derivedProjectName = params.getProjectName().replace(currentBranch,defaultBranch);
                     }else if(params.getModifiedProjectName() != null && params.getModifiedProjectName() != ""){
                         derivedProjectName = params.getProjectName().replace(params.getModifiedProjectName(),defaultBranch);
