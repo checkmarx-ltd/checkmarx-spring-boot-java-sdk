@@ -2061,8 +2061,10 @@ public class CxService implements CxClient {
 
                     if(params.getProjectName().contains(currentBranch)){
                         derivedProjectName = params.getProjectName().replace(currentBranch,defaultBranch);
-                    }else{
+                    }else if(params.getModifiedProjectName() != null && params.getModifiedProjectName() != ""){
                         derivedProjectName = params.getProjectName().replace(params.getModifiedProjectName(),defaultBranch);
+                    }else{
+                        derivedProjectName = params.getProjectName() + "-" + defaultBranch;
                     }
 
                     log.debug("Derived project name : {}", derivedProjectName);
