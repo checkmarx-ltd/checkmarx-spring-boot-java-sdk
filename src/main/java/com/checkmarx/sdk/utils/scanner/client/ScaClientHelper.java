@@ -128,6 +128,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     public static final String SCA_RESOLVER_RESULT_FILE_NAME = ".cxsca-results.json";
 
     public static final String SAST_RESOLVER_RESULT_FILE_NAME =".cxsca-sast-results.json";
+    public static final String SCA_RESOLVER_SCAN_ORIGIN_NAME = "ScaResolver-CxFlow";
 
     public ScaClientHelper(RestClientConfig config, Logger log, ScaProperties scaProperties, CxProperties cxProperties) {
         super(config, log);
@@ -143,7 +144,14 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         // Pass tenant name in a custom header. This will allow to get token from on-premise access control server
         // and then use this token for SCA authentication in cloud.
         httpClient.setCustomHeader(TENANT_HEADER_NAME, config.getScaConfig().getTenant());
-        httpClient.setCustomHeader(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
+        if(scaProperties.isEnableScaResolver())
+        {
+            httpClient.setCustomHeader(CxHttpClient.ORIGIN_HEADER, SCA_RESOLVER_SCAN_ORIGIN_NAME);
+        }
+        else
+        {
+            httpClient.setCustomHeader(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
+        }
     }
 
     @Override
