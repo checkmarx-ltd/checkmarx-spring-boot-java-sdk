@@ -12,7 +12,7 @@
 	<artifactId>cx-spring-boot-sdk</artifactId>
 
 
-	<version>0.5.41</version>
+	<version>0.5.42</version>
 
 	<name>cx-spring-boot-sdk</name>
 	<description>Checkmarx Java Spring Boot SDK</description>
@@ -29,6 +29,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web-services</artifactId>
+			<version>3.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
