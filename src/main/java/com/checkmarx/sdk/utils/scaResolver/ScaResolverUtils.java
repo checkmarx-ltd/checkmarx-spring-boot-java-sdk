@@ -18,7 +18,7 @@ public class ScaResolverUtils {
     public static final String SCA_RESOLVER_FOR_LINUX = "/" + "ScaResolver";
     public static final String OFFLINE = "offline";
 
-    public static int runScaResolver(String pathToScaResolver, String mandatoryParameters , String scaResolverAddParams, String pathToResultJSONFile, Logger log, ScaConfig scaConfig, ScaProperties scaProperties)
+    public static int runScaResolver(String pathToScaResolver, String mandatoryParameters , String scaResolverAddParams, String pathToResultJSONFile, Logger log, ScaConfig scaConfig, ScaProperties scaProperties,String custom)
             throws CxHTTPClientException {
         int exitCode = -100;
         String[] scaResolverCommand;
@@ -31,6 +31,15 @@ public class ScaResolverUtils {
         Matcher m1 = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(scaResolverAddParams);
         while (m1.find())
                 arguments.add(m1.group(1));
+
+        if (SystemUtils.IS_OS_UNIX)
+        {
+            if(custom!=null)
+            {
+                arguments.add(custom);
+            }
+        }
+
 
         /*
             As every time mandatoryParameters are getting added to start of the list looping from end till element.
