@@ -119,6 +119,8 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private final ScaProperties scaProperties;
     private  final CxProperties cxProperties;
 
+    private String customParameters;
+
 
     private String projectId;
     private String scanId;
@@ -345,7 +347,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         log.info("Path to Sca Resolver: {}", scaProperties.getPathToScaResolver());
         //log.info("Sca Resolver Additional Parameters: {}", additionalParameters);
         File zipFile =null;
-        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,additionalParameters,resultPath,log,scaConfig,scaProperties);
+        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,additionalParameters,resultPath,log,scaConfig,scaProperties,customParameters);
         try {
             if (exitCode == 0) {
                 log.info("***************SCA resolution completed successfully.******************");
@@ -441,11 +443,15 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 String key= null;
                 if(entry.getKey().contains("custom-parameter"))
                 {
-                    String value = entry.getValue();
-                    if(value!=null){
-                        newAddParams = newAddParams.concat(value).concat(" ");
+                    if (SystemUtils.IS_OS_UNIX)
+                    {
+                        customParameters = getCustomParameters(entry.getValue());
                     }
+                    else
+                    {
+                       newAddParams = newAddParams.concat(getCustomParameters(entry.getValue())).concat(" ");
 
+                    }
                 }
                 else {
                     if (entry.getKey().length() > 1) {
@@ -459,6 +465,20 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             }
         }
         return newAddParams;
+    }
+
+    private String getCustomParameters(String params)
+    {
+        int equalIndex = params.indexOf("=");
+        String paramToEqual = params.substring(0,equalIndex+1);
+        String endString = params.substring(equalIndex+1);
+        String addParams = "";
+        if (!SystemUtils.IS_OS_UNIX) {
+            addParams= paramToEqual.concat("\"").concat(endString).concat("\"");
+        } else {
+            addParams=paramToEqual.concat("'").concat(endString).concat("'");
+        }
+        return addParams;
     }
 
     private String uniqueFolderName()
