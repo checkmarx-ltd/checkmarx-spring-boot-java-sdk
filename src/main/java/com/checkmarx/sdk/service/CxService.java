@@ -2059,10 +2059,20 @@ public class CxService implements CxClient {
                         log.debug("Normalized name for current branch is {} and target/default branch is {}", currentBranch, defaultBranch);
                     }
 
-                    if(params.getProjectName().contains(currentBranch)){
+                    if(defaultBranch == null || defaultBranch.equalsIgnoreCase("")){
+                        log.info("Default Branch Name not found");
+                    }
+
+                    if(currentBranch != null && !currentBranch.equalsIgnoreCase("") &&  params.getProjectName().contains(currentBranch)){
                         derivedProjectName = params.getProjectName().replace(currentBranch,defaultBranch);
+                    }else if(params.getModifiedProjectName() != null && !params.getModifiedProjectName().equalsIgnoreCase("") &&  params.getModifiedProjectName().contains(currentBranch)){
+                        derivedProjectName = params.getModifiedProjectName().replace(currentBranch,defaultBranch);
                     }else{
-                        derivedProjectName = params.getProjectName().replace(params.getModifiedProjectName(),defaultBranch);
+                        if(params.getModifiedProjectName() != null && !params.getModifiedProjectName().equalsIgnoreCase("")){
+                            derivedProjectName = params.getModifiedProjectName() + "-" + defaultBranch;
+                        }else{
+                            derivedProjectName = params.getProjectName() + "-" + defaultBranch;
+                        }
                     }
 
                     log.debug("Derived project name : {}", derivedProjectName);
@@ -2070,7 +2080,11 @@ public class CxService implements CxClient {
                     if(baseProjectId.equals(UNKNOWN_INT)){
                         baseProjectId = createProject(teamId, derivedProjectName);
                     }
-                    projectId = branchProject(baseProjectId, params.getProjectName());
+                    if(params.getModifiedProjectName() != null && !params.getModifiedProjectName().equalsIgnoreCase("")){
+                        projectId = branchProject(baseProjectId, params.getModifiedProjectName());
+                    }else{
+                        projectId = branchProject(baseProjectId, params.getProjectName());
+                    }
                 } else {
                     projectId = createProject(teamId, params.getProjectName());
                 }
