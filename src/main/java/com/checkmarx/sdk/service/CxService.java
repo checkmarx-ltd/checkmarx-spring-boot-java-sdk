@@ -2059,10 +2059,22 @@ public class CxService implements CxClient {
                         log.debug("Normalized name for current branch is {} and target/default branch is {}", currentBranch, defaultBranch);
                     }
 
-                    if(params.getProjectName().contains(currentBranch)){
+                    if(defaultBranch == null || defaultBranch.equalsIgnoreCase("")){
+                        log.info("Default Branch Name not found");
+                    }
+                    //params.getModifiedProjectName() have modified branch name in case if project name is append with current branch and there is script to change such project name
+                    //that changes branch value as well
+                    if(currentBranch != null && !currentBranch.equalsIgnoreCase("") &&  params.getProjectName().contains(currentBranch)){
                         derivedProjectName = params.getProjectName().replace(currentBranch,defaultBranch);
+                    }else if(params.getModifiedProjectName() != null && !params.getModifiedProjectName().equalsIgnoreCase("") &&  params.getModifiedProjectName().contains(currentBranch)){
+                        derivedProjectName = params.getModifiedProjectName().replace(currentBranch,defaultBranch);
                     }else{
-                        derivedProjectName = params.getProjectName().replace(params.getModifiedProjectName(),defaultBranch);
+                        if(params.getModifiedProjectName() != null && !params.getModifiedProjectName().equalsIgnoreCase("")){
+
+                            derivedProjectName = params.getProjectName().replace(params.getModifiedProjectName(),defaultBranch);
+                        }else{
+                            derivedProjectName = params.getProjectName() + "-" + defaultBranch;
+                        }
                     }
 
                     log.debug("Derived project name : {}", derivedProjectName);
