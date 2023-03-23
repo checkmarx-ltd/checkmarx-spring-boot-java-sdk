@@ -12,7 +12,9 @@
 	<artifactId>cx-spring-boot-sdk</artifactId>
 
 
-	<version>0.5.43</version>
+
+	<version>0.5.44</version>
+
 
 	<name>cx-spring-boot-sdk</name>
 	<description>Checkmarx Java Spring Boot SDK</description>
