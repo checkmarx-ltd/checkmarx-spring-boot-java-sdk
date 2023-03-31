@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.7.8</version>
+		<version>2.7.10</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.github.checkmarx-ltd</groupId>
@@ -13,7 +13,7 @@
 
 
 
-	<version>0.5.44</version>
+	<version>0.5.45</version>
 
 
 	<name>cx-spring-boot-sdk</name>
@@ -44,7 +44,7 @@
 		<dependency>
 			<groupId>org.yaml</groupId>
 			<artifactId>snakeyaml</artifactId>
-			<version>1.33</version>
+			<version>2.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -104,7 +104,7 @@
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
-			<version>20220320</version>
+			<version>20230227</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
