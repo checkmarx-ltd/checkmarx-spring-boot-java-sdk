@@ -2,6 +2,8 @@ package com.checkmarx.sdk.service;
 
 import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
 import com.checkmarx.sdk.dto.cx.CxScanSettings;
+import com.checkmarx.sdk.dto.cx.preandpostaction.CustomTaskByName;
+import com.checkmarx.sdk.dto.cx.preandpostaction.ListCustomeObj;
 import com.checkmarx.sdk.exception.CheckmarxException;
 
 /**
@@ -16,6 +18,7 @@ public interface ScanSettingsClient {
                            CxEmailNotifications emailNotifications);
 
     String getScanSettings(int projectId);
+    CustomTaskByName getPreActionID(String customTaskName);
 
     CxScanSettings getScanSettingsDto(int projectId);
 

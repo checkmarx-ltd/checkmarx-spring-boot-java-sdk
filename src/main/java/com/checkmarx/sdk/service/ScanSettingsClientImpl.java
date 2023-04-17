@@ -6,11 +6,11 @@ import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
 import com.checkmarx.sdk.dto.cx.CxPreset;
 import com.checkmarx.sdk.dto.cx.CxScanEngine;
 import com.checkmarx.sdk.dto.cx.CxScanSettings;
+import com.checkmarx.sdk.dto.cx.preandpostaction.CustomTaskByName;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -23,7 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-import java.util.List;
 
 @Service
 @Slf4j
@@ -32,6 +31,8 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
 
     private static final String SCAN_SETTINGS = "/sast/scanSettings";
     private static final String SCAN_SETTINGS_BY_ID = SCAN_SETTINGS + ID_TEMPLATE;
+
+    private static final String CUSTOM_TASK_DTLS_BY_NAME = "/customTasks/name/";
 
     private static final String PRESETS = "/sast/presets";
     private static final String PRESET_BY_ID = PRESETS + ID_TEMPLATE;
@@ -69,8 +70,13 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
                 .presetId(presetId)
                 .emailNotifications(emailNotifications)
                 .build();
-        if(cxProperties.getEnablePostActionEvent() && postActionId != 0)
+        if(postActionId != 0){
             scanSettings.setPostScanActionId(postActionId);
+        }
+            //  else{
+       //     scanSettings.setPostScanActionId(postActionId);
+      //  }
+
         HttpEntity<CxScanSettings> requestEntity = new HttpEntity<>(scanSettings, authClient.createAuthHeaders());
 
         log.info("Creating ScanSettings for project Id {}", projectId);
@@ -88,6 +94,28 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
             log.error(ExceptionUtils.getStackTrace(e));
         }
         return Constants.UNKNOWN_INT;
+    }
+
+
+
+    @Override
+    public CustomTaskByName getPreActionID(String customTaskName) {
+        HttpEntity<Void> requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+
+        log.info("Custom Task Name is  {}", customTaskName);
+        try {
+            String url = cxProperties.getUrl().concat(CUSTOM_TASK_DTLS_BY_NAME).concat(customTaskName);
+            ResponseEntity<CustomTaskByName[]> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, CustomTaskByName[].class);
+
+            return response.getBody()[0];
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while retrieving ScanSettings for Customtask {}, http error {}", customTaskName, e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error(JSON_ERROR);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return null;
     }
 
     @Override
