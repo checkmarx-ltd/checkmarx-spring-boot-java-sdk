@@ -3,6 +3,9 @@ package com.checkmarx.sdk.service;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
+import com.checkmarx.sdk.dto.cx.preandpostaction.CustomTaskByName;
+import com.checkmarx.sdk.dto.cx.preandpostaction.ListCustomeObj;
+import com.checkmarx.sdk.dto.cx.preandpostaction.ScanSettings;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
@@ -17,6 +20,7 @@ import com.checkmarx.sdk.utils.CxRepoFileHelper;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.checkmarx.sdk.utils.scanner.client.ScanClientHelper;
 import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -61,9 +65,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 
 /**
@@ -1984,6 +1985,19 @@ public class CxService implements CxClient {
         return scanSettingsClient.getEngineConfigurationName(configurationId);
     }
 
+    @Override
+    public String getPreAndPostActionSettings(int projectId) {
+        return scanSettingsClient.getScanSettings(projectId);
+    }
+
+    @Override
+    public CustomTaskByName getPreActionID(String name) {
+        if(name.equalsIgnoreCase("")){
+            return null;
+        }
+        return scanSettingsClient.getPreActionID(name);
+    }
+
     public Integer getPresetId(String preset) throws CheckmarxException {
         return scanSettingsClient.getPresetId(preset);
     }
@@ -2097,12 +2111,33 @@ public class CxService implements CxClient {
             log.debug("Updating project...");
             Integer presetId = getPresetId(params.getScanPreset());
             Integer engineConfigurationId = getScanConfiguration(params.getScanConfiguration());
+            String preAndPostAction = getPreAndPostActionSettings(projectId);
+
+            ScanSettings scanSettingsDetails = new ScanSettings();
+
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                scanSettingsDetails = mapper.readValue(preAndPostAction, ScanSettings.class);
+            } catch (JsonProcessingException e) {
+                log.debug("Json Parsing Excption for pre and post action settings {}",e.getMessage());
+            }
+            CustomTaskByName customTaskDetais = new CustomTaskByName();
+
+
+                customTaskDetais = getPreActionID(scanSettingsDetails.getPostScanActionName());
+
+                if(params.getEmailNotifications()==null){
+                    params.setEmailNotifications(scanSettingsDetails.getEmailNotifications());
+                }
 
             if(params.getPostBackActionId()!=null){
                 createScanSetting(projectId, presetId, engineConfigurationId, params.getPostBackActionId(),
                         params.getEmailNotifications());
-            }else{
+            }else if(cxProperties.getPostActionPostbackId() != null){
                 createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                        params.getEmailNotifications());
+            }else{
+                createScanSetting(projectId, presetId, engineConfigurationId, customTaskDetais.getId(),
                         params.getEmailNotifications());
             }
 
