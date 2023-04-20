@@ -3,6 +3,7 @@ package com.checkmarx.sdk.service.scanner;
 import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxGoProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
+import com.checkmarx.sdk.dto.cx.preandpostaction.CustomTaskByName;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.sca.Summary;
@@ -1110,6 +1111,16 @@ public class GoScanner implements ILegacyClient {
     
     @Override
     public String getScanConfigurationName(int configurationId) {
+        return null;
+    }
+
+    @Override
+    public String getPreAndPostActionSettings(int projectId) {
+        return null;
+    }
+
+    @Override
+    public CustomTaskByName getPreActionID(String customTaskName) {
         return null;
     }
 
