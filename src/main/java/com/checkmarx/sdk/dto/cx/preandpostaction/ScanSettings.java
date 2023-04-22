@@ -1,6 +1,8 @@
 package com.checkmarx.sdk.dto.cx.preandpostaction;
 
 import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,6 +44,7 @@ Root root = om.readValue(myJsonString, Root.class); */
     public Link link;
 }
 
+@JsonIgnoreProperties(value = { "postScanActionConditions","postScanActionArguments" })
 public class ScanSettings{
     public Project project;
     public Preset preset;
@@ -56,6 +59,8 @@ public class ScanSettings{
 
     @Getter
     public String postScanActionName;
+
+
 }
 
 

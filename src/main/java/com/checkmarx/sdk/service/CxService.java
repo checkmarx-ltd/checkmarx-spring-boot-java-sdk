@@ -1992,7 +1992,7 @@ public class CxService implements CxClient {
 
     @Override
     public CustomTaskByName getPreActionID(String name) {
-        if(name.equalsIgnoreCase("")){
+        if(name == null || name.equalsIgnoreCase("")){
             return null;
         }
         return scanSettingsClient.getPreActionID(name);
@@ -2118,6 +2118,7 @@ public class CxService implements CxClient {
             ObjectMapper mapper = new ObjectMapper();
             try {
                 scanSettingsDetails = mapper.readValue(preAndPostAction, ScanSettings.class);
+
             } catch (JsonProcessingException e) {
                 log.debug("Json Parsing Excption for pre and post action settings {}",e.getMessage());
             }
@@ -2133,7 +2134,7 @@ public class CxService implements CxClient {
             if(params.getPostBackActionId()!=null){
                 createScanSetting(projectId, presetId, engineConfigurationId, params.getPostBackActionId(),
                         params.getEmailNotifications());
-            }else if(cxProperties.getPostActionPostbackId() != null){
+            }else if(cxProperties.getPostActionPostbackId() != null && cxProperties.getPostActionPostbackId() != 0){
                 createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                         params.getEmailNotifications());
             }else{
