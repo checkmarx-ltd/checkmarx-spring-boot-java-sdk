@@ -1992,7 +1992,7 @@ public class CxService implements CxClient {
 
     @Override
     public CustomTaskByName getPreActionID(String name) {
-        if(name.equalsIgnoreCase("")){
+        if(name == null || name.equalsIgnoreCase("")){
             return null;
         }
         return scanSettingsClient.getPreActionID(name);
@@ -2118,11 +2118,11 @@ public class CxService implements CxClient {
             ObjectMapper mapper = new ObjectMapper();
             try {
                 scanSettingsDetails = mapper.readValue(preAndPostAction, ScanSettings.class);
+
             } catch (JsonProcessingException e) {
                 log.debug("Json Parsing Excption for pre and post action settings {}",e.getMessage());
             }
             CustomTaskByName customTaskDetais = new CustomTaskByName();
-
 
                 customTaskDetais = getPreActionID(scanSettingsDetails.getPostScanActionName());
 
@@ -2133,12 +2133,17 @@ public class CxService implements CxClient {
             if(params.getPostBackActionId()!=null){
                 createScanSetting(projectId, presetId, engineConfigurationId, params.getPostBackActionId(),
                         params.getEmailNotifications());
-            }else if(cxProperties.getPostActionPostbackId() != null){
+            }else if(cxProperties.getPostActionPostbackId() != null && cxProperties.getPostActionPostbackId() != 0){
                 createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                         params.getEmailNotifications());
             }else{
-                createScanSetting(projectId, presetId, engineConfigurationId, customTaskDetais.getId(),
-                        params.getEmailNotifications());
+                if(customTaskDetais!=null){
+                    createScanSetting(projectId, presetId, engineConfigurationId, customTaskDetais.getId(),
+                            params.getEmailNotifications());
+                }else{
+                    createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                            params.getEmailNotifications());
+                }
             }
 
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
@@ -2207,7 +2212,8 @@ public class CxService implements CxClient {
             String response = restTemplate.postForObject(cxProperties.getUrl().concat(SCAN), requestEntity, String.class);
             JSONObject obj = new JSONObject(response);
             String id = obj.get("id").toString();
-            log.info("Scan created with Id {} for project Id {}", id, projectId);
+            log.info("Scan created with Id {} for project Id Satyam {}", id, projectId);
+            System.err.println("cxflowscanidextractiongithubaction " +id+ "endofstatementscanidaction");
             return Integer.parseInt(id);
         } catch (HttpStatusCodeException e) {
             log.error(SCAN_CREATION_ERROR, projectId, e.getStatusCode());
