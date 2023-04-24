@@ -70,7 +70,8 @@ public class ScanSettingsClientImpl implements ScanSettingsClient {
                 .presetId(presetId)
                 .emailNotifications(emailNotifications)
                 .build();
-        if(postActionId != 0){
+        log.info("Post back action ID : {} ",postActionId);
+        if(postActionId != 0 ){
             scanSettings.setPostScanActionId(postActionId);
         }
             //  else{
