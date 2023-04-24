@@ -2124,7 +2124,6 @@ public class CxService implements CxClient {
             }
             CustomTaskByName customTaskDetais = new CustomTaskByName();
 
-
                 customTaskDetais = getPreActionID(scanSettingsDetails.getPostScanActionName());
 
                 if(params.getEmailNotifications()==null){
@@ -2138,8 +2137,13 @@ public class CxService implements CxClient {
                 createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                         params.getEmailNotifications());
             }else{
-                createScanSetting(projectId, presetId, engineConfigurationId, customTaskDetais.getId(),
-                        params.getEmailNotifications());
+                if(customTaskDetais!=null){
+                    createScanSetting(projectId, presetId, engineConfigurationId, customTaskDetais.getId(),
+                            params.getEmailNotifications());
+                }else{
+                    createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                            params.getEmailNotifications());
+                }
             }
 
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
@@ -2208,7 +2212,8 @@ public class CxService implements CxClient {
             String response = restTemplate.postForObject(cxProperties.getUrl().concat(SCAN), requestEntity, String.class);
             JSONObject obj = new JSONObject(response);
             String id = obj.get("id").toString();
-            log.info("Scan created with Id {} for project Id {}", id, projectId);
+            log.info("Scan created with Id {} for project Id Satyam {}", id, projectId);
+            System.err.println("cxflowscanidextractiongithubaction " +id+ "endofstatementscanidaction");
             return Integer.parseInt(id);
         } catch (HttpStatusCodeException e) {
             log.error(SCAN_CREATION_ERROR, projectId, e.getStatusCode());
