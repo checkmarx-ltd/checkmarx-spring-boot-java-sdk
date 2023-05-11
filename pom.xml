@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.github.checkmarx-ltd</groupId>
 	<artifactId>cx-spring-boot-sdk</artifactId>
-	<version>0.5.48</version>
+	<version>0.5.49</version>
 	<name>cx-spring-boot-sdk</name>
 	<description>Checkmarx Java Spring Boot SDK</description>
 	<properties>
@@ -271,8 +271,8 @@
 
 	<licenses>
 		<license>
-			<name>GNU General Public License, version 3</name>
-			<url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
