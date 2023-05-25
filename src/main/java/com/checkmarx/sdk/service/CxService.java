@@ -87,6 +87,7 @@ public class CxService implements CxClient {
     private static final Integer SCAN_STATUS_NONE = 1001;
 
     private static final Integer MESSAGE_CODE_BRANCH_NOT_FOUND = 49805;
+    private static final Integer MESSAGE_CODE_PROJECT_NAME_ALREADY_EXISTS = 12108;
     private static final Integer BRANCHING_STATUS_COMPLETED = 2;
     private static final Integer BRANCHING_STATUS_FAILED = 4;
 
@@ -1152,6 +1153,28 @@ public class CxService implements CxClient {
             String id = obj.get("id").toString();
             return Integer.parseInt(id);
         } catch (HttpStatusCodeException e) {
+            if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+                String responseBody = e.getResponseBodyAsString();
+                try {
+                    JSONObject obj = new JSONObject(responseBody);
+                    int messageCode = obj.optInt("messageCode");
+                    if (messageCode == MESSAGE_CODE_PROJECT_NAME_ALREADY_EXISTS) {
+                        log.debug("Project with name \"{}\" already exists", name);
+                        Integer projectId = getProjectId(ownerId, name);
+                        if (!projectId.equals(UNKNOWN_INT)) {
+                            log.debug("Existing project has projectId {}", projectId);
+                            return projectId;
+                        } else {
+                            log.error("Cannot determine projectId of existing project");
+                        }
+                    } else {
+                        String messageDetails = obj.optString("messageDetails");
+                        log.debug("{}: failure not due to existing project with same name (messageDetails: {})", messageCode, messageDetails);
+                    }
+                } catch (JSONException je) {
+                    log.error("Response payload is not JSON.");
+                }
+            }
             log.error("HTTP error code {} while creating project with name {} under owner id {}", e.getStatusCode(), name, ownerId);
             log.error(ExceptionUtils.getStackTrace(e));
         } catch (JSONException e) {
