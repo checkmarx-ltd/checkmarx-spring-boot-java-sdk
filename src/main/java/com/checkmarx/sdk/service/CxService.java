@@ -2235,7 +2235,7 @@ public class CxService implements CxClient {
             String response = restTemplate.postForObject(cxProperties.getUrl().concat(SCAN), requestEntity, String.class);
             JSONObject obj = new JSONObject(response);
             String id = obj.get("id").toString();
-            log.info("Scan created with Id {} for project Id Satyam {}", id, projectId);
+            log.info("Scan created with Id {} for project Id {}", id, projectId);
             System.err.println("cxflowscanidextractiongithubaction " +id+ "endofstatementscanidaction");
             return Integer.parseInt(id);
         } catch (HttpStatusCodeException e) {
