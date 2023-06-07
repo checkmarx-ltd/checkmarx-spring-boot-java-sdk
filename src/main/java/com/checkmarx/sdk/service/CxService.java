@@ -2076,13 +2076,13 @@ public class CxService implements CxClient {
         String teamId = determineTeamId(params);
         Integer projectId = determineProjectId(params, teamId);
         boolean projectExistedBeforeScan = !projectId.equals(UNKNOWN_INT);
+        Integer baseProjectId = UNKNOWN_INT;
         if (!projectExistedBeforeScan) {
             /*
                 When CxBranch is set to true, the current and default branches are compared if they are same then a licensed project is created,
                 if they are not same then, the ID of the default or base project is retrieved to create a branch project for the current branch of the repo,
                 if a project for default branch is not present then it is first created and then a branched project is created from it.
              */
-            Integer baseProjectId;
             String derivedProjectName = "";
             if(cxProperties.getCxBranch()){
                 if(!params.getBranch().equals(params.getDefaultBranch())) {
@@ -2156,15 +2156,23 @@ public class CxService implements CxClient {
             if(params.getPostBackActionId()!=null){
                 createScanSetting(projectId, presetId, engineConfigurationId, params.getPostBackActionId(),
                         params.getEmailNotifications());
+                createScanSetting(baseProjectId, presetId, engineConfigurationId, params.getPostBackActionId(),
+                        params.getEmailNotifications());
             }else if(cxProperties.getPostActionPostbackId() != null && cxProperties.getPostActionPostbackId() != 0){
                 createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                        params.getEmailNotifications());
+                createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                         params.getEmailNotifications());
             }else{
                 if(customTaskDetais!=null){
                     createScanSetting(projectId, presetId, engineConfigurationId, customTaskDetais.getId(),
                             params.getEmailNotifications());
+                    createScanSetting(baseProjectId, presetId, engineConfigurationId, customTaskDetais.getId(),
+                            params.getEmailNotifications());
                 }else{
                     createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                            params.getEmailNotifications());
+                    createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                             params.getEmailNotifications());
                 }
             }
