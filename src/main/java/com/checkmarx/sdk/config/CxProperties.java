@@ -81,6 +81,11 @@ public class CxProperties extends CxPropertiesBase{
      */
     private Boolean disableClubbing = false;
 
+    @Getter
+    @Setter
+    private Boolean infiniteTimeOutCheckflag = true; // Adding this if any issue occurs user can turn off this check and it will not affect original
+
+
     /**
      * Maps finding state ID (as returned in CxSAST report) to state name (as specified in filter configuration).
      */

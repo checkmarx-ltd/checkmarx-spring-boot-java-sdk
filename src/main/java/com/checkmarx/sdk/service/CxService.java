@@ -2841,6 +2841,11 @@ public class CxService implements CxClient {
                     !status.equals(CxService.SCAN_STATUS_FAILED)) {
                 Thread.sleep(cxProperties.getScanPolling());
                 status = getScanStatus(scanId);
+
+                if(status.equals(CxService.UNKNOWN_INT) && cxProperties.getInfiniteTimeOutCheckflag()){
+                    break;
+                }
+
                 timer += cxProperties.getScanPolling();
 
                 //Scan Queuing Timeout = '0' and Scan Queuing = true would be waiting forever with the scan in the queue
@@ -2859,6 +2864,11 @@ public class CxService implements CxClient {
             if (status.equals(CxService.SCAN_STATUS_FAILED)) {
                 throw new CheckmarxException("Scan was failed");
             }
+
+            if(status.equals(CxService.UNKNOWN_INT) && cxProperties.getInfiniteTimeOutCheckflag()){
+                throw new CheckmarxException("Scan was failed");
+            }
+
             if (status.equals(CxService.SCAN_STATUS_CANCELED)) {
                 throw new CheckmarxException("Scan was cancelled");
             }
