@@ -83,16 +83,20 @@ public abstract class AbstractScanner  {
         setRemoteBranch(scanParams, remoteRepoInfo);
 
         if (localSourcesAreSpecified(scanParams)) {
-            configBase.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);
+            configBase.setSourceLocationType(SourceLocationType.CLONED_REMOTE_REPOSITORY);           
             // If both zip file and source directory are specified, zip file has priority.
-            // This is to conform to Common Client behavior.
+            // This is to conform to Common Client behavior.     
             if (StringUtils.isNotEmpty(scanParams.getZipPath())) {
                 log.debug("Using a local zip file for scanning.");
                 scanConfig.setZipFile(new File(scanParams.getZipPath()));
-            } else {
-                log.debug("Using a local directory for scanning.");
+            } else if (scanParams.getRemoteRepoUrl() != null) {
+                log.debug("Using a cloned local directory for scanning.");
                 scanConfig.setSourceDir(scanParams.getSourceDir());
-            }
+            } else {
+                log.debug("Using a local directory for scanning.");                    
+                configBase.setSourceLocationType(SourceLocationType.LOCAL_DIRECTORY);          
+                scanConfig.setSourceDir(scanParams.getSourceDir());
+            } 
         } else {
             configBase.setSourceLocationType(SourceLocationType.REMOTE_REPOSITORY);
             remoteRepoInfo.setUrl(scanParams.getRemoteRepoUrl());
