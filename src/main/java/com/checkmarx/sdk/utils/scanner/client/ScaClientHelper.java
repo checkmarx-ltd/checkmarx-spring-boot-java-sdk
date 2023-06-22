@@ -372,9 +372,12 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             throw new CxHTTPClientException("Error while running sca resolver executable. Exit code: "+exitCode);
         }
         finally {
-            log.debug("deleting all files ");
-            log.debug("clone path :{}",file.toPath());
-            cxRepoFileHelper.deleteCloneLocalDir(file);
+            if (scaConfig.getSourceLocationType() != SourceLocationType.LOCAL_DIRECTORY) {
+                // consider this a cloned source directory and delete it
+                log.debug("deleting all files ");
+                log.debug("clone path :{}",file.toPath());
+                cxRepoFileHelper.deleteCloneLocalDir(file);
+            }
             log.debug("result path :{}",resultFilePath.getParentFile());
             FileUtils.deleteDirectory(resultFilePath.getParentFile());
             if(sastResultFile!=null )
