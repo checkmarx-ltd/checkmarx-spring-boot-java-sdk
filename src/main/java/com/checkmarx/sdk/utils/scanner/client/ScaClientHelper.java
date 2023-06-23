@@ -373,8 +373,10 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         }
         finally {
             log.debug("deleting all files ");
-            log.debug("clone path :{}",file.toPath());
-            cxRepoFileHelper.deleteCloneLocalDir(file);
+            if (scaConfig.getSourceLocationType().equals(SourceLocationType.CLONED_REMOTE_REPOSITORY)) {
+                log.debug("clone path :{}",file.toPath());
+                cxRepoFileHelper.deleteCloneLocalDir(file);
+            }
             log.debug("result path :{}",resultFilePath.getParentFile());
             FileUtils.deleteDirectory(resultFilePath.getParentFile());
             if(sastResultFile!=null )
