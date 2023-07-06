@@ -2161,19 +2161,29 @@ public class CxService implements CxClient {
             }else if(cxProperties.getPostActionPostbackId() != null && cxProperties.getPostActionPostbackId() != 0){
                 createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                         params.getEmailNotifications());
-                createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
-                        params.getEmailNotifications());
+                if(cxProperties.getCxBranch())
+                {
+                    createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                            params.getEmailNotifications());
+                }
+
             }else{
                 if(customTaskDetais!=null){
                     createScanSetting(projectId, presetId, engineConfigurationId, customTaskDetais.getId(),
                             params.getEmailNotifications());
-                    createScanSetting(baseProjectId, presetId, engineConfigurationId, customTaskDetais.getId(),
-                            params.getEmailNotifications());
+                    if(cxProperties.getCxBranch())
+                    {
+                        createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                                params.getEmailNotifications());
+                    }
                 }else{
                     createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                             params.getEmailNotifications());
-                    createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
-                            params.getEmailNotifications());
+                    if(cxProperties.getCxBranch())
+                    {
+                        createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                                params.getEmailNotifications());
+                    }
                 }
             }
 
