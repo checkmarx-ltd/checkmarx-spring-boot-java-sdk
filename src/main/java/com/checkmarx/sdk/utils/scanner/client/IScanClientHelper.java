@@ -7,6 +7,7 @@ import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.utils.State;
 
 import java.io.File;
+import java.io.IOException;
 
 
 /**
@@ -27,4 +28,6 @@ public interface IScanClientHelper {
         return State.SUCCESS;
     }
     ScanResults getReportContent(File file, FilterConfiguration filter) throws CheckmarxException;
+
+    String initiateSbom(String scanId, String fileFormat,boolean hideDev,boolean showLicenses) throws IOException;
 }

@@ -515,6 +515,11 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         return null;
     }
 
+    @Override
+    public String initiateSbom(String scanId, String fileFormat, boolean hideDev, boolean showLicenses) throws IOException {
+        return null;
+    }
+
     private void validate(ScanConfigBase astScaSastConfig) {
         log.debug("Validating config.");
         String error = null;

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
 
 @Slf4j
 public abstract class AbstractScanner  {
@@ -119,6 +120,21 @@ public abstract class AbstractScanner  {
             throw new ScannerRuntimeException("Scanner State Failure");
         }
         
+    }
+
+    public String initiateSbom(String scanId,ScanParams scanParams,String fileFormat,boolean hideDev,boolean showLicenses)
+    {
+        try {
+            validateScanParams(scanParams);
+            RestClientConfig scanConfig = getScanConfig(scanParams);
+            this.client = allocateClient(scanConfig);
+            client.init();
+            return client.initiateSbom(scanId, fileFormat,hideDev,showLicenses);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            client.close();
+        }
     }
 
     protected abstract RestClientConfig getScanConfig(ScanParams scaParams);
