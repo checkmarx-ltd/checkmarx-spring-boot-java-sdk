@@ -44,4 +44,5 @@ public class ScaProperties {
     private Map<String,String> scaResolverAddParameters;
     private boolean enableExploitablePath= false;
     private String scaResolverOverrideProjectName;
+    private String projectName;
 }
