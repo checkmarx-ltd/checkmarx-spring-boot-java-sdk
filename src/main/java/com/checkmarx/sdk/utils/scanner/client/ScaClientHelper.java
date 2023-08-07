@@ -16,10 +16,7 @@ import com.checkmarx.sdk.dto.scansummary.Severity;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.CxHTTPClientException;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
-import com.checkmarx.sdk.utils.CxRepoFileHelper;
-import com.checkmarx.sdk.utils.ScanUtils;
-import com.checkmarx.sdk.utils.State;
-import com.checkmarx.sdk.utils.UrlUtils;
+import com.checkmarx.sdk.utils.*;
 import com.checkmarx.sdk.utils.sca.CxSCAFileSystemUtils;
 import com.checkmarx.sdk.utils.sca.fingerprints.CxSCAScanFingerprints;
 import com.checkmarx.sdk.utils.sca.fingerprints.FingerprintCollector;
@@ -45,6 +42,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
+import org.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 
@@ -53,9 +51,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.stream.XMLInputFactory;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -86,6 +82,10 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final String PACKAGES = RISK_MANAGEMENT_API + "riskReports/%s/packages";
     private static final String LATEST_SCAN = RISK_MANAGEMENT_API + "riskReports?size=1&projectId=%s";
     private static final String WEB_REPORT = "/#/projects/%s/reports/%s";
+
+    private static final String SBOM ="/export/requests?hideDevAndTestDependencies=%s&showOnlyEffectiveLicenses=%s";
+
+    private static final String GET_SBOM_REPORT = "/export/requests?exportId=%s";
     private static final String RESOLVING_CONFIGURATION_API = "/settings/projects/%s/resolving-configuration";
     private static final String REPORT_IN_XML_WITH_SCANID = RISK_MANAGEMENT_API + "risk-reports/%s/export?format=xml";
 
@@ -890,6 +890,16 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         }
     }
 
+    @Override
+    public String initiateSbom(String scanId, String fileFormat, boolean hideDev, boolean showLicenses) throws IOException {
+        String response = createSbomReport(scanId,fileFormat,hideDev,showLicenses);
+        JSONObject jsonObject = new JSONObject(response);
+        String exportId = (String) jsonObject.get("exportId");
+        log.debug("SBOM exportID : {}",exportId);
+        String fileUrl = getSbomFileUrl(exportId);
+        log.debug("fileurl :{}",fileUrl);
+        return  fileUrl;
+    }
     private ScanResults toScanResults(SCAResults scaResult) {
         return ScanResults.builder()
                 .scaResults(scaResult)
@@ -1420,6 +1430,39 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 true);
     }
 
+    private String createSbomReport(String scanId, String fileFormat,boolean hideDev,boolean showLicenses)throws IOException
+    {
+        log.debug("Getting Sbom Report");
+        CreateSbomReport report = new CreateSbomReport();
+        report.setFileFormat(fileFormat);
+        report.setScanId(scanId);
+        String path = String.format(SBOM,URLEncoder.encode(String.valueOf(hideDev),ENCODING),URLEncoder.encode(String.valueOf(showLicenses),ENCODING));
+        StringEntity entity = HttpClientHelper.convertToStringEntity(report);
+
+        String response= httpClient.postRequest(path,
+                ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                entity,
+                String.class,
+                HttpStatus.SC_ACCEPTED,
+                "create a sbom report");
+
+        return response;
+    }
+
+    private String getSbomFileUrl(String exportId) throws IOException {
+        ScanWaiter waiter = new ScanWaiter(httpClient, config, getScannerDisplayName(), log);
+        waiter.waitForSBOMToFinish(exportId);
+        String path = String.format(GET_SBOM_REPORT, exportId);
+        SbomInfoResponse response = httpClient.getRequest(path,
+                ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                SbomInfoResponse.class,
+                HttpStatus.SC_OK,
+                "getting policy evaluation be report-id",
+                false);
+
+
+        return response.getFileUrl();
+    }
     private void printSummary(ScaSummaryBaseFormat summary, String scanId) {
         if (log.isInfoEnabled()) {
             log.info("----CxSCA risk report summary----");
