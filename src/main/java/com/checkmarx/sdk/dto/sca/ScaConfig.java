@@ -31,4 +31,5 @@ public class ScaConfig extends ScanConfigBase implements Serializable {
     private String team;
     private Integer scanTimeout;
     private String expPathSastProjectName;
+    private  String projectName;
 }
