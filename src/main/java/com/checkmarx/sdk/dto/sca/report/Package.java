@@ -45,5 +45,7 @@ public class Package implements Serializable {
     //public boolean isDirectDependency;
     @JsonProperty(value="isDevelopment")
     private boolean IsDevelopmentDependency;
+    @JsonProperty(value="isTestDependency")
+    private boolean IsTestDependency;
     private PackageUsage packageUsage;
 }
