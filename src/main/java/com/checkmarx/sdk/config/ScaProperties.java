@@ -39,7 +39,7 @@ public class ScaProperties {
     private String filterPolicyViolation;
     private String filterdependencytype;
     private boolean filterOutDevdependency=false;
-    private boolean filterOutDirectDependency=false;
+    private boolean filterOutInDirectDependency=false;
     private boolean filterOutPluginDependency=false;
     private boolean filterOutTestDependency=false;
     private boolean filterOutNpmVerifiedDependency=false;
