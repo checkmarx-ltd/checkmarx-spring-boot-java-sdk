@@ -6,6 +6,7 @@ import com.checkmarx.sdk.config.CxPropertiesBase;
 import com.checkmarx.sdk.dto.cx.preandpostaction.CustomTaskByName;
 import com.checkmarx.sdk.dto.cx.preandpostaction.ListCustomeObj;
 import com.checkmarx.sdk.dto.cx.preandpostaction.ScanSettings;
+import com.checkmarx.sdk.dto.cx.projectdetails.ProjectFieldDetails;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.cx.*;
@@ -1716,6 +1717,21 @@ public class CxService implements CxClient {
         }
     }
 
+        public List<com.checkmarx.sdk.dto.cx.projectdetails.CustomField> getCustomFieldsFromProjectDetails(int projectId) throws CheckmarxException {
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            ResponseEntity<ProjectFieldDetails> projects = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT), HttpMethod.GET, httpEntity, ProjectFieldDetails.class,projectId);
+            if(projects.getBody() != null){
+                return projects.getBody().getCustomFields();
+            }
+            return Collections.emptyList();
+        } catch (HttpStatusCodeException e) {
+            log.warn("Error occurred while retrieving projects, http error {}", e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new CheckmarxException("Error retrieving Projects");
+        }
+    }
+
     /**
      * Update a project's custom fields
      *
@@ -2251,24 +2267,52 @@ public class CxService implements CxClient {
 
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
             if (params.getCustomFields() != null && !params.getCustomFields().isEmpty()) {
-                List<CxCustomField> fieldDefinitions = getCustomFields();
+                List<com.checkmarx.sdk.dto.cx.projectdetails.CustomField> fieldDefinitions = getCustomFieldsFromProjectDetails(projectId);
                 List<CxProject.CustomField> customFields = new ArrayList<>();
+
+                for (com.checkmarx.sdk.dto.cx.projectdetails.CustomField customFieldObj : fieldDefinitions) {
+                    CxProject.CustomField customField = new CxProject.CustomField();
+                    customField.setId(customFieldObj.getId());
+                    customField.setName(customFieldObj.getName());
+                    customField.setValue(customFieldObj.getValue());
+                    customFields.add(customField);
+                }
+
                 for (Map.Entry<String, String> entry : params.getCustomFields().entrySet()) {
                     boolean matched = false;
-                    for (CxCustomField fieldDefinition : fieldDefinitions) {
-                        if (fieldDefinition.getName().equalsIgnoreCase(entry.getKey())) {
+                    for (int i = 0; i < customFields.size(); i++) {
+                        if (customFields.get(i).getName().equalsIgnoreCase(entry.getKey())) {
                             matched = true;
-                            CxProject.CustomField customField = new CxProject.CustomField();
-                            customField.setId(fieldDefinition.getId());
-                            customField.setName(fieldDefinition.getName());
-                            customField.setValue(entry.getValue());
-                            customFields.add(customField);
+                            customFields.get(i).setValue(entry.getValue());
                         }
                     }
                     if (!matched) {
                         log.warn("{}: ignoring unrecognised custom field", entry.getKey());
                     }
                 }
+
+//                for (Map.Entry<String, String> entry : params.getCustomFields().entrySet()) {
+//                    boolean matched = false;
+//                    for (com.checkmarx.sdk.dto.cx.projectdetails.CustomField fieldDefinition : fieldDefinitions) {
+//                        if (fieldDefinition.getName().equalsIgnoreCase(entry.getKey())) {
+//                            matched = true;
+//                            CxProject.CustomField customField = new CxProject.CustomField();
+//                            customField.setId(fieldDefinition.getId());
+//                            customField.setName(fieldDefinition.getName());
+//                            customField.setValue(entry.getValue());
+//                            customFields.add(customField);
+//                        }else{
+//                            CxProject.CustomField customField = new CxProject.CustomField();
+//                            customField.setId(fieldDefinition.getId());
+//                            customField.setName(fieldDefinition.getName());
+//                            customField.setValue(fieldDefinition.getValue());
+//                            customFields.add(customField);
+//                        }
+//                    }
+//                    if (!matched) {
+//                        log.warn("{}: ignoring unrecognised custom field", entry.getKey());
+//                    }
+//                }
                 CxProject cxProject = CxProject.builder()
                         .id(projectId)
                         .name(params.getProjectName())
