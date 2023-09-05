@@ -11,6 +11,7 @@ import com.checkmarx.sdk.config.ContentType;
 import com.checkmarx.sdk.dto.ScanInfoResponse;
 import com.checkmarx.sdk.dto.ScanStatus;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.slf4j.Logger;
@@ -114,6 +115,7 @@ public class ScanWaiter {
                     SbomInfoResponse.class, HttpStatus.SC_OK, failedMessage, false);
         } catch (Exception e) {
             errorMessage = e.getMessage();
+            log.debug(ExceptionUtils.getStackTrace(e));
         }
 
         boolean completedSuccessfully = false;

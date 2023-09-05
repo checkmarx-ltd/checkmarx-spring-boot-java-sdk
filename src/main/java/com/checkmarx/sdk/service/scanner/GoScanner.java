@@ -146,6 +146,7 @@ public class GoScanner implements ILegacyClient {
                     OdApplicationCreate.class);
         } catch (HttpStatusCodeException e) {
             log.error("Error occurred in creating application ",e);
+            log.debug(ExceptionUtils.getStackTrace(e));
         }
         OdApplicationCreate appCreate = createResp.getBody();
         assert appCreate != null;
@@ -265,9 +266,11 @@ public class GoScanner implements ILegacyClient {
             return scanId;
         }catch (HttpClientErrorException | HttpServerErrorException e){
             log.error("Http Exception: {}", ExceptionUtils.getRootCauseMessage(e), e);
+            log.debug(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException("Http error occurred");
         }catch (NullPointerException e){
             log.error("Null Exception: {}", ExceptionUtils.getRootCauseMessage(e), e);
+            log.debug(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException("NullPointerException occurred");
         }
     }
@@ -303,6 +306,7 @@ public class GoScanner implements ILegacyClient {
                     String.class);
         } catch(HttpClientErrorException e) {
             log.error("CxGo error uploading file.", e);
+            log.debug(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException("Error Uploading Source to ".concat(scanStorage.getUrl()));
         }
     }

@@ -1597,6 +1597,7 @@ public class CxService implements CxClient {
 
         } catch (HttpStatusCodeException e) {
             log.info(PROJECT_REMOTE_SETTINGS_NOT_FOUND, e.getStatusCode());
+            log.debug(ExceptionUtils.getStackTrace(e));
         }
         return null;
     }
@@ -2754,6 +2755,7 @@ public class CxService implements CxClient {
             restTemplate.exchange(cxProperties.getUrl().concat(ROLE_LDAP_MAPPING),  HttpMethod.PUT, requestEntity, String.class, ldapServerId);
         }catch (HttpStatusCodeException e) {
             log.error("Error occurred while creating Team Ldap mapping: {}", ExceptionUtils.getMessage(e));
+            log.debug(ExceptionUtils.getStackTrace(e));
         }
     }
 

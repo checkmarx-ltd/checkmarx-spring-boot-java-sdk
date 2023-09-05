@@ -8,6 +8,7 @@ import com.checkmarx.sdk.exception.CxHTTPClientException;
 import com.checkmarx.sdk.exception.CxTokenExpiredException;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.*;
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.auth.AuthScope;
@@ -486,8 +487,10 @@ public class CxHttpClient implements Closeable {
             //extract response as object and return the link
             return HttpClientHelper.convertToObject(response, responseType, isCollection);
         } catch (UnknownHostException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
             throw new CxHTTPClientException("Connection failed. Please recheck the hostname and credentials you provided and try again.");
         } catch (CxTokenExpiredException ex) {
+            log.debug(ExceptionUtils.getStackTrace(ex));
             if (retry) {
                 logTokenError(httpMethod, statusCode, ex);
                 if (lastLoginSettings != null) {
