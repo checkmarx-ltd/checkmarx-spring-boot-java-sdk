@@ -57,7 +57,7 @@ public class ScaScanner extends AbstractScanner {
                         }
                     });
 
-        }else if(scaProperties.isFilterOutDirectDependency()){
+        }else if(scaProperties.isFilterOutInDirectDependency()){
             List<String> packageIds = new ArrayList<>();
             combinedResults.getScaResults()
                     .getPackages().forEach(packages -> {
@@ -68,7 +68,7 @@ public class ScaScanner extends AbstractScanner {
 
             combinedResults.getScaResults()
                     .getFindings().forEach(finding -> {
-                        if (passesFilter(finding, filterConfig) && !packageIds.contains(finding.getPackageId())) {
+                        if (passesFilter(finding, filterConfig) && packageIds.contains(finding.getPackageId())) {
                             findingsToRetain.add(finding);
                         }
                     });
