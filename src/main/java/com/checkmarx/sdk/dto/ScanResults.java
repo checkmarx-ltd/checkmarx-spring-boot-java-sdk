@@ -64,6 +64,10 @@ public class ScanResults{
     private SCAResults scaResults;
     private ASTResults astResults;
 
+    @Getter
+    @Setter
+    private Integer pdfScanID;
+
     public ScanResults(Boolean osa, String projectId,String deepLink, String reportCreationTime, String scanTime, String team, String project, String link, String files, String loc, String scanType,String version,
                        List<XIssue> xIssues,List<XIssue> unFilteredIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary, SCAResults scaResults, ASTResults astResults) {
         this.osa = osa;

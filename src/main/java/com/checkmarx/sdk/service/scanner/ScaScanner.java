@@ -41,14 +41,45 @@ public class ScaScanner extends AbstractScanner {
         EngineFilterConfiguration filterConfig = extractFilterConfigFrom(scanParams);
 
         List<Finding> findingsToRetain = new ArrayList<>();
-        
-        combinedResults.getScaResults()
-                .getFindings().forEach(finding -> {
-                    if(passesFilter(finding, filterConfig)){
-                        findingsToRetain.add(finding);
-                    }
-        });
+        if (scaProperties.isFilterOutDevdependency()) {
+            List<String> packageIds = new ArrayList<>();
+            combinedResults.getScaResults()
+                    .getPackages().forEach(packages -> {
+                        if (packages.isIsDevelopmentDependency() || packages.isIsTestDependency()) {
+                            packageIds.add(packages.getId());
+                        }
+                    });
 
+            combinedResults.getScaResults()
+                    .getFindings().forEach(finding -> {
+                        if (passesFilter(finding, filterConfig) && !packageIds.contains(finding.getPackageId())) {
+                            findingsToRetain.add(finding);
+                        }
+                    });
+
+        }else if(scaProperties.isFilterOutInDirectDependency()){
+            List<String> packageIds = new ArrayList<>();
+            combinedResults.getScaResults()
+                    .getPackages().forEach(packages -> {
+                        if (packages.isIsDirectDependency()) {
+                            packageIds.add(packages.getId());
+                        }
+                    });
+
+            combinedResults.getScaResults()
+                    .getFindings().forEach(finding -> {
+                        if (passesFilter(finding, filterConfig) && packageIds.contains(finding.getPackageId())) {
+                            findingsToRetain.add(finding);
+                        }
+                    });
+        }else{
+            combinedResults.getScaResults()
+                    .getFindings().forEach(finding -> {
+                        if(passesFilter(finding, filterConfig)){
+                            findingsToRetain.add(finding);
+                        }
+                    });
+        }
         combinedResults.getScaResults().setFindings(findingsToRetain);
                 
     }
