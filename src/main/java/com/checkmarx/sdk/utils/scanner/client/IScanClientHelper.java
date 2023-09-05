@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
+import com.checkmarx.sdk.config.PDFPropertiesSCA;
 import com.checkmarx.sdk.dto.ResultsBase;
 import com.checkmarx.sdk.dto.ScanResults;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
@@ -17,8 +18,10 @@ public interface IScanClientHelper {
     ResultsBase init();
 
     ResultsBase initiateScan();
+    ResultsBase initiateScanPDF();
 
     ResultsBase waitForScanResults();
+    ResultsBase waitForScanResultsForPDF(PDFPropertiesSCA pdfSCAprop);
 
     ResultsBase getLatestScanResults();
 

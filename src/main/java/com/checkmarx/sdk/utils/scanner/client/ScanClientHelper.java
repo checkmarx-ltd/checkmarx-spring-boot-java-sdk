@@ -78,6 +78,9 @@ public abstract class ScanClientHelper {
     protected abstract HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
                                                 SourceLocationType sourceLocation,
                                                 String projectId)throws IOException ;
+    protected abstract HttpResponse sendStartScanRequestForPDF(RemoteRepositoryInfo repoInfo,
+                                                SourceLocationType sourceLocation,
+                                                String projectId)throws IOException ;
 
     protected HttpResponse submitSourcesFromRemoteRepo(String projectId, ScanConfigBase baseConfig) throws IOException {
         log.info("Using remote repository flow.");
@@ -184,6 +187,21 @@ public abstract class ScanClientHelper {
         configBase.getRemoteRepositoryInfo().setUrl(new URL(uploadedArchiveUrl));
 
         return sendStartScanRequest(configBase.getRemoteRepositoryInfo(), SourceLocationType.LOCAL_DIRECTORY, projectId);
+    }
+
+    protected HttpResponse initiateScanForUploadPDF(String projectId, byte[] zipFile, ScanConfigBase configBase) throws IOException {
+        String uploadedArchiveUrl = getSourcesUploadUrl();
+        String cleanPath = uploadedArchiveUrl.split("\\?")[0];
+        log.info("Uploading to: {}", cleanPath);
+        uploadArchive(zipFile, uploadedArchiveUrl);
+
+        //delete only if path not specified in the config
+        //If zipFilePath is specified in config, it means that the user has prepared the zip file themselves. The user obviously doesn't want this file to be deleted.
+        //If zipFilePath is NOT specified, we will create the zip itself. After uploading the zip, the code should clean after itself (delete the zip file that it created).
+
+        configBase.getRemoteRepositoryInfo().setUrl(new URL(uploadedArchiveUrl));
+
+        return sendStartScanRequestForPDF(configBase.getRemoteRepositoryInfo(), SourceLocationType.LOCAL_DIRECTORY, projectId);
     }
 
     private String getSourcesUploadUrl() throws IOException {

@@ -471,6 +471,16 @@ public class GoScanner implements ILegacyClient {
         return results.build();
     }
 
+    @Override
+    public ScanResults getPDFReportId(Integer scanId, FilterConfiguration filter) throws CheckmarxException {
+        return null;
+    }
+
+    @Override
+    public byte[] downLoadPDFReport(ScanResults scanId) {
+        return null;
+    }
+
     private static void logRawScaScanResults(List<SCAScanResult> rawScanResults) {
         if (log.isDebugEnabled()) {
             log.debug("Raw CxGo-SCA findings, before filtering:");
