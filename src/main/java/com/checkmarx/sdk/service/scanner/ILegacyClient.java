@@ -56,7 +56,9 @@ public interface ILegacyClient {
      * @throws CheckmarxException
      */
     ScanResults getReportContentByScanId(Integer scanId, FilterConfiguration filter) throws CheckmarxException;
-    
+    ScanResults getPDFReportId(Integer scanId, FilterConfiguration filter) throws CheckmarxException;
+    byte[] downLoadPDFReport(ScanResults scanId);
+
     Integer getProjectId(String ownerId, String name);
 
     void waitForScanCompletion(Integer scanId) throws CheckmarxException;

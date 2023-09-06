@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
+import com.checkmarx.sdk.config.PDFPropertiesSCA;
 import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.ast.*;
 import com.checkmarx.sdk.dto.ast.report.Finding;
@@ -169,6 +170,11 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         return astResults;
     }
 
+    @Override
+    public ResultsBase initiateScanPDF() {
+        return null;
+    }
+
     private HttpResponse submitAllSourcesFromLocalDir(String projectId,  ScanConfigBase configBase) throws IOException {
         log.info("Using local directory flow.");
 
@@ -219,6 +225,11 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
             result.setException(e);
         }
         return result;
+    }
+
+    @Override
+    public ResultsBase waitForScanResultsForPDF(PDFPropertiesSCA pdfSCAprop) {
+        return null;
     }
 
     private ASTResults retrieveScanResults() {
@@ -515,6 +526,11 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         return null;
     }
 
+    @Override
+    public String initiateSbom(String scanId, String fileFormat, boolean hideDev, boolean showLicenses) throws IOException {
+        return null;
+    }
+
     private void validate(ScanConfigBase astScaSastConfig) {
         log.debug("Validating config.");
         String error = null;
@@ -661,6 +677,11 @@ public class AstClientHelper extends ScanClientHelper implements IScanClientHelp
         log.info("Sending the 'start scan' request.");
         return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
                 HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
+    }
+
+    @Override
+    protected HttpResponse sendStartScanRequestForPDF(RemoteRepositoryInfo repoInfo, SourceLocationType sourceLocation, String projectId) throws IOException {
+        return null;
     }
 
 

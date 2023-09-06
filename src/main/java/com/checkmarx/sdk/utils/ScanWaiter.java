@@ -1,5 +1,7 @@
 package com.checkmarx.sdk.utils;
 
+import com.checkmarx.sdk.dto.sca.SbomInfoResponse;
+import com.checkmarx.sdk.dto.sca.SbomStatus;
 import com.checkmarx.sdk.exception.ScannerRuntimeException;
 
 import com.checkmarx.sdk.config.RestClientConfig;
@@ -9,6 +11,7 @@ import com.checkmarx.sdk.config.ContentType;
 import com.checkmarx.sdk.dto.ScanInfoResponse;
 import com.checkmarx.sdk.dto.ScanStatus;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.slf4j.Logger;
@@ -34,6 +37,7 @@ public class ScanWaiter {
     private long startTimestampSec;
     private final Logger log;
     private static final int DEFAULT_TIMEOUT = 120;
+    private static final String GET_SBOM_REPORT = "/export/requests?exportId=%s";
      
     public void waitForScanToFinish(String scanId) {
         startTimestampSec = System.currentTimeMillis() / 1000;
@@ -64,6 +68,27 @@ public class ScanWaiter {
         }
     }
 
+    public void waitForSBOMToFinish(String exportId) {
+        startTimestampSec = System.currentTimeMillis() / 1000;
+        Duration timeout = getTimeout(config);
+        int maxErrorCount = getMaxErrorCount(config);
+        AtomicInteger errorCounter = new AtomicInteger();
+
+        try {
+            String urlPath = String.format(GET_SBOM_REPORT, URLEncoder.encode(exportId, ENCODING));
+
+            Awaitility.await()
+                    .atMost(timeout)
+                    .pollDelay(Duration.ZERO)
+                    .until(() -> sbomIsCompeleted(urlPath, errorCounter, maxErrorCount));
+
+        } catch (ConditionTimeoutException e) {
+            String message = "SBOM file generation failed";
+            throw new ScannerRuntimeException(message);
+        } catch (UnsupportedEncodingException e) {
+            log.error("Unexpected error.", e);
+        }
+    }
     private static Duration getTimeout(RestClientConfig config) {
         Integer timeout = config.getScaConfig().getScanTimeout();
         if(timeout == null){
@@ -79,6 +104,30 @@ public class ScanWaiter {
 
     private static int getMaxErrorCount(RestClientConfig config) {
         return CONNECTION_RETRIES;
+    }
+
+    private boolean sbomIsCompeleted(String path, AtomicInteger errorCounter,int maxErrorCount){
+        SbomInfoResponse response = null;
+        String errorMessage = null;
+        try {
+            String failedMessage = "get Sbom report";
+            response = httpClient.getRequest(path, ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                    SbomInfoResponse.class, HttpStatus.SC_OK, failedMessage, false);
+        } catch (Exception e) {
+            errorMessage = e.getMessage();
+            log.debug(ExceptionUtils.getStackTrace(e));
+        }
+
+        boolean completedSuccessfully = false;
+        if (response == null) {
+            // A network error is likely to have occurred -> retry.
+            countError(errorCounter, maxErrorCount, errorMessage);
+        } else {
+            SbomStatus status = extractSBOMStatusFrom(response);
+            completedSuccessfully = handleSBOMStatus(status);
+        }
+
+        return completedSuccessfully;
     }
 
     private boolean scanIsCompleted(String path, AtomicInteger errorCounter, int maxErrorCount) {
@@ -117,6 +166,18 @@ public class ScanWaiter {
         return completedSuccessfully;
     }
 
+    private boolean handleSBOMStatus(SbomStatus status) {
+        boolean completedSuccessfully = false;
+        if (status == SbomStatus.COMPLETED) {
+            completedSuccessfully = true;
+        } else if (status == SbomStatus.FAILED) {
+            // Scan has failed on the back end, no need to retry.
+            throw new ScannerRuntimeException(String.format("Scan status is %s, aborting.", status));
+        } else if (status == null) {
+            log.warn("Unknown status.");
+        }
+        return completedSuccessfully;
+    }
     private void countError(AtomicInteger errorCounter, int maxErrorCount, String message) {
         int currentErrorCount = errorCounter.incrementAndGet();
         int triesLeft = maxErrorCount - currentErrorCount;
@@ -141,5 +202,13 @@ public class ScanWaiter {
                 rawStatus));
         return EnumUtils.getEnumIgnoreCase(ScanStatus.class, rawStatus);
     }
-    
+
+    private SbomStatus extractSBOMStatusFrom(SbomInfoResponse response) {
+        String rawStatus = response.getExportStatus();
+        String elapsedTimestamp = SdkUtils.getTimestampSince(startTimestampSec);
+        log.info(String.format("Waiting for sbom report. Elapsed time: %s. Status: %s.",
+                elapsedTimestamp,
+                rawStatus));
+        return EnumUtils.getEnumIgnoreCase(SbomStatus.class, rawStatus);
+    }
 }
