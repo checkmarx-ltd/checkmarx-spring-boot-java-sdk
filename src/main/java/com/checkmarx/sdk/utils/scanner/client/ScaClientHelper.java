@@ -1,14 +1,12 @@
 package com.checkmarx.sdk.utils.scanner.client;
 
-import com.checkmarx.sdk.config.ContentType;
-import com.checkmarx.sdk.config.CxProperties;
-import com.checkmarx.sdk.config.RestClientConfig;
-import com.checkmarx.sdk.config.ScaProperties;
+import com.checkmarx.sdk.config.*;
 import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.ast.ASTResults;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.sca.*;
+import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.dto.sca.report.*;
 import com.checkmarx.sdk.dto.sca.report.Package;
 import com.checkmarx.sdk.dto.sca.xml.*;
@@ -45,6 +43,7 @@ import org.apache.http.entity.StringEntity;
 import org.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -131,6 +130,8 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
     public static final String SAST_RESOLVER_RESULT_FILE_NAME =".cxsca-sast-results.json";
     public static final String SCA_RESOLVER_SCAN_ORIGIN_NAME = "ScaResolver-CxFlow";
+
+
 
     public ScaClientHelper(RestClientConfig config, Logger log, ScaProperties scaProperties, CxProperties cxProperties) {
         super(config, log);
@@ -260,6 +261,20 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     }
 
     @Override
+    public ResultsBase waitForScanResultsForPDF(PDFPropertiesSCA pdfSCAprop) {
+        SCAResults scaResults;
+        try {
+            waitForScanToFinish(scanId);
+            scaResults = tryGetScanResultsPDF(pdfSCAprop).orElseThrow(() -> new ScannerRuntimeException("Unable to get scan results: scan not found."));
+        } catch (ScannerRuntimeException e) {
+            log.error(e.getMessage());
+            scaResults = new SCAResults();
+            scaResults.setException(e);
+        }
+        return scaResults;
+    }
+
+    @Override
     protected void uploadArchive(byte[] source, String uploadUrl) throws IOException {
         log.info("Uploading the zipped data.");
         CxHttpClient uploader = null;
@@ -324,6 +339,56 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         }
         return scaResults;
     }
+
+    @Override
+    public ResultsBase initiateScanPDF() {
+
+        log.info("----------------------------------- Initiating {} Scan:------------------------------------",
+                getScannerDisplayName());
+        SCAResults scaResults = new SCAResults();
+        scanId = null;
+        projectId = null;
+        try {
+            ScaConfig scaConfig = config.getScaConfig();
+            SourceLocationType locationType = scaConfig.getSourceLocationType();
+            log.debug("location type {}",locationType);
+            HttpResponse response;
+
+            projectId = resolveRiskManagementProject();
+            boolean isManifestAndFingerprintsOnly = !config.getScaConfig().isIncludeSources();
+            if (isManifestAndFingerprintsOnly) {
+                this.resolvingConfiguration = getCxSCAResolvingConfigurationForProject(this.projectId);
+                log.info("Got the following manifest patterns {}", this.resolvingConfiguration.getManifests());
+                log.info("Got the following fingerprint patterns {}", this.resolvingConfiguration.getFingerprints());
+            }
+
+            if (locationType == SourceLocationType.REMOTE_REPOSITORY) {
+                response = submitSourcesFromRemoteRepo(projectId, scaConfig);
+            } else {
+                if (scaConfig.isIncludeSources()) {
+                    response = submitAllSourcesFromLocalDir(projectId, scaConfig);
+                }else if(scaProperties.isEnableScaResolver())
+                {
+                    response = submitScaResolverEvidenceFile(scaConfig);
+                }else {
+                    response = submitManifestsAndFingerprintsFromLocalDirForPDF(projectId, scaConfig);
+                }
+            }
+            this.scanId = extractScanIdFrom(response);
+            scaResults.setScanId(scanId);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            setState(State.FAILED);
+            scaResults.setException(new ScannerRuntimeException("Error creating scan.", e));
+        } finally {
+            if (config.isClonedRepo() && config.getZipFile() != null) {
+                log.info("Deleting cloned repo zip file: {}", config.getZipFile());
+                FileUtils.deleteQuietly(config.getZipFile());
+            }
+        }
+        return scaResults;
+    }
+
     private HttpResponse submitScaResolverEvidenceFile(ScaConfig scaConfig) throws IOException
     {
         //varibles required
@@ -658,6 +723,48 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         return initiateScanForUpload(projectId, FileUtils.readFileToByteArray(zipFile), configBase);
     }
 
+    private HttpResponse submitManifestsAndFingerprintsFromLocalDirForPDF(String projectId, ScanConfigBase configBase) throws IOException {
+        log.info("Using manifest only and fingerprint flow");
+
+        String sourceDir = config.getSourceDir();
+
+        PathFilter userFilter = new PathFilter("", "", log);
+        if (ArrayUtils.isNotEmpty(userFilter.getIncludes()) && !ArrayUtils.contains(userFilter.getIncludes(), "**")) {
+            userFilter.addToIncludes("**");
+        }
+        Set<String> scannedFileSet = new HashSet<>(Arrays.asList(CxSCAFileSystemUtils.scanAndGetIncludedFiles(sourceDir, userFilter)));
+
+        PathFilter manifestIncludeFilter = new PathFilter(null, getManifestsIncludePattern(), log);
+        if (manifestIncludeFilter.getIncludes().length == 0) {
+            throw new ScannerRuntimeException(String.format("Using manifest only mode requires include filter. Resolving config does not have include patterns defined: %s", getManifestsIncludePattern()));
+        }
+
+        List<String> filesToZip =
+                Arrays.stream(CxSCAFileSystemUtils.scanAndGetIncludedFiles(sourceDir, manifestIncludeFilter))
+                        .filter(scannedFileSet::contains).
+                        collect(Collectors.toList());
+
+        List<String> filesToFingerprint =
+                Arrays.stream(CxSCAFileSystemUtils.scanAndGetIncludedFiles(sourceDir,
+                                new PathFilter(null, getFingerprintsIncludePattern(), log)))
+                        .filter(scannedFileSet::contains).
+                        collect(Collectors.toList());
+
+
+        CxSCAScanFingerprints fingerprints = fingerprintCollector.collectFingerprints(sourceDir, filesToFingerprint);
+
+        File zipFile = zipDirectoryAndFingerprints(sourceDir, filesToZip, fingerprints);
+
+        optionallyWriteFingerprintsToFile(fingerprints);
+
+        if (config.isClonedRepo()){
+            CxRepoFileHelper cxRepoFileHelper = new CxRepoFileHelper();
+            cxRepoFileHelper.deleteCloneLocalDir(new File(sourceDir));
+            config.setZipFile(zipFile);
+        }
+        return initiateScanForUploadPDF(projectId, FileUtils.readFileToByteArray(zipFile), configBase);
+    }
+
 
     private File zipDirectoryAndFingerprints(String sourceDir, List<String> paths, CxSCAScanFingerprints fingerprints) throws IOException {
         File result = config.getZipFile();
@@ -770,6 +877,23 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             log.info("Unable to get scan results");
         }
         return Optional.ofNullable(result);
+    }
+
+    private Optional<SCAResults> tryGetScanResultsPDF(PDFPropertiesSCA pdfSCAprop) {
+        SCAResults result = null;
+        String SCA_GET_REPORT = "/risk-management/risk-reports/{scan_id}/export?format={file_type}";
+
+        try {
+            byte[] pdfContents=httpClient.getRequest(SCA_GET_REPORT.replace("{scan_id}", scanId).replace("{file_type}", "Pdf"),
+                    "application/pdf", byte[].class, 200, " scan report: " + scanId, false);
+            FileUtils.writeByteArrayToFile(new File(pdfSCAprop.getDataFolder(),"SCA_"+pdfSCAprop.getFileNameFormat()),pdfContents);
+
+        } catch (IOException e) {
+
+            log.debug("Exception Occured While downloading PDF for report ID : {}", scanId);
+
+        }
+        return  Optional.ofNullable(result);
     }
 
     private String getLatestScanId(String projectId) throws IOException {
@@ -1247,6 +1371,61 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         request.setAssignedTeams(Collections.singletonList(team));
     }
 
+    private SCAResults getScanResultsPDF() {
+        SCAResults result;
+        log.debug("Getting results for scan ID {}", scanId);
+        try {
+            result = new SCAResults();
+            result.setScanId(this.scanId);
+
+            ScaSummaryBaseFormat summaryBaseFormat = getSummaryReport(scanId);
+
+            printSummary(summaryBaseFormat, this.scanId);
+
+            ModelMapper mapper = new ModelMapper();
+            Summary summary = mapper.map(summaryBaseFormat, Summary.class);
+
+            Map<Filter.Severity, Integer> findingCountsPerSeverity = getFindingCountMap(summaryBaseFormat);
+            summary.setFindingCounts(findingCountsPerSeverity);
+
+            result.setSummary(summary);
+
+            List<Finding> findings = getFindings(scanId);
+            result.setFindings(findings);
+
+            List<Package> packages = getPackages(scanId);
+            result.setPackages(packages);
+
+            String reportLink = getWebReportLink(config.getScaConfig().getWebAppUrl());
+            result.setWebReportLink(reportLink);
+            printWebReportLink(result);
+            result.setScaResultReady(true);
+
+            String riskReportId = getRiskReportByProjectId(this.projectId);
+            List<PolicyEvaluation> policyEvaluationsByReportId = getPolicyEvaluationByReportId(riskReportId);
+            List<String> scanViolatedPolicies = getScanViolatedPolicies(policyEvaluationsByReportId);
+            result.setPolicyViolated(!scanViolatedPolicies.isEmpty());
+            result.setViolatedPolicies(scanViolatedPolicies);
+
+            if(scaProperties.isPreserveXml()){
+                String path = String.format(REPORT_IN_XML_WITH_SCANID, URLEncoder.encode(scanId, ENCODING));
+                String xml = httpClient.getRequest(path,
+                        ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                        String.class,
+                        HttpStatus.SC_OK,
+                        "CxSCA findings",
+                        false);
+                xml = xml.trim().replaceFirst("^([\\W]+)<", "<");
+                String xml2 = ScanUtils.cleanStringUTF8_2(xml);
+                result.setOutput(xml2);
+            }
+
+            log.info("Retrieved SCA results successfully.");
+        } catch (IOException e) {
+            throw new ScannerRuntimeException("Error retrieving CxSCA scan results.", e);
+        }
+        return result;
+    }
     private SCAResults getScanResults() {
         SCAResults result;
         log.debug("Getting results for scan ID {}", scanId);
@@ -1528,6 +1707,33 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     }
 
     protected HttpResponse sendStartScanRequest(RemoteRepositoryInfo repoInfo,
+                                                SourceLocationType sourceLocation,
+                                                String projectId) throws IOException {
+        log.debug("Constructing the 'start scan' request");
+
+        ScaScanStartHandler handler = getScanStartHandler(repoInfo);
+
+        ScaProjectToScan project = ScaProjectToScan.builder()
+                .id(projectId)
+                .type(sourceLocation.getApiValue())
+                .handler(handler)
+                .build();
+
+        List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
+
+        ScaStartScanRequest request = ScaStartScanRequest.builder()
+                .project(project)
+                .config(apiScanConfig)
+                .build();
+
+        StringEntity entity = HttpClientHelper.convertToStringEntity(request);
+
+        log.info("Sending the 'start scan' request.");
+        return httpClient.postRequest(CREATE_SCAN, ContentType.CONTENT_TYPE_APPLICATION_JSON, entity,
+                HttpResponse.class, HttpStatus.SC_CREATED, "start the scan");
+    }
+
+    protected HttpResponse sendStartScanRequestForPDF(RemoteRepositoryInfo repoInfo,
                                                 SourceLocationType sourceLocation,
                                                 String projectId) throws IOException {
         log.debug("Constructing the 'start scan' request");
