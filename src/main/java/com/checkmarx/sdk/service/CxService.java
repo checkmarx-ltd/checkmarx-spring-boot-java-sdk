@@ -2068,6 +2068,16 @@ public class CxService implements CxClient {
         return getScanSummaryByScanId(scanId);
     }
 
+    public String branchNameNormalizer(String branchName){
+        String finalBranchName= new String("");
+        if(branchName.contains("refs/heads/")){
+            finalBranchName=branchName.replaceAll("refs/heads/","");
+        }
+        if(branchName.contains("refs/pull/")){
+            finalBranchName=branchName.replaceAll("/refs/pull/\\\\d+\\/","");
+        }
+        return finalBranchName;
+    }
     @Override
     public Integer createScan(CxScanParams params, String comment) throws CheckmarxException{
         log.info("Creating scan...");
@@ -2086,9 +2096,9 @@ public class CxService implements CxClient {
             String derivedProjectName = "";
             if(cxProperties.getCxBranch()){
                 if(!params.getBranch().equals(params.getDefaultBranch())) {
-                    String currentBranch = params.getBranch().replace("refs/heads/","");
+                    String currentBranch = branchNameNormalizer(params.getBranch());
                     log.debug("Current branch is {}", currentBranch);
-                    String defaultBranch = params.getDefaultBranch().replace("refs/heads/","");
+                    String defaultBranch = branchNameNormalizer(params.getDefaultBranch()) ;
                     log.debug("Target/default branch is {}", defaultBranch);
                     if(!params.getPreserveProjectName()){
                         currentBranch = currentBranch.replaceAll("[^a-zA-Z0-9-_.]+", "-");
@@ -2156,12 +2166,16 @@ public class CxService implements CxClient {
             if(params.getPostBackActionId()!=null){
                 createScanSetting(projectId, presetId, engineConfigurationId, params.getPostBackActionId(),
                         params.getEmailNotifications());
-                createScanSetting(baseProjectId, presetId, engineConfigurationId, params.getPostBackActionId(),
-                        params.getEmailNotifications());
+                if(baseProjectId != -1){
+
+                    createScanSetting(baseProjectId, presetId, engineConfigurationId, params.getPostBackActionId(),
+                            params.getEmailNotifications());
+                }
+
             }else if(cxProperties.getPostActionPostbackId() != null && cxProperties.getPostActionPostbackId() != 0){
                 createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                         params.getEmailNotifications());
-                if(cxProperties.getCxBranch())
+                if(cxProperties.getCxBranch() && baseProjectId!= -1)
                 {
                     createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                             params.getEmailNotifications());
@@ -2173,19 +2187,26 @@ public class CxService implements CxClient {
                             params.getEmailNotifications());
                     if(cxProperties.getCxBranch())
                     {
-                        createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
-                                params.getEmailNotifications());
+                        if(baseProjectId != -1){
+                            createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                                    params.getEmailNotifications());
+
+                        }
                     }
                 }else{
                     createScanSetting(projectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
                             params.getEmailNotifications());
                     if(cxProperties.getCxBranch())
                     {
-                        createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
-                                params.getEmailNotifications());
+                        if(baseProjectId != -1){
+                            createScanSetting(baseProjectId, presetId, engineConfigurationId, cxProperties.getPostActionPostbackId(),
+                                    params.getEmailNotifications());
+                        }
+
                     }
                 }
             }
+
 
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
             if (params.getCustomFields() != null && !params.getCustomFields().isEmpty()) {
@@ -2270,6 +2291,8 @@ public class CxService implements CxClient {
         log.info("...Finished creating scan");
         return UNKNOWN_INT;
     }
+
+
 
     private void prepareSources(CxScanParams params, Integer projectId) throws CheckmarxException {
         if (params.isFileSource()) {

@@ -43,6 +43,9 @@ public class CxScanParams {
     @Getter @Setter
     private Integer postBackActionId;
 
+    @Getter @Setter
+    private String branchPattern;
+
     public String getTeamName() {
         return teamName;
     }
@@ -246,6 +249,10 @@ public class CxScanParams {
 
     public CxScanParams withFolderExclude(List<String> folderExclude) {
         this.folderExclude = folderExclude;
+        return this;
+    }
+    public CxScanParams withBranchPattern(String branchPattern) {
+        this.branchPattern = branchPattern;
         return this;
     }
 
