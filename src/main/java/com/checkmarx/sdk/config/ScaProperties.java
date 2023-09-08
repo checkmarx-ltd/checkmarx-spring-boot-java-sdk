@@ -44,6 +44,7 @@ public class ScaProperties {
     private boolean filterOutTestDependency=false;
     private boolean filterOutNpmVerifiedDependency=false;
     private boolean enableScaResolver;
+    private boolean enablePolicyViolation=true;
     private String pathToScaResolver="/app";
     private Map<String,String> scaResolverAddParameters;
     private boolean enableExploitablePath= false;
