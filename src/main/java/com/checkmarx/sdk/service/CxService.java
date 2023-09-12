@@ -317,9 +317,14 @@ public class CxService implements CxClient {
      */
     public Set<Integer> getScanSimilarityIds(Integer scanId) {
         log.debug("Getting similarity ids for scan {}", scanId);
+        if(scanId==-1){
+            return null;
+        }
         HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
         Set<Integer> similarityIds = new HashSet<>();
+
         try {
+
             ResponseEntity<String> response = restTemplate.exchange(cxProperties.getBaseUrl().concat(ODATA_SCAN_SIMILARITY_IDS),
                     HttpMethod.GET, requestEntity, String.class, scanId);
             JSONObject obj = new JSONObject(response.getBody());
