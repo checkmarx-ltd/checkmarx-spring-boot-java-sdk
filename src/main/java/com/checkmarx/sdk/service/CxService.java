@@ -2147,7 +2147,7 @@ public class CxService implements CxClient {
     }
 
     public String branchNameNormalizer(String branchName){
-        String finalBranchName= new String("");
+        String finalBranchName= new String(branchName);
         if(branchName.contains("refs/heads/")){
             finalBranchName=branchName.replaceAll("refs/heads/","");
         }
