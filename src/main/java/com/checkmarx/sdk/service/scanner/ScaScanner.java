@@ -41,7 +41,7 @@ public class ScaScanner extends AbstractScanner {
         EngineFilterConfiguration filterConfig = extractFilterConfigFrom(scanParams);
 
         List<Finding> findingsToRetain = new ArrayList<>();
-        if (scaProperties.isFilterOutDevdependency()) {
+        if (scaProperties.isFilterOutDevdependency() && !scaProperties.isFilterOutInDirectDependency()) {
             List<String> packageIds = new ArrayList<>();
             combinedResults.getScaResults()
                     .getPackages().forEach(packages -> {
@@ -57,11 +57,26 @@ public class ScaScanner extends AbstractScanner {
                         }
                     });
 
-        }else if(scaProperties.isFilterOutInDirectDependency()){
+        }else if(scaProperties.isFilterOutInDirectDependency() && !scaProperties.isFilterOutDevdependency()){
             List<String> packageIds = new ArrayList<>();
             combinedResults.getScaResults()
                     .getPackages().forEach(packages -> {
                         if (packages.isIsDirectDependency()) {
+                            packageIds.add(packages.getId());
+                        }
+                    });
+
+            combinedResults.getScaResults()
+                    .getFindings().forEach(finding -> {
+                        if (passesFilter(finding, filterConfig) && packageIds.contains(finding.getPackageId())) {
+                            findingsToRetain.add(finding);
+                        }
+                    });
+        }else if(scaProperties.isFilterOutInDirectDependency() && scaProperties.isFilterOutDevdependency()){
+            List<String> packageIds = new ArrayList<>();
+            combinedResults.getScaResults()
+                    .getPackages().forEach(packages -> {
+                        if (packages.isIsDirectDependency() || !(packages.isIsDevelopmentDependency() || packages.isIsTestDependency())) {
                             packageIds.add(packages.getId());
                         }
                     });
