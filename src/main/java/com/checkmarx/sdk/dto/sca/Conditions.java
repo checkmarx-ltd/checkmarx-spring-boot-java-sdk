@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class RuleCondition {
+public class Conditions {
 
     private String operator;
     private List<String> parameterValue;

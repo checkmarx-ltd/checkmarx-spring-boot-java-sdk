@@ -10,5 +10,5 @@ import java.util.List;
 @Setter
 @Builder
 public class ConditionGroups {
-    private List<RuleCondition> conditions;
+    private List<Conditions> conditions;
 }

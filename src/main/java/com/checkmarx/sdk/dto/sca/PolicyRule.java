@@ -12,5 +12,5 @@ import java.util.List;
 public class PolicyRule {
 
     private String name;
-    private List<ConditionGroups> conditionGroups;
+    private List<Conditions> conditions;
 }
