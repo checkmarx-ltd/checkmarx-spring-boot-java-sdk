@@ -8,7 +8,7 @@
 
 package com.checkmarx.sdk.dto.sca.xml;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 
 /**

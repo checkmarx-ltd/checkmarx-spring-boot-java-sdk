@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.dto.sast;
 
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -1,7 +1,7 @@
 package com.checkmarx.sdk.config;
 
 import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 public abstract class CxPropertiesBase {
 

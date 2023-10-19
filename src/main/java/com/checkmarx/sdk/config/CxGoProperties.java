@@ -1,6 +1,5 @@
 package com.checkmarx.sdk.config;
 
-import com.checkmarx.sdk.utils.ScanUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;

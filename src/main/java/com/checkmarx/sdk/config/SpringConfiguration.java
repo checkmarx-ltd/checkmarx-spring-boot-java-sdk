@@ -25,7 +25,8 @@ public class SpringConfiguration {
         RestTemplate restTemplate = new RestTemplate();
 
         HttpComponentsClientHttpRequestFactory requestFactory = new
-                HttpComponentsClientHttpRequestFactory(HttpClientBuilder.create().useSystemProperties().build());
+                HttpComponentsClientHttpRequestFactory();
+                //HttpComponentsClientHttpRequestFactory(HttpClientBuilder.create().useSystemProperties().build());
         requestFactory.setConnectTimeout(properties.getHttpConnectionTimeout());
         requestFactory.setReadTimeout(properties.getHttpReadTimeout());
         restTemplate.setRequestFactory(requestFactory);

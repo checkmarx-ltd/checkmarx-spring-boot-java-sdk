@@ -8,7 +8,7 @@
 
 package checkmarx.wsdl.portal;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 
 /**
