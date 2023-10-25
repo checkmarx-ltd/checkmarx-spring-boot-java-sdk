@@ -42,5 +42,11 @@ public class Sca implements Serializable {
     protected  String expPathSastProjectName;
     @JsonProperty
     protected  String projectName;
+    @JsonProperty
+    protected  String excludeFiles;
+    @JsonProperty
+    protected  String manifestsIncludePattern;
+    @JsonProperty
+    protected  String fingerprintsIncludePattern;
 
 }
