@@ -187,8 +187,20 @@ public class ScaScanner extends AbstractScanner {
             scaConfig.setExcludeFiles(sdkScaConfig.getExcludeFiles());
             scaConfig.setUsername(scaProperties.getUsername());
             scaConfig.setPassword(scaProperties.getPassword());
-            scaConfig.setFingerprintsIncludePattern(scaProperties.getFingerprintsIncludePattern());
-            scaConfig.setManifestsIncludePattern(scaProperties.getManifestsIncludePattern());
+            if(sdkScaConfig.getFingerprintsIncludePattern()!=null)
+            {
+                scaConfig.setFingerprintsIncludePattern(sdkScaConfig.getFingerprintsIncludePattern());
+            }
+            else{
+                scaConfig.setFingerprintsIncludePattern(scaProperties.getFingerprintsIncludePattern());
+            }
+            if(sdkScaConfig.getManifestsIncludePattern()!=null)
+            {
+                scaConfig.setManifestsIncludePattern(sdkScaConfig.getManifestsIncludePattern());
+            }
+            else{
+                scaConfig.setManifestsIncludePattern(scaProperties.getManifestsIncludePattern());
+            }
             scaConfig.setTeam(sdkScaConfig.getTeam());
             scaConfig.setScanTimeout(sdkScaConfig.getScanTimeout());
             scaConfig.setExpPathSastProjectName(sdkScaConfig.getExpPathSastProjectName());
