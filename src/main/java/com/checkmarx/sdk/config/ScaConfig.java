@@ -1,6 +1,7 @@
 package com.checkmarx.sdk.config;
 
 import com.checkmarx.sdk.dto.scansummary.Severity;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.typesafe.config.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
