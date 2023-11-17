@@ -24,6 +24,11 @@ public class Sast implements Serializable {
     private String fileExcludes;
     @JsonProperty("folderExcludes")
     private String folderExcludes;
+
+
+
+    @JsonProperty("publicScan")
+    private Boolean publicScan;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
     private final static long serialVersionUID = 1949448108099095334L;
@@ -86,6 +91,15 @@ public class Sast implements Serializable {
     @JsonProperty("folderExcludes")
     public void setFolderExcludes(String folderExcludes) {
         this.folderExcludes = folderExcludes;
+    }
+
+    @JsonProperty("publicScan")
+    public Boolean isPublicScan() {
+        return publicScan;
+    }
+    @JsonProperty("publicScan")
+    public void setPublicScan(Boolean publicScan) {
+        this.publicScan = publicScan;
     }
 
     @JsonAnyGetter
