@@ -1,6 +1,9 @@
 package com.checkmarx.sdk.config;
 
 import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.annotation.PostConstruct;
 
 public abstract class CxPropertiesBase {
@@ -42,6 +45,8 @@ public abstract class CxPropertiesBase {
     private Integer projectBranchingCheckCount = 3;
     private Integer projectBranchingCheckInterval = 5;
     private Boolean restrictResultsToBranch = false;
+
+    private Boolean publicScan=true;
     
     public abstract Boolean getEnableOsa();
 
@@ -132,6 +137,13 @@ public abstract class CxPropertiesBase {
             // everything else
             return Constants.UNIX_PATH;
         }
+    }
+    public Boolean getPublicScan() {
+        return publicScan;
+    }
+
+    public void setPublicScan(Boolean publicScan) {
+        this.publicScan = publicScan;
     }
 
     public void setEnableShardManager(boolean enableShardManager) {
