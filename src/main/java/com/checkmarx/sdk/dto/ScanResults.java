@@ -656,6 +656,8 @@ public class ScanResults{
     @Builder
     public static class ScaDetails {
         private String vulnerabilityLink;
+
+        private Map scanTags;
         private Finding finding;
         private Package vulnerabilityPackage;
     }

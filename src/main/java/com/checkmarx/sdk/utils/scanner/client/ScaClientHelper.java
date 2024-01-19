@@ -24,6 +24,7 @@ import com.checkmarx.sdk.utils.scanner.client.httpClient.HttpClientHelper;
 import com.checkmarx.sdk.utils.zip.CxZipUtils;
 import com.checkmarx.sdk.utils.zip.NewCxZipFile;
 import com.checkmarx.sdk.utils.zip.Zipper;
+import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -78,6 +79,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final String PROJECTS_BY_ID = PROJECTS + "/%s";
     private static final String SUMMARY_REPORT = RISK_MANAGEMENT_API + "riskReports/%s/summary";
     private static final String FINDINGS = RISK_MANAGEMENT_API + "riskReports/%s/vulnerabilities";
+    private static final String TAGS = "/scan-runner/scans/%s";
     private static final String PACKAGES = RISK_MANAGEMENT_API + "riskReports/%s/packages";
     private static final String LATEST_SCAN = RISK_MANAGEMENT_API + "riskReports?size=1&projectId=%s";
     private static final String WEB_REPORT = "/#/projects/%s/reports/%s";
@@ -1462,6 +1464,10 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             result.setPolicyViolated(!scanViolatedPolicies.isEmpty());
             result.setViolatedPolicies(scanViolatedPolicies);
 
+            Map<String,String>tags = getScaScanTags();
+            result.setScanTags(tags);
+
+
             if(scaProperties.isPreserveXml()){
                 String path = String.format(REPORT_IN_XML_WITH_SCANID, URLEncoder.encode(scanId, ENCODING));
                 String xml = httpClient.getRequest(path,
@@ -1479,6 +1485,23 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         } catch (IOException e) {
             throw new ScannerRuntimeException("Error retrieving CxSCA scan results.", e);
         }
+        return result;
+    }
+
+    private  Map<String, String> getScaScanTags() throws IOException {
+        log.debug("Getting SCA scan tags.");
+
+        String path = String.format(TAGS, URLEncoder.encode(scanId, ENCODING));
+
+        String response = httpClient.getRequest(path,
+                ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                String.class,
+                HttpStatus.SC_OK,
+                "CxSCA Tags",
+                false);
+        JSONObject obj = new JSONObject(response);
+        JSONObject tags = obj.getJSONObject("tags");
+        Map<String, String> result = caseInsensitiveObjectMapper.convertValue(tags.toMap(), Map.class);
         return result;
     }
 

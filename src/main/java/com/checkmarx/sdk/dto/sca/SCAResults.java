@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 @Builder
 @Getter
@@ -25,6 +26,8 @@ public class SCAResults extends ResultsBase implements Serializable {
     private boolean isPolicyViolated;
     private List<String> violatedPolicies;
     private String output;
+
+    private Map scanTags;
     
     public void calculateVulnerableAndOutdatedPackages() {
         int sum;
