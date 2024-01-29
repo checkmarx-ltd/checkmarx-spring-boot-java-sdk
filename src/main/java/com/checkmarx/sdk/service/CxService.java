@@ -995,6 +995,10 @@ public class CxService implements CxClient {
         if (!resultType.getFalsePositive().equalsIgnoreCase("FALSE")) {
             falsePositive = true;
         }
+        if (cxProperties.checkCustomFalsePositive(resultType.getState())!=null) {
+            log.info("CusumState issue found which is false positive.");
+            falsePositive = true;
+        }
         /*Map issue details*/
         xIssueBuilder.cwe(result.getCweId());
         xIssueBuilder.language(result.getLanguage());
