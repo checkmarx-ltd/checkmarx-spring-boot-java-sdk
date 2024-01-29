@@ -63,6 +63,9 @@ public class CxProperties extends CxPropertiesBase{
 
     private Map<String, String> customStateMap;
 
+    @Getter @Setter
+    private Map<String, String> customStateFalsePositiveMap;
+
     private Map<String, String> sshKeyList;
 
     private Boolean cxBranch = false;
@@ -300,6 +303,14 @@ public class CxProperties extends CxPropertiesBase{
 	    stateFullName = customStateMap.get(key);
 	}
 	return stateFullName;
+    }
+
+    public String checkCustomFalsePositive(String key){
+        try {
+            return customStateFalsePositiveMap.get(key);
+        }catch (Exception e){
+            return null;
+        }
     }
 
     public Boolean getGroupBySeverity() {
