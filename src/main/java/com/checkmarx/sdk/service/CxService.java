@@ -2373,37 +2373,48 @@ public class CxService implements CxClient {
 
 
 //preserving settings
-        Gitremotemain gitremotemainObj = getGitRepoDetails(projectId);
-        Customremotemain customremotemainObj = getCustomRepoDetails(projectId);
-        Perforceremotemain perforceremotemainObj = getPerforceRepoDetails(projectId);
-        Sharedremotemain sharedremotemainObj = getSharedRepoDetails(projectId);
-        Svnremotemain svnremotemainObj = getSvnRepoDetails(projectId);
-        Tfsremotemain tfsremotemainObj = getTfsRepoDetails(projectId);
-        ExcludeSettingsmain excludeSettingsmainObj = getExcludeSettingsDetails(projectId);
+//        Gitremotemain gitremotemainObj = getGitRepoDetails(projectId);
+//        Customremotemain customremotemainObj = getCustomRepoDetails(projectId);
+//        Perforceremotemain perforceremotemainObj = getPerforceRepoDetails(projectId);
+//        Sharedremotemain sharedremotemainObj = getSharedRepoDetails(projectId);
+//        Svnremotemain svnremotemainObj = getSvnRepoDetails(projectId);
+//        Tfsremotemain tfsremotemainObj = getTfsRepoDetails(projectId);
+//        ExcludeSettingsmain excludeSettingsmainObj = getExcludeSettingsDetails(projectId);
+
         prepareSources(params, projectId);
         //Setting Remembered Git Settings
-        if (gitremotemainObj != null) {
-            setGitRepoDetails(gitremotemainObj, projectId);
-        }
-        if (customremotemainObj != null) {
-            setCustomRepoDetails(customremotemainObj, projectId);
-        }
-        if (perforceremotemainObj != null) {
-            setPerforceRepoDetails(perforceremotemainObj, projectId);
-        }
-        if (sharedremotemainObj != null) {
-            setSharedRepoDetails(sharedremotemainObj, projectId);
-        }
-        if (svnremotemainObj != null) {
-            setSvnRepoDetails(svnremotemainObj, projectId);
-        }
-        if (tfsremotemainObj != null) {
-            setTfsRepoDetails(tfsremotemainObj, projectId);
-        }
+//        try {
+//            if(params.isFileSource() || (params.isGitSource()
+//                    && cxProperties.getEnabledZipScan())){
+//                if (gitremotemainObj != null) {
+//                    setGitRepoDetails(gitremotemainObj, projectId);
+//                }
+//                if (customremotemainObj != null) {
+//                    setCustomRepoDetails(customremotemainObj, projectId);
+//                }
+//                if (perforceremotemainObj != null) {
+//                    setPerforceRepoDetails(perforceremotemainObj, projectId);
+//                }
+//                if (sharedremotemainObj != null) {
+//                    setSharedRepoDetails(sharedremotemainObj, projectId);
+//                }
+//                if (svnremotemainObj != null) {
+//                    setSvnRepoDetails(svnremotemainObj, projectId);
+//                }
+//                if (tfsremotemainObj != null) {
+//                    setTfsRepoDetails(tfsremotemainObj, projectId);
+//                }
+//
+//                if (excludeSettingsmainObj != null) {
+//                    setExcludeSettingsDetails(excludeSettingsmainObj, projectId);
+//                }
+//            }
+//        }catch (Exception e) {
+//            log.error("Error Occurred While Setting Settings.");
+//            log.error(ExceptionUtils.getStackTrace(e));
+//        }
 
-        if (excludeSettingsmainObj != null) {
-            setExcludeSettingsDetails(excludeSettingsmainObj, projectId);
-        }
+
 
 
         if(params.isIncremental() && projectExistedBeforeScan) {
