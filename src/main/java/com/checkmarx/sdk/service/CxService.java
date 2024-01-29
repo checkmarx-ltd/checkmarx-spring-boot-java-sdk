@@ -2188,14 +2188,8 @@ public class CxService implements CxClient {
         Integer projectId = determineProjectId(params, teamId);
         boolean projectExistedBeforeScan = !projectId.equals(UNKNOWN_INT);
         Integer baseProjectId = UNKNOWN_INT;
-        //preserving settings
-        Gitremotemain gitremotemainObj = getGitRepoDetails(projectId);
-        Customremotemain customremotemainObj = getCustomRepoDetails(projectId);
-        Perforceremotemain perforceremotemainObj = getPerforceRepoDetails(projectId);
-        Sharedremotemain sharedremotemainObj = getSharedRepoDetails(projectId);
-        Svnremotemain svnremotemainObj = getSvnRepoDetails(projectId);
-        Tfsremotemain tfsremotemainObj = getTfsRepoDetails(projectId);
-        ExcludeSettingsmain excludeSettingsmainObj = getExcludeSettingsDetails(projectId);
+
+
 
         if (!projectExistedBeforeScan) {
             /*
@@ -2378,8 +2372,14 @@ public class CxService implements CxClient {
         }
 
 
-
-
+//preserving settings
+        Gitremotemain gitremotemainObj = getGitRepoDetails(projectId);
+        Customremotemain customremotemainObj = getCustomRepoDetails(projectId);
+        Perforceremotemain perforceremotemainObj = getPerforceRepoDetails(projectId);
+        Sharedremotemain sharedremotemainObj = getSharedRepoDetails(projectId);
+        Svnremotemain svnremotemainObj = getSvnRepoDetails(projectId);
+        Tfsremotemain tfsremotemainObj = getTfsRepoDetails(projectId);
+        ExcludeSettingsmain excludeSettingsmainObj = getExcludeSettingsDetails(projectId);
         prepareSources(params, projectId);
         //Setting Remembered Git Settings
         if (gitremotemainObj != null) {
