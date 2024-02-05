@@ -68,6 +68,8 @@ public class ScanResults{
     @Setter
     private Integer pdfScanID;
 
+    @Getter @Setter
+    private String latestCommitterEmail;
     public ScanResults(Boolean osa, String projectId,String deepLink, String reportCreationTime, String scanTime, String team, String project, String link, String files, String loc, String scanType,String version,
                        List<XIssue> xIssues,List<XIssue> unFilteredIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary, SCAResults scaResults, ASTResults astResults) {
         this.osa = osa;
@@ -654,6 +656,8 @@ public class ScanResults{
     @Builder
     public static class ScaDetails {
         private String vulnerabilityLink;
+
+        private Map scanTags;
         private Finding finding;
         private Package vulnerabilityPackage;
     }

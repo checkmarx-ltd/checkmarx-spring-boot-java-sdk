@@ -16,6 +16,13 @@ import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
 import com.checkmarx.sdk.exception.CheckmarxException;
 import com.checkmarx.sdk.exception.InvalidCredentialsException;
+import com.checkmarx.sdk.remotesettings.custom.Customremotemain;
+import com.checkmarx.sdk.remotesettings.exclude.ExcludeSettingsmain;
+import com.checkmarx.sdk.remotesettings.git.Gitremotemain;
+import com.checkmarx.sdk.remotesettings.perforce.Perforceremotemain;
+import com.checkmarx.sdk.remotesettings.shared.Sharedremotemain;
+import com.checkmarx.sdk.remotesettings.svn.Svnremotemain;
+import com.checkmarx.sdk.remotesettings.tfs.Tfsremotemain;
 import com.checkmarx.sdk.service.scanner.CxClient;
 import com.checkmarx.sdk.utils.CxRepoFileHelper;
 import com.checkmarx.sdk.utils.ScanUtils;
@@ -112,6 +119,13 @@ public class CxService implements CxClient {
     private static final String ODATA_SCAN_SIMILARITY_IDS = "/cxwebinterface/odata/v1/Scans({id})?$select=Id&$expand=Results($select=SimilarityId)";
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
+    private static final String GIT_PROJ_DETAILS = "/projects/{id}/sourceCode/remoteSettings/git";
+    private static final String SVN_PROJ_DETAILS = "/projects/{id}/sourceCode/remoteSettings/svn";
+    private static final String TFS_PROJ_DETAILS = "/projects/{id}/sourceCode/remoteSettings/tfs";
+    private static final String EXCULDESETTINGS_PROJ_DETAILS = "/projects/{id}/sourceCode/excludeSettings";
+    private static final String CUSTOM_PROJ_DETAILS = "/projects/{id}/sourceCode/remoteSettings/custom";
+    private static final String SHARED_PROJ_DETAILS = "/projects/{id}/sourceCode/remoteSettings/shared";
+    private static final String PERFORCE_PROJ_DETAILS = "/projects/{id}/sourceCode/remoteSettings/perforce";
     private static final String PROJECT_BRANCH = "/projects/{id}/branch";
     private static final String PROJECT_BRANCH_STATUS = "/projects/branch/{id}";
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
@@ -979,6 +993,10 @@ public class CxService implements CxClient {
     private ScanResults.XIssue buildIssue(ScanResults.XIssue.XIssueBuilder xIssueBuilder,ResultType resultType,QueryType result,DateTimeFormatter formatter,CxXMLResultsType cxResults,String session,List<ScanResults.XIssue> cxIssueList,Map<String, Integer> summary,boolean flag){
         boolean falsePositive = false;
         if (!resultType.getFalsePositive().equalsIgnoreCase("FALSE")) {
+            falsePositive = true;
+        }
+        if (cxProperties.checkCustomFalsePositive(resultType.getState())!=null) {
+            log.info("CusumState issue found which is false positive.");
             falsePositive = true;
         }
         /*Map issue details*/
@@ -2170,6 +2188,9 @@ public class CxService implements CxClient {
         Integer projectId = determineProjectId(params, teamId);
         boolean projectExistedBeforeScan = !projectId.equals(UNKNOWN_INT);
         Integer baseProjectId = UNKNOWN_INT;
+
+
+
         if (!projectExistedBeforeScan) {
             /*
                 When CxBranch is set to true, the current and default branches are compared if they are same then a licensed project is created,
@@ -2349,7 +2370,53 @@ public class CxService implements CxClient {
                 updateProjectCustomFields(cxProject);
             }
         }
+
+
+//preserving settings
+//        Gitremotemain gitremotemainObj = getGitRepoDetails(projectId);
+//        Customremotemain customremotemainObj = getCustomRepoDetails(projectId);
+//        Perforceremotemain perforceremotemainObj = getPerforceRepoDetails(projectId);
+//        Sharedremotemain sharedremotemainObj = getSharedRepoDetails(projectId);
+//        Svnremotemain svnremotemainObj = getSvnRepoDetails(projectId);
+//        Tfsremotemain tfsremotemainObj = getTfsRepoDetails(projectId);
+//        ExcludeSettingsmain excludeSettingsmainObj = getExcludeSettingsDetails(projectId);
+
         prepareSources(params, projectId);
+        //Setting Remembered Git Settings
+//        try {
+//            if(params.isFileSource() || (params.isGitSource()
+//                    && cxProperties.getEnabledZipScan())){
+//                if (gitremotemainObj != null) {
+//                    setGitRepoDetails(gitremotemainObj, projectId);
+//                }
+//                if (customremotemainObj != null) {
+//                    setCustomRepoDetails(customremotemainObj, projectId);
+//                }
+//                if (perforceremotemainObj != null) {
+//                    setPerforceRepoDetails(perforceremotemainObj, projectId);
+//                }
+//                if (sharedremotemainObj != null) {
+//                    setSharedRepoDetails(sharedremotemainObj, projectId);
+//                }
+//                if (svnremotemainObj != null) {
+//                    setSvnRepoDetails(svnremotemainObj, projectId);
+//                }
+//                if (tfsremotemainObj != null) {
+//                    setTfsRepoDetails(tfsremotemainObj, projectId);
+//                }
+//
+//                if (excludeSettingsmainObj != null) {
+//                    setExcludeSettingsDetails(excludeSettingsmainObj, projectId);
+//                }
+//            }
+//        }catch (Exception e) {
+//            log.error("Error Occurred While Setting Settings.");
+//            log.error(ExceptionUtils.getStackTrace(e));
+//        }
+
+
+
+
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
             if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
@@ -2399,10 +2466,179 @@ public class CxService implements CxClient {
                 FileUtils.deleteQuietly(new File(params.getFilePath()));
             }
         }
+
+
         log.info("...Finished creating scan");
         return UNKNOWN_INT;
     }
 
+    private void setExcludeSettingsDetails(ExcludeSettingsmain excludeSettingsmainObj, Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(excludeSettingsmainObj,authClient.createAuthHeaders());
+        try {
+            log.info("Setting Exclude Settings Repo Details for project id {}", projectId);
+            restTemplate.exchange(cxProperties.getUrl().concat(EXCULDESETTINGS_PROJ_DETAILS), HttpMethod.PUT, requestEntity, String.class, projectId);
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Setting Exclude Settings Repo Details for project id {}.", projectId);
+        }
+    }
+
+    private ExcludeSettingsmain getExcludeSettingsDetails(Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            log.info("Getting Exclude Settings Details for project id {}", projectId);
+            ResponseEntity<ExcludeSettingsmain> response =restTemplate.exchange(cxProperties.getUrl().concat(EXCULDESETTINGS_PROJ_DETAILS), HttpMethod.GET, requestEntity, ExcludeSettingsmain.class, projectId);
+            return response.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Getting Exclude Settings Details for project id {}.", projectId);
+            return null;
+        }
+    }
+
+    private void setTfsRepoDetails(Tfsremotemain tfsremotemainObj, Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(tfsremotemainObj,authClient.createAuthHeaders());
+        try {
+            log.info("Setting TFS Repo Details for project id {}", projectId);
+            restTemplate.exchange(cxProperties.getUrl().concat(TFS_PROJ_DETAILS), HttpMethod.POST, requestEntity, String.class, projectId);
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Setting TFS Repo Details for project id {}.", projectId);
+        }
+    }
+
+    private void setSvnRepoDetails(Svnremotemain svnremotemainObj, Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(svnremotemainObj,authClient.createAuthHeaders());
+        try {
+            log.info("Setting SVN Repo Details for project id {}", projectId);
+            restTemplate.exchange(cxProperties.getUrl().concat(SVN_PROJ_DETAILS), HttpMethod.POST, requestEntity, String.class, projectId);
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Setting SVN Repo Details for project id {}.", projectId);
+        }
+    }
+
+    private void setSharedRepoDetails(Sharedremotemain sharedremotemainObj, Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(sharedremotemainObj,authClient.createAuthHeaders());
+        try {
+            log.info("Setting Shared Repo Details for project id {}", projectId);
+            restTemplate.exchange(cxProperties.getUrl().concat(SHARED_PROJ_DETAILS), HttpMethod.POST, requestEntity, String.class, projectId);
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Setting Shared Repo Details for project id {}.", projectId);
+        }
+    }
+
+    private void setPerforceRepoDetails(Perforceremotemain perforceremotemainObj, Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(perforceremotemainObj,authClient.createAuthHeaders());
+        try {
+            log.info("Setting Perforce Repo Details for project id {}", projectId);
+            restTemplate.exchange(cxProperties.getUrl().concat(PERFORCE_PROJ_DETAILS), HttpMethod.POST, requestEntity, String.class, projectId);
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Setting Perforce Repo Details for project id {}.", projectId);
+        }
+    }
+
+    private void setCustomRepoDetails(Customremotemain customremotemainObj, Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(customremotemainObj,authClient.createAuthHeaders());
+        try {
+            log.info("Setting Custom Repo Details for project id {}", projectId);
+            restTemplate.exchange(cxProperties.getUrl().concat(CUSTOM_PROJ_DETAILS), HttpMethod.POST, requestEntity, String.class, projectId);
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Setting Custom Repo Details for project id {}.", projectId);
+        }
+    }
+
+    private Tfsremotemain getTfsRepoDetails(Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            log.info("Getting TFS Details for project id {}", projectId);
+            ResponseEntity<Tfsremotemain> response =restTemplate.exchange(cxProperties.getUrl().concat(TFS_PROJ_DETAILS), HttpMethod.GET, requestEntity, Tfsremotemain.class, projectId);
+            return response.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Getting TFS Details for project id {}.", projectId);
+            return null;
+        }
+    }
+
+    private Svnremotemain getSvnRepoDetails(Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            log.info("Getting SVN Repo Details for project id {}", projectId);
+            ResponseEntity<Svnremotemain> response =restTemplate.exchange(cxProperties.getUrl().concat(SVN_PROJ_DETAILS), HttpMethod.GET, requestEntity, Svnremotemain.class, projectId);
+            return response.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Getting SVN Repo Details for project id {}.", projectId);
+            return null;
+        }
+    }
+
+    private Sharedremotemain getSharedRepoDetails(Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            log.info("Getting Shared Details for project id {}", projectId);
+            ResponseEntity<Sharedremotemain> response =restTemplate.exchange(cxProperties.getUrl().concat(SHARED_PROJ_DETAILS), HttpMethod.GET, requestEntity, Sharedremotemain.class, projectId);
+            return response.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Getting Shared Details for project id {}.", projectId);
+            return null;
+        }
+    }
+
+    private Perforceremotemain getPerforceRepoDetails(Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            log.info("Getting Perforce Details for project id {}", projectId);
+            ResponseEntity<Perforceremotemain> response =restTemplate.exchange(cxProperties.getUrl().concat(PERFORCE_PROJ_DETAILS), HttpMethod.GET, requestEntity, Perforceremotemain.class, projectId);
+            return response.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Getting Perforce Details for project id {}.", projectId);
+            return null;
+        }
+    }
+
+    private Customremotemain getCustomRepoDetails(Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            log.info("Getting Custom Details for project id {}", projectId);
+            ResponseEntity<Customremotemain> response =restTemplate.exchange(cxProperties.getUrl().concat(CUSTOM_PROJ_DETAILS), HttpMethod.GET, requestEntity, Customremotemain.class, projectId);
+            return response.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Getting Custom Details for project id {}.", projectId);
+            return null;
+        }
+    }
+
+    private void setGitRepoDetails(Gitremotemain gitremotemainObj,int projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(gitremotemainObj,authClient.createAuthHeaders());
+        try {
+            log.info("Setting Git Repo Details for project id {}", projectId);
+            restTemplate.exchange(cxProperties.getUrl().concat(GIT_PROJ_DETAILS), HttpMethod.POST, requestEntity, String.class, projectId);
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Setting Git Repo Details for project id {}.", projectId);
+        }
+    }
+
+    private Gitremotemain getGitRepoDetails(Integer projectId) {
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        try {
+            log.info("Getting Git Repo Details for project id {}", projectId);
+            ResponseEntity<Gitremotemain> response =restTemplate.exchange(cxProperties.getUrl().concat(GIT_PROJ_DETAILS), HttpMethod.GET, requestEntity, Gitremotemain.class, projectId);
+            return response.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.debug(ExceptionUtils.getStackTrace(e));
+            log.debug("Error occurred while Getting Git Repo Details for project id {}.", projectId);
+            return null;
+        }
+    }
 
 
     private void prepareSources(CxScanParams params, Integer projectId) throws CheckmarxException {
