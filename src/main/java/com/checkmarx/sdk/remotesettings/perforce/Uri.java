@@ -3,7 +3,7 @@ package com.checkmarx.sdk.remotesettings.perforce;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 
 @Generated("jsonschema2pojo")
 public class Uri {

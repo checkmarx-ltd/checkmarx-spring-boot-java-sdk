@@ -4,7 +4,7 @@ package com.checkmarx.sdk.remotesettings.shared;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 
 @Generated("jsonschema2pojo")
 public class Sharedremotemain {
