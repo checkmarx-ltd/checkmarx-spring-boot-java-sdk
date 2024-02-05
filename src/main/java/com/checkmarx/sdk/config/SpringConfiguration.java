@@ -1,5 +1,6 @@
 package com.checkmarx.sdk.config;
 
+import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +10,7 @@ import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.ws.client.core.WebServiceTemplate;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class SpringConfiguration {
@@ -25,13 +26,13 @@ public class SpringConfiguration {
         RestTemplate restTemplate = new RestTemplate();
 
         HttpComponentsClientHttpRequestFactory requestFactory = new
-                HttpComponentsClientHttpRequestFactory(HttpClientBuilder.create().useSystemProperties().build());
+                HttpComponentsClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.getHttpConnectionTimeout());
         requestFactory.setReadTimeout(properties.getHttpReadTimeout());
         restTemplate.setRequestFactory(requestFactory);
 
         restTemplate.getMessageConverters()
-                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
+                .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         return restTemplate;
     }
 

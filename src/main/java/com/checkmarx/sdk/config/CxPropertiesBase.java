@@ -4,7 +4,7 @@ import com.checkmarx.sdk.dto.cx.CxEmailNotifications;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 public abstract class CxPropertiesBase {
 

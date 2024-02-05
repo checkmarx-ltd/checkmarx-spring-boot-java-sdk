@@ -5,5 +5,5 @@
 // Generated on: 2017.11.17 at 10:51:56 PM EST
 //
 
-@javax.xml.bind.annotation.XmlSchema(namespace = "http://Checkmarx.com", elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
+@jakarta.xml.bind.annotation.XmlSchema(namespace = "http://Checkmarx.com", elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED)
 package checkmarx.wsdl.portal;
