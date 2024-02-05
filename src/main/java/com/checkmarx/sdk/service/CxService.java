@@ -65,10 +65,10 @@ import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.UnmarshalException;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.UnmarshalException;
+import jakarta.xml.bind.Unmarshaller;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -964,7 +964,7 @@ public class CxService implements CxClient {
             }
 
             log.debug("similarityIdsToExclude: {}", similarityIdsToExclude);
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(cxProperties.getDetectionDateFormat());
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(cxProperties.getDetectionDateFormat(),Locale.US);
             for (QueryType result : cxResults.getQuery()) {
                 ScanResults.XIssue.XIssueBuilder xIssueBuilder = ScanResults.XIssue.builder();
                 /*Top node of each issue*/

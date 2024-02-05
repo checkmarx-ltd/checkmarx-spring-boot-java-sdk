@@ -1,6 +1,6 @@
 package com.checkmarx.sdk.dto.cx.xml;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 
 /**

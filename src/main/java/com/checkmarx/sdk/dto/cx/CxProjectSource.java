@@ -3,7 +3,7 @@ package com.checkmarx.sdk.dto.cx;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 @JsonPropertyOrder({
         "url",
