@@ -1271,7 +1271,7 @@ public class CxService implements CxClient {
 
     @Override
     public void deleteProject(Integer projectId) {
-        deleteProject(projectId, false);
+        deleteProject(projectId, cxProperties.getDeleteRunningScans());
     }
 
     @Override
