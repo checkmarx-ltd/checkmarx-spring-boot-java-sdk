@@ -86,7 +86,11 @@ public class CxProperties extends CxPropertiesBase{
 
     @Getter
     @Setter
-    private Boolean infiniteTimeOutCheckflag = true; // Adding this if any issue occurs user can turn off this check and it will not affect original
+    private Boolean infiniteTimeOutCheckflag = true;// Adding this if any issue occurs user can turn off this check and it will not affect original
+
+    @Getter
+    @Setter
+    private Boolean deleteRunningScans = false;
 
 
     /**
