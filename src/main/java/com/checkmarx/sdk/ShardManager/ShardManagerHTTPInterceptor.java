@@ -8,6 +8,7 @@ import groovy.lang.GroovyRuntimeException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
@@ -131,8 +132,7 @@ public class ShardManagerHTTPInterceptor implements ClientHttpRequestInterceptor
             this.shardAddress = shardAddress;
         }
 
-        @Override
-        public String getMethodValue() { return super.getMethodValue(); }
+        public String getMethodValue() { return super.getMethod().name(); }
 
         @Override
         public HttpHeaders getHeaders() {
