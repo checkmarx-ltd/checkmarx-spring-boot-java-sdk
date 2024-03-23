@@ -66,6 +66,11 @@ public class CxProperties extends CxPropertiesBase{
     @Getter @Setter
     private Map<String, String> customStateFalsePositiveMap;
 
+
+
+    @Getter @Setter
+    private Map<String, String> modifyBranchNameByPatternMap;
+
     private Map<String, String> sshKeyList;
 
     private Boolean cxBranch = false;
