@@ -61,6 +61,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -2213,6 +2214,16 @@ public class CxService implements CxClient {
                     if(defaultBranch == null || defaultBranch.equalsIgnoreCase("")){
                         log.info("Default Branch Name not found");
                     }
+
+                    if (cxProperties.getModifyBranchNameByPatternMap() != null) {
+                        for (Map.Entry<String, String> entry : cxProperties.getModifyBranchNameByPatternMap().entrySet()) {
+                            String pattern = entry.getKey();
+                            String replacementChar = entry.getValue();
+                            currentBranch = editBranchString(currentBranch, pattern, replacementChar);
+                            defaultBranch = editBranchString(defaultBranch, pattern, replacementChar);
+                        }
+                    }
+
                     //params.getModifiedProjectName() have modified branch name in case if project name is append with current branch and there is script to change such project name
                     //that changes branch value as well
                     if(currentBranch != null && !currentBranch.equalsIgnoreCase("") &&  params.getProjectName().contains(currentBranch)){
@@ -2470,6 +2481,11 @@ public class CxService implements CxClient {
 
         log.info("...Finished creating scan");
         return UNKNOWN_INT;
+    }
+
+    public static String editBranchString(String text, String pattern, String replacement) {
+        Pattern regex = Pattern.compile(pattern);
+        return regex.matcher(text).replaceAll(replacement);
     }
 
     private void setExcludeSettingsDetails(ExcludeSettingsmain excludeSettingsmainObj, Integer projectId) {
