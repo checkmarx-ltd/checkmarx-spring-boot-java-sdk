@@ -1,3 +1,5 @@
+package com.checkmarx.sdk.utils;
+
 public class SASTScanReport {
 
     private int scanId;
