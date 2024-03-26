@@ -64,7 +64,7 @@ public abstract class AbstractScanner  {
 
     protected abstract AstScaResults toResults(ResultsBase scanResults);
 
-    protected ResultsBase executeScan(RestClientConfig restClientConfig) {
+    protected synchronized  ResultsBase executeScan(RestClientConfig restClientConfig) {
 
         ResultsBase finalResults;
                 
