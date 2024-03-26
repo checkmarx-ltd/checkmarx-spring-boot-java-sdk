@@ -25,6 +25,7 @@ import com.checkmarx.sdk.remotesettings.svn.Svnremotemain;
 import com.checkmarx.sdk.remotesettings.tfs.Tfsremotemain;
 import com.checkmarx.sdk.service.scanner.CxClient;
 import com.checkmarx.sdk.utils.CxRepoFileHelper;
+import com.checkmarx.sdk.utils.SASTScanReport;
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.checkmarx.sdk.utils.scanner.client.ScanClientHelper;
 import com.checkmarx.sdk.utils.scanner.client.httpClient.CxHttpClient;
@@ -131,6 +132,7 @@ public class CxService implements CxClient {
     private static final String PROJECT_BRANCH_STATUS = "/projects/branch/{id}";
     private static final String PROJECT_SOURCE = "/projects/{id}/sourceCode/remoteSettings/git";
     private static final String PROJECT_SOURCE_FILE = "/projects/{id}/sourceCode/attachments";
+    private static final String PROJECT_SOURCE_FILE_WITH_SETTINGS = "/sast/scanWithSettings";
     private static final String PROJECT_EXCLUDE = "/projects/{id}/sourceCode/excludeSettings";
     private static final String PROJECT_BRANCH_DETAILS = "/projects/branch/{id}";
     private static final String SCAN = "/sast/scans";
@@ -277,7 +279,8 @@ public class CxService implements CxClient {
     }
 
     @Override
-    public LocalDateTime getLastScanDate(Integer projectId) {
+    public LocalDateTime
+    getLastScanDate(Integer projectId) {
         HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
@@ -1796,9 +1799,6 @@ public class CxService implements CxClient {
         }
     }
 
-    /**
-     * Upload file (zip of source) for a project
-     */
     public void uploadProjectSource(Integer projectId, File file) throws CheckmarxException {
         HttpHeaders headers = authClient.createAuthHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -1817,6 +1817,44 @@ public class CxService implements CxClient {
             log.error("Error occurred while uploading Project source for project id {}.", projectId);
             throw new CheckmarxException("Error occurred while uploading source");
         }
+    }
+
+    /**
+     * Upload file (zip of source) for a project
+     */
+    public Integer uploadProjectSource(CxScanParams params,Integer projectId, File file,String comment) throws CheckmarxException {
+        HttpHeaders headers = authClient.createAuthHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        FileSystemResource value = new FileSystemResource(file);
+        map.add("projectId", projectId);
+        map.add("customFields", params.getCustomFields());
+        map.add("overrideProjectSetting", cxProperties.getOverrideProjectSetting());
+        map.add("isIncremental", params.isIncremental());
+        map.add("isPublic", params.isPublic());
+        map.add("forceScan", params.isForceScan());
+        map.add("comment", comment);
+        map.add("presetId", getPresetId(params.getScanPreset())); //Test Satyam
+        map.add("engineConfigurationId",getScanConfiguration(params.getScanConfiguration())); //Test Satyam
+        map.add("zippedSource", value);
+
+        HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(map, headers);
+
+        try {
+            log.info("Updating Source details for project Id {}", projectId);
+            String response = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_SOURCE_FILE_WITH_SETTINGS), HttpMethod.POST, requestEntity, String.class).getBody();
+            JSONObject obj = new JSONObject(response);
+            String id = obj.get("id").toString();
+            log.info("Scan created with Id {} for project Id {}", id, projectId);
+            System.err.println("cxflowscanidextractiongithubaction " +id+ "endofstatementscanidaction");
+            return Integer.parseInt(id);
+
+        } catch (HttpStatusCodeException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            log.error("Error occurred while uploading Project source for project id {}.", projectId);
+        }
+        return UNKNOWN_INT;
     }
 
     public void setProjectExcludeDetails(Integer projectId, List<String> excludeFolders, List<String> excludeFiles) {
@@ -2391,8 +2429,6 @@ public class CxService implements CxClient {
 //        Svnremotemain svnremotemainObj = getSvnRepoDetails(projectId);
 //        Tfsremotemain tfsremotemainObj = getTfsRepoDetails(projectId);
 //        ExcludeSettingsmain excludeSettingsmainObj = getExcludeSettingsDetails(projectId);
-
-        prepareSources(params, projectId);
         //Setting Remembered Git Settings
 //        try {
 //            if(params.isFileSource() || (params.isGitSource()
@@ -2424,10 +2460,6 @@ public class CxService implements CxClient {
 //            log.error("Error Occurred While Setting Settings.");
 //            log.error(ExceptionUtils.getStackTrace(e));
 //        }
-
-
-
-
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
             if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
@@ -2444,39 +2476,45 @@ public class CxService implements CxClient {
             params.setIncremental(false);
         }
 
-        CxScan scan = CxScan.builder()
-                .projectId(projectId)
-                .isIncremental(params.isIncremental())
-                .forceScan(params.isForceScan())
-                .isPublic(params.isPublic())
-                .comment(comment)
-                .customFields(params.getScanCustomFields())
-                .build();
-        log.debug("scan: {}", scan);
+        SASTScanReport SASTScanReportObj = prepareSources(params, projectId,comment);
+        if(SASTScanReportObj.isHasFindings()){
+            CxScan scan = CxScan.builder()
+                    .projectId(projectId)
+                    .isIncremental(params.isIncremental())
+                    .forceScan(params.isForceScan())
+                    .isPublic(params.isPublic())
+                    .comment(comment)
+                    .customFields(params.getScanCustomFields())
+                    .build();
+            log.debug("scan: {}", scan);
 
-        HttpHeaders headers = authClient.createAuthHeaders();
-        headers.add(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
-        HttpEntity<CxScan> requestEntity = new HttpEntity<>(scan, headers);
+            HttpHeaders headers = authClient.createAuthHeaders();
+            headers.add(CxHttpClient.ORIGIN_HEADER, ScanClientHelper.CX_FLOW_SCAN_ORIGIN_NAME);
+            HttpEntity<CxScan> requestEntity = new HttpEntity<>(scan, headers);
 
-        log.info("Creating Scan for project Id {}", projectId);
-        try {
-            String response = restTemplate.postForObject(cxProperties.getUrl().concat(SCAN), requestEntity, String.class);
-            JSONObject obj = new JSONObject(response);
-            String id = obj.get("id").toString();
-            log.info("Scan created with Id {} for project Id {}", id, projectId);
-            System.err.println("cxflowscanidextractiongithubaction " +id+ "endofstatementscanidaction");
-            return Integer.parseInt(id);
-        } catch (HttpStatusCodeException e) {
-            log.error(SCAN_CREATION_ERROR, projectId, e.getStatusCode());
-            log.error(ExceptionUtils.getStackTrace(e));
-        } catch (JSONException e) {
-            log.error("Error Occurred While processing JSON");
-            log.error(ExceptionUtils.getStackTrace(e));
-        } finally {
-            if (params.isGitSource() && cxProperties.getEnabledZipScan() || params.isFileSource()){
-                FileUtils.deleteQuietly(new File(params.getFilePath()));
+            log.info("Creating Scan for project Id {}", projectId);
+            try {
+                String response = restTemplate.postForObject(cxProperties.getUrl().concat(SCAN), requestEntity, String.class);
+                JSONObject obj = new JSONObject(response);
+                String id = obj.get("id").toString();
+                log.info("Scan created with Id {} for project Id {}", id, projectId);
+                System.err.println("cxflowscanidextractiongithubaction " +id+ "endofstatementscanidaction");
+                return Integer.parseInt(id);
+            } catch (HttpStatusCodeException e) {
+                log.error(SCAN_CREATION_ERROR, projectId, e.getStatusCode());
+                log.error(ExceptionUtils.getStackTrace(e));
+            } catch (JSONException e) {
+                log.error("Error Occurred While processing JSON");
+                log.error(ExceptionUtils.getStackTrace(e));
+            } finally {
+                if (params.isGitSource() && cxProperties.getEnabledZipScan() || params.isFileSource()){
+                    FileUtils.deleteQuietly(new File(params.getFilePath()));
+                }
             }
+        }else{
+            return SASTScanReportObj.getScanId();
         }
+
 
 
         log.info("...Finished creating scan");
@@ -2657,19 +2695,29 @@ public class CxService implements CxClient {
     }
 
 
-    private void prepareSources(CxScanParams params, Integer projectId) throws CheckmarxException {
-        if (params.isFileSource()) {
+    private SASTScanReport prepareSources(CxScanParams params, Integer projectId, String comment) throws CheckmarxException {
+        if (params.isFileSource() && !cxProperties.getOverrideProjectSetting()) {
+            return new SASTScanReport(uploadProjectSource(params,projectId, new File(params.getFilePath()),comment),false);
+        }else if(params.isFileSource() && cxProperties.getOverrideProjectSetting()){
             uploadProjectSource(projectId, new File(params.getFilePath()));
-        }
-        else if (params.isGitSource()) {
-            if (cxProperties.getEnabledZipScan()) {
+            return new SASTScanReport(UNKNOWN_INT,true);
+        }else if (params.isGitSource()) {
+            if (cxProperties.getEnabledZipScan() && cxProperties.getOverrideProjectSetting()) {
                 String clonedRepoPath = cxRepoFileHelper.prepareRepoFile(params);
                 uploadProjectSource(projectId, new File(clonedRepoPath));
                 params.setFilePath(clonedRepoPath);
-            }else {
+                return new SASTScanReport(UNKNOWN_INT,true);
+            }else if(cxProperties.getEnabledZipScan() && !cxProperties.getOverrideProjectSetting()){
+                String clonedRepoPath = cxRepoFileHelper.prepareRepoFile(params);
+                uploadProjectSource(params,projectId, new File(clonedRepoPath),comment);
+                params.setFilePath(clonedRepoPath);
+                return new SASTScanReport(uploadProjectSource(params,projectId, new File(clonedRepoPath),comment),false);
+            }
+            else {
                 setProjectRepositoryDetails(projectId, params.getGitUrl(), params.getBranch(), params);
             }
         }
+        return new SASTScanReport(UNKNOWN_INT,true);
     }
 
     private Integer determineProjectId(CxScanParams params, String teamId) {
