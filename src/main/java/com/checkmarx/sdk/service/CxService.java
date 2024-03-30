@@ -1835,8 +1835,8 @@ public class CxService implements CxClient {
         map.add("isPublic", params.isPublic());
         map.add("forceScan", params.isForceScan());
         map.add("comment", comment);
-        map.add("presetId", getPresetId(params.getScanPreset())); //Test Satyam
-        map.add("engineConfigurationId",getScanConfiguration(params.getScanConfiguration())); //Test Satyam
+        map.add("presetId", getPresetId(params.getScanPreset()));
+        map.add("engineConfigurationId",getScanConfiguration(params.getScanConfiguration()));
         map.add("zippedSource", value);
 
         HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(map, headers);
