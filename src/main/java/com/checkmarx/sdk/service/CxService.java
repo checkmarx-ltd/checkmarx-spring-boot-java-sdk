@@ -1729,7 +1729,7 @@ public class CxService implements CxClient {
      * @return a list of custom fields
      * @throws CheckmarxException
      */
-    public List<CxCustomField> getCustomFields() throws CheckmarxException {
+    public List<CxCustomField> getAllCustomFields() throws CheckmarxException {
         HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
         try {
             ResponseEntity<CxCustomField[]> projects = restTemplate.exchange(cxProperties.getUrl().concat(CUSTOM_FIELDS), HttpMethod.GET, httpEntity, CxCustomField[].class);
@@ -2363,14 +2363,13 @@ public class CxService implements CxClient {
 
             setProjectExcludeDetails(projectId, params.getFolderExclude(), params.getFileExclude());
             if (params.getCustomFields() != null && !params.getCustomFields().isEmpty()) {
-                List<com.checkmarx.sdk.dto.cx.projectdetails.CustomField> fieldDefinitions = getCustomFieldsFromProjectDetails(projectId);
+                List<CxCustomField> fieldDefinitions = getAllCustomFields();
                 List<CxProject.CustomField> customFields = new ArrayList<>();
 
-                for (com.checkmarx.sdk.dto.cx.projectdetails.CustomField customFieldObj : fieldDefinitions) {
+                for (CxCustomField customFieldObj : fieldDefinitions) {
                     CxProject.CustomField customField = new CxProject.CustomField();
                     customField.setId(customFieldObj.getId());
                     customField.setName(customFieldObj.getName());
-                    customField.setValue(customFieldObj.getValue());
                     customFields.add(customField);
                 }
 
@@ -2387,28 +2386,6 @@ public class CxService implements CxClient {
                     }
                 }
 
-//                for (Map.Entry<String, String> entry : params.getCustomFields().entrySet()) {
-//                    boolean matched = false;
-//                    for (com.checkmarx.sdk.dto.cx.projectdetails.CustomField fieldDefinition : fieldDefinitions) {
-//                        if (fieldDefinition.getName().equalsIgnoreCase(entry.getKey())) {
-//                            matched = true;
-//                            CxProject.CustomField customField = new CxProject.CustomField();
-//                            customField.setId(fieldDefinition.getId());
-//                            customField.setName(fieldDefinition.getName());
-//                            customField.setValue(entry.getValue());
-//                            customFields.add(customField);
-//                        }else{
-//                            CxProject.CustomField customField = new CxProject.CustomField();
-//                            customField.setId(fieldDefinition.getId());
-//                            customField.setName(fieldDefinition.getName());
-//                            customField.setValue(fieldDefinition.getValue());
-//                            customFields.add(customField);
-//                        }
-//                    }
-//                    if (!matched) {
-//                        log.warn("{}: ignoring unrecognised custom field", entry.getKey());
-//                    }
-//                }
                 CxProject cxProject = CxProject.builder()
                         .id(projectId)
                         .name(params.getProjectName())
@@ -2421,45 +2398,7 @@ public class CxService implements CxClient {
         }
 
 
-//preserving settings
-//        Gitremotemain gitremotemainObj = getGitRepoDetails(projectId);
-//        Customremotemain customremotemainObj = getCustomRepoDetails(projectId);
-//        Perforceremotemain perforceremotemainObj = getPerforceRepoDetails(projectId);
-//        Sharedremotemain sharedremotemainObj = getSharedRepoDetails(projectId);
-//        Svnremotemain svnremotemainObj = getSvnRepoDetails(projectId);
-//        Tfsremotemain tfsremotemainObj = getTfsRepoDetails(projectId);
-//        ExcludeSettingsmain excludeSettingsmainObj = getExcludeSettingsDetails(projectId);
-        //Setting Remembered Git Settings
-//        try {
-//            if(params.isFileSource() || (params.isGitSource()
-//                    && cxProperties.getEnabledZipScan())){
-//                if (gitremotemainObj != null) {
-//                    setGitRepoDetails(gitremotemainObj, projectId);
-//                }
-//                if (customremotemainObj != null) {
-//                    setCustomRepoDetails(customremotemainObj, projectId);
-//                }
-//                if (perforceremotemainObj != null) {
-//                    setPerforceRepoDetails(perforceremotemainObj, projectId);
-//                }
-//                if (sharedremotemainObj != null) {
-//                    setSharedRepoDetails(sharedremotemainObj, projectId);
-//                }
-//                if (svnremotemainObj != null) {
-//                    setSvnRepoDetails(svnremotemainObj, projectId);
-//                }
-//                if (tfsremotemainObj != null) {
-//                    setTfsRepoDetails(tfsremotemainObj, projectId);
-//                }
-//
-//                if (excludeSettingsmainObj != null) {
-//                    setExcludeSettingsDetails(excludeSettingsmainObj, projectId);
-//                }
-//            }
-//        }catch (Exception e) {
-//            log.error("Error Occurred While Setting Settings.");
-//            log.error(ExceptionUtils.getStackTrace(e));
-//        }
+
         if(params.isIncremental() && projectExistedBeforeScan) {
             LocalDateTime scanDate = getLastScanDate(projectId);
             if(scanDate == null || LocalDateTime.now().isAfter(scanDate.plusDays(cxProperties.getIncrementalThreshold()))){
