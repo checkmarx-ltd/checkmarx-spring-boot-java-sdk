@@ -50,6 +50,10 @@ public class ScaConfig {
     private String expPathSastProjectName;
     @Optional
     private  String projectName;
+    @Optional
+    private List<String> projectTags;
+    @Optional
+    private List<String> scanTags;
 
     /**
      * This setter allows to avoid ConfigProvider error: Map&lt;Severity,Integer&gt; is not supported.

@@ -17,7 +17,6 @@ import java.util.Map;
 @Setter
 public class ScaProperties {
     public static final String CONFIG_PREFIX = "sca";
-
     private Map<Severity, Integer> thresholdsSeverity;
     private Double thresholdsScore;
     private List<String> filterSeverity;
@@ -50,4 +49,6 @@ public class ScaProperties {
     private boolean enableExploitablePath= false;
     private String scaResolverOverrideProjectName;
     private String projectName;
+    private List<String> projectTags;
+    private List<String> scanTags;
 }

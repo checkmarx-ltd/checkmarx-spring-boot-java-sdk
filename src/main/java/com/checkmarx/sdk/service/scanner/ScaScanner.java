@@ -201,6 +201,8 @@ public class ScaScanner extends AbstractScanner {
             else{
                 scaConfig.setManifestsIncludePattern(scaProperties.getManifestsIncludePattern());
             }
+            scaConfig.setProjectTags(sdkScaConfig.getProjectTags());
+            scaConfig.setScanTags(sdkScaConfig.getScanTags());
             scaConfig.setTeam(sdkScaConfig.getTeam());
             scaConfig.setScanTimeout(sdkScaConfig.getScanTimeout());
             scaConfig.setExpPathSastProjectName(sdkScaConfig.getExpPathSastProjectName());
