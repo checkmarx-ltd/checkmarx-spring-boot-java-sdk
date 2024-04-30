@@ -141,7 +141,7 @@ public class ScaResolverUtils {
                     log.debug(reader.readLine());
                 }
             } catch (IOException e) {
-                log.error("Error while trying write to the file: " + e.getMessage(), e.getStackTrace());
+                log.error("Error while trying write to the file: " + e.getMessage(), (Object) e.getStackTrace());
                 throw new CxHTTPClientException(e);
             }
             exitCode = process.waitFor();
