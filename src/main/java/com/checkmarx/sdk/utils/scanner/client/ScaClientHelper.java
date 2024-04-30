@@ -1284,9 +1284,31 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             resolvedProjectId = createRiskManagementProject(projectName);
             log.info("Created a project with ID {}", resolvedProjectId);
         } else {
+            if(scaConfig.getProjectTags()!=null){
+                log.info("Project tags present updating tags");
+                updateProjectTags(scaConfig.getProjectTags(),resolvedProjectId,projectName);
+            }
             log.info("Project already exists with ID {}", resolvedProjectId);
         }
         return resolvedProjectId;
+    }
+
+    private void updateProjectTags(List<String> projectTags,String projectId,String projectName) throws IOException {
+        CreateProjectRequest request = new CreateProjectRequest();
+        Map<String,String> tags = normalizeTags(projectTags);
+        request.setName(projectName);
+        request.setTags(tags);
+        StringEntity entity = HttpClientHelper.convertToStringEntity(request);
+        try {
+            httpClient.putRequest(String.format(PROJECTS_BY_ID, projectId),
+                    ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                    entity,
+                    Project.class,
+                    HttpStatus.SC_NO_CONTENT,
+                    "update project");
+        } catch (IOException e) {
+            log.error("Error occurred while updating project tags: {}",e.getMessage());
+        }
     }
 
     private String getRiskManagementProjectId(String projectName) throws IOException {
@@ -1339,8 +1361,9 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
     public String createRiskManagementProject(String name) throws IOException {
         CreateProjectRequest request = new CreateProjectRequest();
+        Map<String,String> tags = normalizeTags(scaConfig.getProjectTags());
         request.setName(name);
-
+        request.setTags(tags);
         determineProjectTeam(request);
         StringEntity entity = HttpClientHelper.convertToStringEntity(request);
 
@@ -1352,6 +1375,38 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 "create a project");
 
         return newProject.getId();
+    }
+
+    private Map<String, String> normalizeTags(List<String> values) {
+        if (values != null) {
+            Map<String, String> tags = new HashMap<>();
+            String[] nvp = null;
+            for (String value : values) {
+                if( value.contains(":")){
+                     nvp= value.split(":", 2);
+                }
+                else{
+                    tags.put(value,null);
+                }
+                if(nvp!=null){
+                    if (nvp.length == 2) {
+                        if(nvp[0].length()>250 || nvp[1].length()>250 )
+                        {
+                            log.warn("Either key or value has character length more than 250. Ignoring the provided input tag: {}", value);
+                        }else {
+                            tags.put(nvp[0], nvp[1]);
+                            log.info("Added Tag:{}",tags);
+                        }
+                    } else {
+                        log.warn("Provided tag: {} has incorrect syntax, Ignoring it", value);
+                    }
+                }
+
+            }
+            return tags;
+        } else {
+            return null;
+        }
     }
 
     private void determineProjectTeam(CreateProjectRequest request) {
@@ -1743,10 +1798,11 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 .build();
 
         List<ScanConfig> apiScanConfig = Collections.singletonList(getScanConfig());
-
+        Map<String,String> map = normalizeTags(scaConfig.getScanTags());
         ScaStartScanRequest request = ScaStartScanRequest.builder()
                 .project(project)
                 .config(apiScanConfig)
+                .tags(map)
                 .build();
 
         StringEntity entity = HttpClientHelper.convertToStringEntity(request);

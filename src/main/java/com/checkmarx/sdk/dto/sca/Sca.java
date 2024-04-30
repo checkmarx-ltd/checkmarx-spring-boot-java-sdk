@@ -49,4 +49,9 @@ public class Sca implements Serializable {
     @JsonProperty
     protected  String fingerprintsIncludePattern;
 
+    @JsonProperty
+    protected  String projectTags;
+
+    @JsonProperty
+    protected  String scanTags;
 }
