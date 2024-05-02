@@ -21,6 +21,10 @@ public class CxConfig implements Serializable {
     private Double version;
     @JsonProperty("active")
     private Boolean active = true;
+
+    @JsonProperty("scanSubmittedComment")
+    private Boolean scanSubmittedComment = true;
+
     @JsonProperty("host")
     private String host;
     @JsonProperty("credential")
@@ -77,6 +81,16 @@ public class CxConfig implements Serializable {
     @JsonProperty("active")
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    @JsonProperty("scanSubmittedComment")
+    public Boolean getScanSubmittedComment() {
+        return scanSubmittedComment;
+    }
+
+    @JsonProperty("scanSubmittedComment")
+    public void setScanSubmittedComment(Boolean scanSubmittedComment) {
+        this.scanSubmittedComment = scanSubmittedComment;
     }
 
     @JsonProperty("cxHost")
