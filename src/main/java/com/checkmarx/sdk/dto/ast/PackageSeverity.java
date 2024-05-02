@@ -4,5 +4,6 @@ public enum PackageSeverity {
     NONE,
     LOW,
     MEDIUM,
-    HIGH
+    HIGH,
+    CRITICAL
 }
