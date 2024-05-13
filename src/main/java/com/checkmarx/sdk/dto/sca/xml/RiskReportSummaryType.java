@@ -26,6 +26,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="ProjectId" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="ProjectName" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="ProjectCreatedOn" type="{http://www.w3.org/2001/XMLSchema}dateTime"/>
+ *         &lt;element name="CriticalVulnerabilityCount" type="{http://www.w3.org/2001/XMLSchema}byte"/>
  *         &lt;element name="HighVulnerabilityCount" type="{http://www.w3.org/2001/XMLSchema}byte"/>
  *         &lt;element name="MediumVulnerabilityCount" type="{http://www.w3.org/2001/XMLSchema}byte"/>
  *         &lt;element name="LowVulnerabilityCount" type="{http://www.w3.org/2001/XMLSchema}byte"/>
@@ -61,6 +62,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "projectId",
     "projectName",
     "projectCreatedOn",
+    "CriticalVulnerabilityCount",
     "highVulnerabilityCount",
     "mediumVulnerabilityCount",
     "lowVulnerabilityCount",
@@ -70,7 +72,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "riskScore",
     "totalOutdatedPackages",
     "vulnerablePackages",
-    "totalPackagesWithLegalRisk",
+    "totalPackagesWithLegalRisk", "criticalVulnerablePackages",
     "highVulnerablePackages",
     "mediumVulnerablePackages",
     "lowVulnerablePackages",
@@ -94,6 +96,8 @@ public class RiskReportSummaryType {
     @XmlElement(name = "ProjectCreatedOn", required = true)
     @XmlSchemaType(name = "dateTime")
     protected XMLGregorianCalendar projectCreatedOn;
+    @XmlElement(name = "CriticalVulnerabilityCount")
+    protected byte criticalVulnerabilityCount;
     @XmlElement(name = "HighVulnerabilityCount")
     protected byte highVulnerabilityCount;
     @XmlElement(name = "MediumVulnerabilityCount")
@@ -408,6 +412,14 @@ public class RiskReportSummaryType {
      */
     public byte getHighVulnerablePackages() {
         return highVulnerablePackages;
+    }
+
+    public byte getCriticalVulnerabilityCount() {
+        return criticalVulnerabilityCount;
+    }
+
+    public void setCriticalVulnerabilityCount(byte criticalVulnerabilityCount) {
+        this.criticalVulnerabilityCount = criticalVulnerabilityCount;
     }
 
     /**

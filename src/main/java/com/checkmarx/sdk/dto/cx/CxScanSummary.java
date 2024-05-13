@@ -2,6 +2,8 @@ package com.checkmarx.sdk.dto.cx;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+
+import com.checkmarx.sdk.config.CxProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -16,6 +18,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 })
 public class CxScanSummary {
 
+    @JsonProperty("criticalSeverity")
+    private Integer criticalSeverity;
     @JsonProperty("highSeverity")
     private Integer highSeverity;
     @JsonProperty("mediumSeverity")
@@ -30,6 +34,7 @@ public class CxScanSummary {
     public CxScanSummary() { }
 
     public CxScanSummary(Map<String, Integer> summary) {
+        criticalSeverity = summary.getOrDefault("Critical", 0);
         highSeverity = summary.getOrDefault("High", 0);
         mediumSeverity = summary.getOrDefault("Medium", 0);
         lowSeverity = summary.getOrDefault("Low", 0);
@@ -37,6 +42,15 @@ public class CxScanSummary {
         LocalDateTime now = LocalDateTime.now();
         statisticsCalculationDate = now.toString();
     }
+
+    public Integer getCriticalSeverity() {
+        return criticalSeverity;
+    }
+
+    public void setCriticalSeverity(Integer criticalSeverity) {
+        this.criticalSeverity = criticalSeverity;
+    }
+
     public Integer getHighSeverity() {
         return highSeverity;
     }
@@ -79,6 +93,6 @@ public class CxScanSummary {
 
     @Override
     public String toString() {
-        return String.format("high: %s, medium: %s, low: %s, info: %s", highSeverity, mediumSeverity, lowSeverity, infoSeverity);
+            return String.format("critical:%s, high: %s, medium: %s, low: %s, info: %s",criticalSeverity, highSeverity, mediumSeverity, lowSeverity, infoSeverity);
     }
 }

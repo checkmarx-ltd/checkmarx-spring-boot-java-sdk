@@ -118,6 +118,7 @@ public class CxService implements CxClient {
     private static final String ROLE_LDAP_MAPPINGS = "/auth/LDAPRoleMappings?ldapServerId={id}";
     private static final String ROLE_LDAP_MAPPINGS_DELETE = "/auth/LDAPRoleMappings/{id}";
     private static final String LDAP_SERVER = "/auth/LDAPServers";
+    private static final String VERSION  = "/system/version";
     private static final String ODATA_SCAN_SIMILARITY_IDS = "/cxwebinterface/odata/v1/Scans({id})?$select=Id&$expand=Results($select=SimilarityId)";
     private static final String PROJECTS = "/projects";
     private static final String PROJECT = "/projects/{id}";
@@ -624,7 +625,6 @@ public class CxService implements CxClient {
             } else {
                 scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
             }
-            log.debug("scanSummary: {}", scanSummary);
             cxScanBuilder.scanSummary(scanSummary);
             ScanResults results = cxScanBuilder.build();
             //Add the summary map (severity, count)
@@ -2222,6 +2222,7 @@ public class CxService implements CxClient {
     public Integer createScan(CxScanParams params, String comment) throws CheckmarxException{
         log.info("Creating scan...");
         log.debug("Creating scan with params: {} and comment: \"{}\"", params, comment);
+        getAndUpdateSASTVersion();
         validateScanParams(params);
         String teamId = determineTeamId(params);
         Integer projectId = determineProjectId(params, teamId);
@@ -3161,6 +3162,16 @@ public class CxService implements CxClient {
             }
             return UNKNOWN_INT;
         }
+    }
+
+    public void getAndUpdateSASTVersion(){
+        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(VERSION), HttpMethod.GET, requestEntity, String.class);
+        JSONObject obj = new JSONObject(Objects.requireNonNull(response.getBody()));
+        String versionName = obj.getString("version");
+        Double version=Double.parseDouble(versionName.split("\\.",3)[0]+"."+ versionName.split("\\.",3)[1]);
+        log.info("using SAST version :{}",version);
+        cxProperties.setVersion(version);
     }
 
     private void validateScanParams(CxScanParams params) throws CheckmarxException {
