@@ -23,7 +23,7 @@ public class Package implements Serializable {
      * The current values are [Filename, Sha1]. Not considered an enum in SCA API.
      */
     private String matchType;
-
+    private int criticalVulnerabilityCount;
     private int highVulnerabilityCount;
     private int mediumVulnerabilityCount;
     private int lowVulnerabilityCount;

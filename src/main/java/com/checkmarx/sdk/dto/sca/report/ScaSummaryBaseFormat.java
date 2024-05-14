@@ -9,6 +9,7 @@ public class ScaSummaryBaseFormat implements Serializable {
     private String createdOn;
     private double riskScore;
     private int totalOutdatedPackages;
+    private int criticalVulnerabilityCount = 0;
     private int highVulnerabilityCount = 0;
     private int mediumVulnerabilityCount = 0;
     private int lowVulnerabilityCount = 0;
@@ -16,19 +17,20 @@ public class ScaSummaryBaseFormat implements Serializable {
     public ScaSummaryBaseFormat() {
     }
 
-    public ScaSummaryBaseFormat(int totalPackages, int directPackages, String createdOn, double riskScore, int totalOutdatedPackages, int highVulnerabilityCount, int mediumVulnerabilityCount, int lowVulnerabilityCount) {
+    public ScaSummaryBaseFormat(int totalPackages, int directPackages, String createdOn, double riskScore, int totalOutdatedPackages, int criticalVulnerabilityCount,int highVulnerabilityCount, int mediumVulnerabilityCount, int lowVulnerabilityCount) {
         this.totalPackages = totalPackages;
         this.directPackages = directPackages;
         this.createdOn = createdOn;
         this.riskScore = riskScore;
         this.totalOutdatedPackages = totalOutdatedPackages;
+        this.criticalVulnerabilityCount = criticalVulnerabilityCount;
         this.highVulnerabilityCount = highVulnerabilityCount;
         this.mediumVulnerabilityCount = mediumVulnerabilityCount;
         this.lowVulnerabilityCount = lowVulnerabilityCount;
     }
 
     public int getTotalOkLibraries() {
-        int totalOk = (totalPackages - (highVulnerabilityCount + mediumVulnerabilityCount + lowVulnerabilityCount));
+        int totalOk = (totalPackages - (criticalVulnerabilityCount+highVulnerabilityCount + mediumVulnerabilityCount + lowVulnerabilityCount));
         totalOk = Math.max(totalOk, 0);
         return totalOk;
     }
@@ -95,5 +97,12 @@ public class ScaSummaryBaseFormat implements Serializable {
 
     public void setLowVulnerabilityCount(int lowVulnerabilityCount) {
         this.lowVulnerabilityCount = lowVulnerabilityCount;
+    }
+    public int getCriticalVulnerabilityCount() {
+        return criticalVulnerabilityCount;
+    }
+
+    public void setCriticalVulnerabilityCount(int criticalVulnerabilityCount) {
+        this.criticalVulnerabilityCount = criticalVulnerabilityCount;
     }
 }
