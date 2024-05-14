@@ -4,7 +4,6 @@ import com.checkmarx.sdk.config.Constants;
 import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
 import com.checkmarx.sdk.dto.cx.preandpostaction.CustomTaskByName;
-import com.checkmarx.sdk.dto.cx.preandpostaction.ListCustomeObj;
 import com.checkmarx.sdk.dto.cx.preandpostaction.ScanSettings;
 import com.checkmarx.sdk.dto.cx.projectdetails.ProjectFieldDetails;
 import com.checkmarx.sdk.dto.sast.Filter;
@@ -55,9 +54,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -3164,14 +3161,22 @@ public class CxService implements CxClient {
         }
     }
 
-    public void getAndUpdateSASTVersion(){
-        HttpEntity requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
-        ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(VERSION), HttpMethod.GET, requestEntity, String.class);
-        JSONObject obj = new JSONObject(Objects.requireNonNull(response.getBody()));
-        String versionName = obj.getString("version");
-        Double version=Double.parseDouble(versionName.split("\\.",3)[0]+"."+ versionName.split("\\.",3)[1]);
-        log.info("using SAST version :{}",version);
-        cxProperties.setVersion(version);
+    public void getAndUpdateSASTVersion() {
+        try{
+            HttpEntity<Object> requestEntity = new HttpEntity<>(authClient.createAuthHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(cxProperties.getUrl().concat(VERSION), HttpMethod.GET, requestEntity, String.class);
+            JSONObject obj = new JSONObject(Objects.requireNonNull(response.getBody()));
+            String versionName = obj.getString("version");
+            Double version=Double.parseDouble(versionName.split("\\.",3)[0]+"."+ versionName.split("\\.",3)[1]);
+            log.info("using SAST version :{}",version);
+            cxProperties.setVersion(version);
+        } catch (HttpStatusCodeException e) {
+            log.error("Error occurred while SAST version, http error {}", e.getStatusCode());
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error occurred while processing JSON");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
     }
 
     private void validateScanParams(CxScanParams params) throws CheckmarxException {
