@@ -61,6 +61,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "version",
     "licenses",
     "matchType",
+    "CriticalVulnerabilityCount",
     "highVulnerabilityCount",
     "mediumVulnerabilityCount",
     "lowVulnerabilityCount",
@@ -93,6 +94,8 @@ public class PackageType {
     protected LicensesType licenses;
     @XmlElement(name = "MatchType", required = true)
     protected String matchType;
+    @XmlElement(name = "CriticalVulnerabilityCount")
+    protected byte criticalVulnerabilityCount;
     @XmlElement(name = "HighVulnerabilityCount")
     protected byte highVulnerabilityCount;
     @XmlElement(name = "MediumVulnerabilityCount")
@@ -251,6 +254,17 @@ public class PackageType {
      */
     public void setMatchType(String value) {
         this.matchType = value;
+    }
+    /**
+     * Gets the value of the criticalVulnerabilityCount property.
+     *
+     */
+    public byte getCriticalVulnerabilityCount() {
+        return criticalVulnerabilityCount;
+    }
+
+    public void setCriticalVulnerabilityCount(byte criticalVulnerabilityCount) {
+        this.criticalVulnerabilityCount = criticalVulnerabilityCount;
     }
 
     /**

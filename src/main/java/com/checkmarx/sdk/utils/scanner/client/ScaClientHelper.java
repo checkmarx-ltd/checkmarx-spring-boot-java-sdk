@@ -1131,6 +1131,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             packge.setName(packageTypeList.get(count).getName());
             packge.setVersion(packageTypeList.get(count).getVersion());
             packge.setMatchType(packageTypeList.get(count).getMatchType());
+            packge.setCriticalVulnerabilityCount(packageTypeList.get(count).getCriticalVulnerabilityCount());
             packge.setHighVulnerabilityCount(packageTypeList.get(count).getHighVulnerabilityCount());
             packge.setLowVulnerabilityCount(packageTypeList.get(count).getLowVulnerabilityCount());
             packge.setMediumVulnerabilityCount(packageTypeList.get(count).getMediumVulnerabilityCount());
@@ -1253,6 +1254,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         scaSummaryBaseFormat.setTotalPackages(riskReportSummaryType.getTotalPackages());
         scaSummaryBaseFormat.setTotalOutdatedPackages(riskReportSummaryType.getTotalOutdatedPackages());
         scaSummaryBaseFormat.setCreatedOn(riskReportSummaryType.getCreatedOn().toString());
+        scaSummaryBaseFormat.setCriticalVulnerabilityCount(riskReportSummaryType.getCriticalVulnerabilityCount());
         scaSummaryBaseFormat.setHighVulnerabilityCount(riskReportSummaryType.getHighVulnerabilityCount());
         scaSummaryBaseFormat.setLowVulnerabilityCount(riskReportSummaryType.getLowVulnerabilityCount());
         scaSummaryBaseFormat.setMediumVulnerabilityCount(riskReportSummaryType.getMediumVulnerabilityCount());
@@ -1562,6 +1564,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
     protected Map<Filter.Severity, Integer> getFindingCountMap(ScaSummaryBaseFormat summary) {
         EnumMap<Filter.Severity, Integer> result = new EnumMap<>(Filter.Severity.class);
+        result.put(Filter.Severity.CRITICAL,summary.getCriticalVulnerabilityCount());
         result.put(Filter.Severity.HIGH, summary.getHighVulnerabilityCount());
         result.put(Filter.Severity.MEDIUM, summary.getMediumVulnerabilityCount());
         result.put(Filter.Severity.LOW, summary.getLowVulnerabilityCount());
@@ -1725,6 +1728,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             log.info("----CxSCA risk report summary----");
             log.info("Created on: {}", summary.getCreatedOn());
             log.info("Direct packages: {}", summary.getDirectPackages());
+            log.info("Critical vulnerabilities: {}",summary.getCriticalVulnerabilityCount());
             log.info("High vulnerabilities: {}", summary.getHighVulnerabilityCount());
             log.info("Medium vulnerabilities: {}", summary.getMediumVulnerabilityCount());
             log.info("Low vulnerabilities: {}", summary.getLowVulnerabilityCount());
