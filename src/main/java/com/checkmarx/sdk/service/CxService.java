@@ -284,13 +284,20 @@ public class CxService implements CxClient {
 
         log.info("Finding last Scan Id for project Id {}", projectId);
         try {
-            UriComponents uriComponents = UriComponentsBuilder
+
+            UriComponents uriComponents = cxProperties.getConsiderScanningStatus() ? (UriComponentsBuilder
                     .fromHttpUrl(cxProperties.getUrl())
                     .path(SCAN)
                     .queryParam("projectId", projectId.toString())
-                    .queryParam("scanStatus", SCAN_STATUS_FINISHED.toString())
-                    .queryParam("last",cxProperties.getIncrementalNumScans().toString())
-                    .build();
+                    .queryParam("last", cxProperties.getIncrementalNumScans().toString())
+                    .build()) : (UriComponentsBuilder
+                    .fromHttpUrl(cxProperties.getUrl())
+                    .path(SCAN)
+                    .queryParam("projectId", projectId.toString())
+                    .queryParam("scanStatus",
+                            SCAN_STATUS_FINISHED.toString())
+                    .queryParam("last", cxProperties.getIncrementalNumScans().toString())
+                    .build());
 
             ResponseEntity<String> response = restTemplate.exchange(uriComponents.toUri(), HttpMethod.GET, requestEntity, String.class);
 
@@ -304,7 +311,8 @@ public class CxService implements CxClient {
                     //example: "finishedOn": "2018-06-18T01:09:12.707", Grab only first 19 digits due to inconsistency of checkmarx results
                     LocalDateTime d;
                     try {
-                        String finishedOn = dateAndTime.getString("finishedOn");
+                        String finishedOn =
+                                cxProperties.getConsiderScanningStatus() ? dateAndTime.getString("startedOn") : dateAndTime.getString("finishedOn");
                         finishedOn = finishedOn.substring(0, 19);
                         log.debug("finishedOn: {}", finishedOn);
                         d = LocalDateTime.parse(finishedOn, formatter);
