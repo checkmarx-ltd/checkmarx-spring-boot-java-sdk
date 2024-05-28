@@ -100,6 +100,9 @@ public class CxProperties extends CxPropertiesBase{
     @Getter @Setter
     private Boolean overrideProjectSetting = true;
 
+    @Getter @Setter
+    private Boolean considerScanningStatus = false;
+
 
     /**
      * Maps finding state ID (as returned in CxSAST report) to state name (as specified in filter configuration).
