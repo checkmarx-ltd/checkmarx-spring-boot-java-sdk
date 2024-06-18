@@ -267,6 +267,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         SCAResults scaResults;
         try {
             waitForScanToFinish(scanId);
+            getScanResultsPDF();
             scaResults = tryGetScanResultsPDF(pdfSCAprop).orElseThrow(() -> new ScannerRuntimeException("Unable to get scan results: scan not found."));
         } catch (ScannerRuntimeException e) {
             log.error(e.getMessage());
@@ -1465,20 +1466,6 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             List<String> scanViolatedPolicies = getScanViolatedPolicies(policyEvaluationsByReportId);
             result.setPolicyViolated(!scanViolatedPolicies.isEmpty());
             result.setViolatedPolicies(scanViolatedPolicies);
-
-            if(scaProperties.isPreserveXml()){
-                String path = String.format(REPORT_IN_XML_WITH_SCANID, URLEncoder.encode(scanId, ENCODING));
-                String xml = httpClient.getRequest(path,
-                        ContentType.CONTENT_TYPE_APPLICATION_JSON,
-                        String.class,
-                        HttpStatus.SC_OK,
-                        "CxSCA findings",
-                        false);
-                xml = xml.trim().replaceFirst("^([\\W]+)<", "<");
-                String xml2 = ScanUtils.cleanStringUTF8_2(xml);
-                result.setOutput(xml2);
-            }
-
             log.info("Retrieved SCA results successfully.");
         } catch (IOException e) {
             throw new ScannerRuntimeException("Error retrieving CxSCA scan results.", e);

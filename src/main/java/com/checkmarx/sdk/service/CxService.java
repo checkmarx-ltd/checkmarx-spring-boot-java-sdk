@@ -467,7 +467,9 @@ public class CxService implements CxClient {
         log.info("Retrieving report contents of report Id {} in PDF format", reportId);
             try {
                     ResponseEntity<byte[]>  scanReport = restTemplate.exchange(cxProperties.getUrl().concat(REPORT_DOWNLOAD), HttpMethod.GET, httpEntity, byte[].class, reportId.getPdfScanID());
-                    
+            CxScanSummary summary = getScanSummaryByScanId(reportId.getSastScanId());
+            log.info("Scan Summary : {} ",summary.toString());
+
             return scanReport.getBody();
         } catch (HttpStatusCodeException e) {
             log.error("HTTP Status Code of {} while creating xml report for xml Id {}", e.getStatusCode(), reportId);
@@ -475,7 +477,11 @@ public class CxService implements CxClient {
         } catch (JSONException e) {
             log.error("Error processing JSON Response");
             log.error(ExceptionUtils.getStackTrace(e));
-        }
+        } catch (CheckmarxException e) {
+                log.error("Error processing Result Summary");
+                log.error(ExceptionUtils.getStackTrace(e));
+
+            }
         return null;
     }
 
@@ -544,6 +550,7 @@ public class CxService implements CxClient {
         }
         ScanResults sr=new ScanResults();
         sr.setPdfScanID(reportId);
+        sr.setSastScanId(scanId);
         return sr;
     }
 
