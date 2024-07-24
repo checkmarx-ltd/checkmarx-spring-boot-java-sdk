@@ -43,7 +43,9 @@ public class CxProperties extends CxPropertiesBase{
     @Setter
     private int queuecapacityarg;
 
-
+    @Getter
+    @Setter
+    private boolean trustcerts = false;
     
     private Integer httpConnectionTimeout = 30000;
     private Integer httpReadTimeout = 120000;
