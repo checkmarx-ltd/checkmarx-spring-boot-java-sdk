@@ -93,6 +93,11 @@ public class CxScanSummary {
 
     @Override
     public String toString() {
-            return String.format("critical:%s, high: %s, medium: %s, low: %s, info: %s",criticalSeverity, highSeverity, mediumSeverity, lowSeverity, infoSeverity);
+        if(criticalSeverity!=null){
+            return String.format("\ncritical:%s, \nhigh: %s, \nmedium: %s, \nlow: %s, \ninfo: %s",criticalSeverity, highSeverity, mediumSeverity, lowSeverity, infoSeverity);
+        }else{
+            return String.format("\nhigh: %s, \nmedium: %s, \nlow: %s, \ninfo: %s", highSeverity, mediumSeverity, lowSeverity, infoSeverity);
+
+        }
     }
 }
