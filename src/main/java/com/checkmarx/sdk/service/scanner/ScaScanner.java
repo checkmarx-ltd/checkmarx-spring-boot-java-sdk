@@ -17,11 +17,14 @@ import com.checkmarx.sdk.utils.scanner.client.ScaClientHelper;
 import com.checkmarx.sdk.dto.sca.ScaConfig;
 import com.checkmarx.sdk.dto.sca.report.Finding;
 import com.checkmarx.sdk.config.RestClientConfig;
+import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -76,14 +79,17 @@ public class ScaScanner extends AbstractScanner {
             List<String> packageIds = new ArrayList<>();
             combinedResults.getScaResults()
                     .getPackages().forEach(packages -> {
-                        if (packages.isIsDirectDependency() || !(packages.isIsDevelopmentDependency() || packages.isIsTestDependency())) {
+//                        if (packages.isIsDirectDependency() && !(packages.isIsDevelopmentDependency() || packages.isIsTestDependency())) {
+//                            packageIds.add(packages.getId());
+//                        }
+                        if (!packages.isIsDirectDependency() || (packages.isIsDevelopmentDependency() || packages.isIsTestDependency())) {
                             packageIds.add(packages.getId());
                         }
                     });
 
             combinedResults.getScaResults()
                     .getFindings().forEach(finding -> {
-                        if (passesFilter(finding, filterConfig) && packageIds.contains(finding.getPackageId())) {
+                        if (passesFilter(finding, filterConfig) && !packageIds.contains(finding.getPackageId())) {
                             findingsToRetain.add(finding);
                         }
                     });
@@ -95,8 +101,21 @@ public class ScaScanner extends AbstractScanner {
                         }
                     });
         }
+
+        Gson gson = new Gson();
+        String jsonString = gson.toJson(findingsToRetain);
+        log.info(jsonString);
+        // Write JSON string to file
+        try (FileWriter writer = new FileWriter("findingsToRetain.json")) {
+            writer.write(jsonString);
+            writer.flush();
+            System.out.println("JSON written to file successfully!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         combinedResults.getScaResults().setFindings(findingsToRetain);
-                
+
     }
 
     private static EngineFilterConfiguration extractFilterConfigFrom(ScanParams scanParams) {
@@ -123,10 +142,10 @@ public class ScaScanner extends AbstractScanner {
      */
     @Override
     protected AstScaResults toResults(ResultsBase scanResults) {
-        
+
         SCAResults scaResults = (SCAResults)scanResults;
         validateNotNull(scaResults);
-        
+
         AstScaResults results = new AstScaResults();
         results.setScaResults(scaResults);
         return results;
@@ -136,7 +155,7 @@ public class ScaScanner extends AbstractScanner {
     protected IScanClientHelper allocateClient(RestClientConfig restClientConfig) {
         return new ScaClientHelper(restClientConfig, log, scaProperties, cxProperties);
     }
-    
+
     public AstScaResults getLatestScanResults(ScanParams scanParams) {
         RestClientConfig config = getScanConfig(scanParams);
         try {
@@ -174,7 +193,7 @@ public class ScaScanner extends AbstractScanner {
 
         return restClientConfig;
     }
-    
+
     private ScaConfig getScaSpecificConfig(ScanParams scanParams) {
         ScaConfig scaConfig = new ScaConfig();
         com.checkmarx.sdk.config.ScaConfig sdkScaConfig = scanParams.getScaConfig();
@@ -266,7 +285,7 @@ public class ScaScanner extends AbstractScanner {
     }
 
     protected void setRemoteBranch(ScanParams scanParams, RemoteRepositoryInfo remoteRepoInfo) {
-       //branches are supported for SCA
+        //branches are supported for SCA
         remoteRepoInfo.setBranch(scanParams.getBranch());
     }
 }

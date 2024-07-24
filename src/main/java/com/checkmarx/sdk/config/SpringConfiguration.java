@@ -1,7 +1,8 @@
 package com.checkmarx.sdk.config;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,9 +12,14 @@ import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.ws.client.core.WebServiceTemplate;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
-
 @Configuration
 public class SpringConfiguration {
 
@@ -24,15 +30,50 @@ public class SpringConfiguration {
     }
 
     @Bean(name = "cxRestTemplate")
-    public RestTemplate getRestTemplate() {
-        RestTemplate restTemplate = new RestTemplateBuilder()
-                .setConnectTimeout(Duration.ofMillis(properties.getHttpConnectionTimeout()))
-                .setReadTimeout(Duration.ofMillis(properties.getHttpReadTimeout()))
-                .build();
+    public RestTemplate restTemplateByPassSSL(RestTemplateBuilder builder) throws NoSuchAlgorithmException, KeyManagementException {
 
-        restTemplate.getMessageConverters()
-                .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
-        return restTemplate;
+        if (!properties.isTrustcerts()) {
+            RestTemplate restTemplate = new RestTemplateBuilder()
+                    .setConnectTimeout(Duration.ofMillis(properties.getHttpConnectionTimeout()))
+                    .setReadTimeout(Duration.ofMillis(properties.getHttpReadTimeout()))
+                    .build();
+
+            restTemplate.getMessageConverters()
+                    .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+            return restTemplate;
+        } else {
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+
+                        public void checkClientTrusted(
+                                java.security.cert.X509Certificate[] certs, String authType) {
+                        }
+
+                        public void checkServerTrusted(
+                                java.security.cert.X509Certificate[] certs, String authType) {
+                        }
+                    }
+            };
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+
+            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext);
+
+            HttpClientConnectionManager connectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+                    .setSSLSocketFactory(socketFactory)
+                    .build();
+
+            org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpClient = org.apache.hc.client5.http.impl.classic.HttpClients.custom()
+                    .setConnectionManager(connectionManager)
+                    .evictExpiredConnections()
+                    .build();
+            HttpComponentsClientHttpRequestFactory customRequestFactory = new HttpComponentsClientHttpRequestFactory();
+            customRequestFactory.setHttpClient(httpClient);
+            return builder.requestFactory(() -> customRequestFactory).build();
+        }
     }
 
     @Bean
