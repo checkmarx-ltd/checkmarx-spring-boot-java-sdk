@@ -2,8 +2,8 @@
     <servers>
         <server>
             <id>ossrh</id>
-            <username>${env.SERVER_OSSRH_USERNAME}</username>
-            <password>${env.SERVER_OSSRH_PASSWORD}</password>
+            <username>33iQyoWS</username>
+            <password>Kr8MiTLIsmH5LlZsl23jpbBe31qvAZH7mdX9IuMy9F8a</password>
             <configuration>
                 <httpConfiguration>
                     <put>
@@ -11,7 +11,7 @@
                         <readTimeout>120000</readTimeout>
                     </put>
                 </httpConfiguration>
-                
+
             </configuration>
         </server>
     </servers>
