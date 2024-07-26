@@ -44,6 +44,7 @@ jobs:
             - v1-dependencies-
       - run: echo $GPG_ASC_BASE64NEW | base64 --decode | gpg --batch --no-tty --import --yes
       - run: chmod u+x mvnw
+      - run:  echo '#!/bin/bash' > format_env_var.sh
       - run:  echo 'input_var="$SERVER_OSSRH_PASSWORD"' >> format_env_var.sh
       - run:  echo 'input_var="$SERVER_OSSRH_USERNAME	"' >> format_env_var.sh
       - run: ./mvnw -s .circleci/maven.settings.xml clean deploy -DskipTests -X
