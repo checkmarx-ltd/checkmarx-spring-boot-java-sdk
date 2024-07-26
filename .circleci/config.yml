@@ -16,14 +16,14 @@ jobs:
             - v1-dependencies-
       - run:
           command: |
-            MY_VAR=SERVER_OSSRH_USERNAME
+            MY_VAR=$SERVER_OSSRH_USERNAME
             for ((i=0; i<${#MY_VAR}; i++)); do
               echo -n "${MY_VAR:$i:1} "
             done
             echo
       - run:
           command: |
-            MY_VAR=SERVER_OSSRH_PASSWORD
+            MY_VAR=$SERVER_OSSRH_PASSWORD
             for ((i=0; i<${#MY_VAR}; i++)); do
               echo -n "${MY_VAR:$i:1} "
             done
