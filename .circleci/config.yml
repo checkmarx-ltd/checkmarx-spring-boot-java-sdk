@@ -44,7 +44,7 @@ jobs:
             - v1-dependencies-
       - run: echo $GPG_ASC_BASE64NEW | base64 --decode | gpg --batch --no-tty --import --yes
       - run: chmod u+x mvnw
-      - run: ./mvnw -s .circleci/maven.settings.xml clean deploy -DskipTests
+      - run: ./mvnw -s .circleci/maven.settings.xml clean deploy -DskipTests -X
       - save_cache:
           paths:
             - ~/.m2
@@ -71,9 +71,6 @@ workflows:
     jobs:
       - build
       - deploy:
-          filters:
-            branches:
-              only: master
           requires:
             - build
       - publish-github-release:
