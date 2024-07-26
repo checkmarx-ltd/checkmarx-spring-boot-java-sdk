@@ -46,6 +46,13 @@ public class CxProperties extends CxPropertiesBase{
     @Getter
     @Setter
     private boolean trustcerts = false;
+
+    @Getter
+    @Setter
+    private String truststorepath;
+    @Getter
+    @Setter
+    private String truststorepassword;
     
     private Integer httpConnectionTimeout = 30000;
     private Integer httpReadTimeout = 120000;
@@ -76,6 +83,9 @@ public class CxProperties extends CxPropertiesBase{
     private Map<String, String> sshKeyList;
 
     private Boolean cxBranch = false;
+
+    @Getter @Setter
+    private Boolean customkeystore = false;
 
     /*
      * If set to true, group results by vulnerability, filename and
