@@ -1200,6 +1200,9 @@ public class CxService implements CxClient {
                 } else if (existingIssue.getVulnerabilityStatus() != null) {
                     String existingIssueDescription = existingIssue.getDescription();
                     String newIssueDescription = issue.getDescription();
+                    String existingSimilarityId = existingIssue.getSimilarityId();
+                    String newSimilarityId = issue.getSimilarityId();
+                    existingIssue.setSimilarityId(existingSimilarityId + ", " + newSimilarityId);
                     if (!existingIssueDescription.contains(newIssueDescription)) {
                         stringBuilder.append(existingIssueDescription).append("\r\n").append("\r\n").append(newIssueDescription);
                         cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(stringBuilder.toString());
