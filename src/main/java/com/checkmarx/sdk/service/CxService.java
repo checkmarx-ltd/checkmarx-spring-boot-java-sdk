@@ -1202,7 +1202,9 @@ public class CxService implements CxClient {
                     String newIssueDescription = issue.getDescription();
                     String existingSimilarityId = existingIssue.getSimilarityId();
                     String newSimilarityId = issue.getSimilarityId();
-                    existingIssue.setSimilarityId(existingSimilarityId + ", " + newSimilarityId);
+                    if((existingSimilarityId!=null) && (!existingSimilarityId.contains(newSimilarityId))){
+                        existingIssue.setSimilarityId(existingSimilarityId + ", " + newSimilarityId);
+                    }
                     if (!existingIssueDescription.contains(newIssueDescription)) {
                         stringBuilder.append(existingIssueDescription).append("\r\n").append("\r\n").append(newIssueDescription);
                         cxIssueList.get(cxIssueList.indexOf(issue)).setDescription(stringBuilder.toString());
