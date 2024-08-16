@@ -37,7 +37,7 @@ public class CxProperties extends CxPropertiesBase{
     @Getter
     @Setter
     @Builder.Default
-    private Boolean isBrnchedIncremental = false;
+    private Boolean isBranchedIncremental = false;
 
     @Getter
     @Setter
