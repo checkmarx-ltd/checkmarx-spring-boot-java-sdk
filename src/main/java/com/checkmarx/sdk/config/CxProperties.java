@@ -2,6 +2,7 @@ package com.checkmarx.sdk.config;
 
 import com.checkmarx.sdk.utils.ScanUtils;
 import com.google.common.collect.ImmutableMap;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -32,6 +33,11 @@ public class CxProperties extends CxPropertiesBase{
     private Integer incrementalNumScans = 5;
 
     private Boolean preserveXml = false;
+
+    @Getter
+    @Setter
+    @Builder.Default
+    private Boolean isFstScnOfBrnchBeIncremental = false;
 
     @Getter
     @Setter
