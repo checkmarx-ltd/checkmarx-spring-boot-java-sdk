@@ -2427,7 +2427,7 @@ public class CxService implements CxClient {
             else{
                 log.info("Scan will be incremental");
             }
-        }else if(params.isIncremental() && !projectExistedBeforeScan && cxProperties.getIsFstScnOfBrnchBeIncremental()) {
+        }else if(params.isIncremental() && !projectExistedBeforeScan && cxProperties.getIsBrnchedIncremental()) {
             log.info("Scan will be incremental");
             params.setIncremental(true);
         }

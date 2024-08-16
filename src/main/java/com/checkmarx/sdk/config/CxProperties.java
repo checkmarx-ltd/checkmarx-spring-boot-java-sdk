@@ -37,7 +37,7 @@ public class CxProperties extends CxPropertiesBase{
     @Getter
     @Setter
     @Builder.Default
-    private Boolean isFstScnOfBrnchBeIncremental = false;
+    private Boolean isBrnchedIncremental = false;
 
     @Getter
     @Setter
