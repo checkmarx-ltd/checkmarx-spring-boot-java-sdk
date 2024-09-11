@@ -9,6 +9,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -40,23 +42,39 @@ public class ZipUtils {
             File srcFile = new File(fileToZip);
             if (srcFile.isDirectory()) {
                 for (String fileName : Objects.requireNonNull(srcFile.list())) {
-                    addToZip("", String.format("%s/%s", fileToZip, fileName), zipFile, zipOut, excludeList);
+                    addToZip("", String.format("%s/%s", fileToZip, fileName), zipFile, zipOut, excludeList,fileToZip);
                 }
             } else {
-                addToZip("", fileToZip, zipFile, zipOut, excludeList);
+                addToZip("", fileToZip, zipFile, zipOut, excludeList,fileToZip);
             }
             zipOut.flush();
         }
         log.info("Successfully created {} ", zipFile);
     }
 
-    private static void addToZip(String path, String srcFile, String zipFile, ZipOutputStream zipOut, List<String> excludePatterns)
+    private static void addToZip(String path, String srcFile, String zipFile, ZipOutputStream zipOut, List<String> excludePatterns,String rootDir)
             throws IOException {
         File file = new File(srcFile);
         String filePath = "".equals(path) ? file.getName() : String.format("%s/%s", path, file.getName());
+        Path filePathObj = file.toPath();
+        if (Files.isSymbolicLink(filePathObj)) {
+            Path targetPath = Files.readSymbolicLink(filePathObj);
+            String targetPathStr = targetPath.toAbsolutePath().toString();
+
+            // Check if the symbolic link points within the directory being zipped
+            if (targetPathStr.startsWith(new File(rootDir).getAbsolutePath())) {
+                log.debug("#########Skipping symbolic link {} pointing to {}#########", filePath, targetPathStr);
+                return;
+            }
+
+            // Add the symbolic link entry to the zip
+            zipOut.putNextEntry(new ZipEntry(filePath));
+            zipOut.write(targetPathStr.getBytes());
+            zipOut.closeEntry();
+        }
         if (file.isDirectory()) {
             for (String fileName : Objects.requireNonNull(file.list())) {
-                addToZip(filePath, srcFile + "/" + fileName, zipFile, zipOut, excludePatterns);
+                addToZip(filePath, srcFile + "/" + fileName, zipFile, zipOut, excludePatterns,rootDir);
             }
         } else {
             String tmpPath = FileSystems.getDefault().getPath(srcFile).toAbsolutePath().toString();
