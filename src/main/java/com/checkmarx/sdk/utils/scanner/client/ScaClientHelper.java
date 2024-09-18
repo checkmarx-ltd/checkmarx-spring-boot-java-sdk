@@ -24,7 +24,6 @@ import com.checkmarx.sdk.utils.scanner.client.httpClient.HttpClientHelper;
 import com.checkmarx.sdk.utils.zip.CxZipUtils;
 import com.checkmarx.sdk.utils.zip.NewCxZipFile;
 import com.checkmarx.sdk.utils.zip.Zipper;
-import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -44,7 +43,6 @@ import org.apache.http.entity.StringEntity;
 import org.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
@@ -85,6 +83,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final String WEB_REPORT = "/#/projects/%s/reports/%s";
 
     private static final String SBOM ="/export/requests?hideDevAndTestDependencies=%s&showOnlyEffectiveLicenses=%s";
+    private static final String EXPORT_ID_URL ="/export/requests";
 
     private static final String GET_SBOM_REPORT = "/export/requests?exportId=%s";
     private static final String RESOLVING_CONFIGURATION_API = "/settings/projects/%s/resolving-configuration";
@@ -884,10 +883,14 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
     private Optional<SCAResults> tryGetScanResultsPDF(PDFPropertiesSCA pdfSCAprop) {
         SCAResults result = null;
-        String SCA_GET_REPORT = "/risk-management/risk-reports/{scan_id}/export?format={file_type}";
+        //String SCA_GET_REPORT = "/risk-management/risk-reports/{scan_id}/export?format={file_type}";
+        String SCA_GET_REPORT = "/export/requests/{export_id}/download";
 
         try {
-            byte[] pdfContents=httpClient.getRequest(SCA_GET_REPORT.replace("{scan_id}", scanId).replace("{file_type}", "Pdf"),
+            String Export_ID= extractExportID(scanId);
+            ScanWaiter waiter = new ScanWaiter(httpClient, config, getScannerDisplayName(), log);
+            waiter.waitForSBOMToFinish(Export_ID);
+            byte[] pdfContents=httpClient.getRequest(SCA_GET_REPORT.replace("{export_id}", Export_ID),
                     "application/pdf", byte[].class, 200, " scan report: " + scanId, false);
             FileUtils.writeByteArrayToFile(new File(pdfSCAprop.getDataFolder(),"SCA_"+pdfSCAprop.getFileNameFormat()),pdfContents);
 
@@ -1696,6 +1699,30 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         return response;
     }
 
+
+    private String extractExportID(String scanId)throws IOException
+    {
+        log.debug("Getting export ID For PDF Report");
+        ScaPDFExport report = new ScaPDFExport();
+        report.setFileFormat("ScanReportPdf");
+        report.setScanId(scanId);
+        String path = String.format(EXPORT_ID_URL);
+        StringEntity entity = HttpClientHelper.convertToStringEntity(report);
+
+        String response= httpClient.postRequest(path,
+                ContentType.CONTENT_TYPE_APPLICATION_JSON,
+                entity,
+                String.class,
+                HttpStatus.SC_ACCEPTED,
+                "Failed to get export ID.");
+
+        JSONObject jsonObject = new JSONObject(response);
+        String exportId = (String) jsonObject.get("exportId");
+        log.debug("PDF exportID : {}",exportId);
+
+        return exportId;
+    }
+
     private String getSbomFileUrl(String exportId) throws IOException {
         ScanWaiter waiter = new ScanWaiter(httpClient, config, getScannerDisplayName(), log);
         waiter.waitForSBOMToFinish(exportId);
@@ -1710,6 +1737,10 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
 
         return response.getFileUrl();
     }
+
+
+
+
     private void printSummary(ScaSummaryBaseFormat summary, String scanId) {
         if (log.isInfoEnabled()) {
             log.info("----CxSCA risk report summary----");
