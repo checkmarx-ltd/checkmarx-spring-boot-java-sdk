@@ -457,7 +457,7 @@ public class CxHttpClient implements Closeable {
 
     private <T> T request(HttpRequestBase httpMethod, String contentType, HttpEntity entity, Class<T> responseType, int expectStatus, String failedMsg, boolean isCollection, boolean retry) throws IOException {
         if (contentType != null) {
-            httpMethod.addHeader("Content-type", contentType);
+            httpMethod.setHeader("Content-type", contentType);
         }
         if (entity != null && httpMethod instanceof HttpEntityEnclosingRequestBase) { //Entity for Post methods
             ((HttpEntityEnclosingRequestBase) httpMethod).setEntity(entity);
@@ -466,13 +466,13 @@ public class CxHttpClient implements Closeable {
         int statusCode = 0;
 
         try {
-            httpMethod.addHeader(TEAM_PATH, this.teamPath);
+            httpMethod.setHeader(TEAM_PATH, this.teamPath);
             if (token != null) {
-                httpMethod.addHeader(HttpHeaders.AUTHORIZATION, token.getToken_type() + " " + token.getAccess_token());
+                httpMethod.setHeader(HttpHeaders.AUTHORIZATION, token.getToken_type() + " " + token.getAccess_token());
             }
 
             for (Map.Entry<String, String> entry : customHeaders.entrySet()) {
-                httpMethod.addHeader(entry.getKey(), entry.getValue());
+                httpMethod.setHeader(entry.getKey(), entry.getValue());
             }
 
             response = apacheClient.execute(httpMethod);
