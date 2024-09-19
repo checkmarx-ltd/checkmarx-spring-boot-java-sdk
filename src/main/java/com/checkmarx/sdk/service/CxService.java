@@ -2765,10 +2765,9 @@ public class CxService implements CxClient {
      *
      * @param scanId
      * @return
-     * @throws CheckmarxException
      */
     @Override
-    public void cancelScan(Integer scanId) throws CheckmarxException {
+    public void cancelScan(Integer scanId) {
         log.info("Canceling scan with id {}", scanId);
         try {
             JSONObject scanRequest = new JSONObject();
@@ -3280,6 +3279,10 @@ public class CxService implements CxClient {
                     }
                 }
                 if (timer >= (cxProperties.getScanTimeout() * 60000)) {
+                    if(cxProperties.getCancelInpregressScan()){
+                        cancelScan(scanId);
+                    }
+
                     log.error("Scan timeout exceeded.  {} minutes", cxProperties.getScanTimeout());
                     throw new CheckmarxException("Timeout exceeded during scan");
                 }
@@ -3312,4 +3315,10 @@ public class CxService implements CxClient {
         // TODO Auto-generated method stub
 
     }
+
+
+
+
+
+
 }
