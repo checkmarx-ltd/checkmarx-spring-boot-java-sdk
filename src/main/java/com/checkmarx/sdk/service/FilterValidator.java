@@ -1,5 +1,7 @@
 package com.checkmarx.sdk.service;
 
+import com.checkmarx.sdk.dto.ScanResults;
+import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.filtering.EngineFilterConfiguration;
 import com.checkmarx.sdk.dto.filtering.FilterInput;
@@ -61,6 +63,45 @@ public class FilterValidator {
             result = passesSimpleFilter(finding, filterConfiguration);
         }
         
+        return result;
+    }
+
+    public boolean passesExcludeCategory(ScanResults.XIssue issue, FilterConfiguration filterConfiguration){
+        boolean result = true;
+        boolean hasSimpleFilters = hasSimpleFilters(filterConfiguration.getSastFilters());
+        if(hasSimpleFilters){
+            List<Filter> filters = filterConfiguration.getSastFilters().getSimpleFilters();
+            Map<Filter.Type, List<String>> valuesByType = groupFilterValuesByFilterType(filters);
+            if(valuesByType.containsKey(Filter.Type.EXCLUDETYPE) && !valuesByType.get(Filter.Type.EXCLUDETYPE).isEmpty()){
+                result = !fieldMatches(issue.getVulnerability(),valuesByType.get(Filter.Type.EXCLUDETYPE));
+            }
+        }
+        return result;
+    }
+
+    public boolean passesExcludeCwe(ScanResults.XIssue issue, FilterConfiguration filterConfiguration){
+        boolean result = true;
+        boolean hasSimpleFilters = hasSimpleFilters(filterConfiguration.getSastFilters());
+        if(hasSimpleFilters){
+            List<Filter> filters = filterConfiguration.getSastFilters().getSimpleFilters();
+            Map<Filter.Type, List<String>> valuesByType = groupFilterValuesByFilterType(filters);
+            if(valuesByType.containsKey(Filter.Type.EXCLUDECWE) && !valuesByType.get(Filter.Type.EXCLUDECWE).isEmpty()){
+                result = !fieldMatches(issue.getVulnerability(),valuesByType.get(Filter.Type.EXCLUDECWE));
+            }
+        }
+        return result;
+    }
+
+    public boolean passesExcludeState(ScanResults.XIssue issue, FilterConfiguration filterConfiguration){
+        boolean result = true;
+        boolean hasSimpleFilters = hasSimpleFilters(filterConfiguration.getSastFilters());
+        if(hasSimpleFilters){
+            List<Filter> filters = filterConfiguration.getSastFilters().getSimpleFilters();
+            Map<Filter.Type, List<String>> valuesByType = groupFilterValuesByFilterType(filters);
+            if(valuesByType.containsKey(Filter.Type.EXCLUDESTATE) && !valuesByType.get(Filter.Type.EXCLUDESTATE).isEmpty()){
+                result = !fieldMatches(issue.getVulnerability(),valuesByType.get(Filter.Type.EXCLUDESTATE));
+            }
+        }
         return result;
     }
 
