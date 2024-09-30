@@ -60,6 +60,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -627,6 +628,12 @@ public class CxService implements CxClient {
             cxScanBuilder.setReportCreationTime(cxResults.getReportCreationTime());
 
             Map<String, Integer> summary = getIssues(filter, session, xIssueList,unFilteredIssueList, cxResults);
+            xIssueList=xIssueList
+                    .stream()
+                    .filter(x-> filterValidator.passesExcludeCategory(x,filter))
+                    .filter(x-> filterValidator.passesExcludeCwe(x,filter))
+                    .filter(x-> filterValidator.passesExcludeState(x,filter))
+                    .collect(Collectors.toList());
             cxScanBuilder.xIssues(xIssueList);
             cxScanBuilder.unFilteredIssues(unFilteredIssueList);
             cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
@@ -2765,10 +2772,9 @@ public class CxService implements CxClient {
      *
      * @param scanId
      * @return
-     * @throws CheckmarxException
      */
     @Override
-    public void cancelScan(Integer scanId) throws CheckmarxException {
+    public void cancelScan(Integer scanId) {
         log.info("Canceling scan with id {}", scanId);
         try {
             JSONObject scanRequest = new JSONObject();
@@ -3280,6 +3286,10 @@ public class CxService implements CxClient {
                     }
                 }
                 if (timer >= (cxProperties.getScanTimeout() * 60000)) {
+                    if(cxProperties.getCancelInpregressScan()){
+                        cancelScan(scanId);
+                    }
+
                     log.error("Scan timeout exceeded.  {} minutes", cxProperties.getScanTimeout());
                     throw new CheckmarxException("Timeout exceeded during scan");
                 }
@@ -3312,4 +3322,10 @@ public class CxService implements CxClient {
         // TODO Auto-generated method stub
 
     }
+
+
+
+
+
+
 }

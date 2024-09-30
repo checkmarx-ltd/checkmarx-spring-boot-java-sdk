@@ -28,7 +28,10 @@ public class Filter {
         STATE("STATE"),
         SCORE("SCORE"),
 
-        POLICYVIOLATION("POLICYVIOLATION");
+        POLICYVIOLATION("POLICYVIOLATION"),
+        EXCLUDETYPE("EXCLUDETYPE"),
+        EXCLUDECWE("EXCLUDECWE"),
+        EXCLUDESTATE("EXCLUDESTATE");
 
         private final String value;
     }
