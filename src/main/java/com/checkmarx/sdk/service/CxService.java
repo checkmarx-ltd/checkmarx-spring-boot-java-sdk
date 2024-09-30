@@ -60,6 +60,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -627,6 +628,12 @@ public class CxService implements CxClient {
             cxScanBuilder.setReportCreationTime(cxResults.getReportCreationTime());
 
             Map<String, Integer> summary = getIssues(filter, session, xIssueList,unFilteredIssueList, cxResults);
+            xIssueList=xIssueList
+                    .stream()
+                    .filter(x-> filterValidator.passesExcludeCategory(x,filter))
+                    .filter(x-> filterValidator.passesExcludeCwe(x,filter))
+                    .filter(x-> filterValidator.passesExcludeState(x,filter))
+                    .collect(Collectors.toList());
             cxScanBuilder.xIssues(xIssueList);
             cxScanBuilder.unFilteredIssues(unFilteredIssueList);
             cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
