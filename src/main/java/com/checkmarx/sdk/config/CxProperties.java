@@ -36,6 +36,10 @@ public class CxProperties extends CxPropertiesBase{
 
     @Getter
     @Setter
+    private Boolean cancelInpregressScan = false;
+
+    @Getter
+    @Setter
     @Builder.Default
     private Boolean isBranchedIncremental = false;
 
