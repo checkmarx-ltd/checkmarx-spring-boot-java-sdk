@@ -408,13 +408,11 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         resultPath=resultPath+ File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
         File resultFilePath = new File(resultPath);
         File sastResultFile = null;
-        String mandatoryFields = "-s "+sourceDir +" "+"-n "+projectName+" "+"-r "+resultPath;
-        log.debug("mandatory {}",mandatoryFields);
         log.info("Executing SCA Resolver flow.");
         log.info("Path to Sca Resolver: {}", scaProperties.getPathToScaResolver());
         //log.info("Sca Resolver Additional Parameters: {}", additionalParameters);
         File zipFile =null;
-        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),mandatoryFields,additionalParameters,resultPath,log,scaConfig,scaProperties,customParameters);
+        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),createMandatoryList(sourceDir,projectName,resultPath),additionalParameters,resultPath,log,scaConfig,scaProperties,customParameters);
         try {
             if (exitCode == 0) {
                 log.info("***************SCA resolution completed successfully.******************");
@@ -466,6 +464,18 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             }
 
         }
+    }
+
+    private ArrayList<String> createMandatoryList(String sourceDir, String projectName, String resultPath){
+        ArrayList<String> mandatoryList = new ArrayList<>();
+        mandatoryList.add("-s");
+        mandatoryList.add(sourceDir);
+        mandatoryList.add("-n");
+        mandatoryList.add(projectName);
+        mandatoryList.add("-r");
+        mandatoryList.add(resultPath);
+        log.debug(String.valueOf(mandatoryList));
+        return mandatoryList;
     }
 
     private String manageParameters(Map<String,String> additionalParametersMap,String projectName,String path)
