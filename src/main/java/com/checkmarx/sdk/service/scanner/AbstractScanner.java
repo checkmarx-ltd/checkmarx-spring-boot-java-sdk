@@ -168,6 +168,19 @@ public abstract class AbstractScanner  {
             client.close();
         }
     }
+    public void deleteProject(ScanParams scanParams){
+        try{
+            RestClientConfig scanConfig = getScanConfig(scanParams);
+            this.client = allocateClient(scanConfig);
+            client.init();
+            client.deleteProject(scanParams);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            client.close();
+        }
+
+    }
 
     protected abstract RestClientConfig getScanConfig(ScanParams scaParams);
 
