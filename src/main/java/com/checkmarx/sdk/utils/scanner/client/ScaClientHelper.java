@@ -3,6 +3,7 @@ package com.checkmarx.sdk.utils.scanner.client;
 import com.checkmarx.sdk.config.*;
 import com.checkmarx.sdk.dto.*;
 import com.checkmarx.sdk.dto.ast.ASTResults;
+import com.checkmarx.sdk.dto.ast.ScanParams;
 import com.checkmarx.sdk.dto.filtering.FilterConfiguration;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.sca.*;
@@ -1688,6 +1689,21 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 HttpStatus.SC_OK,
                 "CxSCA findings",
                 true);
+    }
+
+    @Override
+    public void deleteProject(ScanParams scanParams)  {
+        try{
+            String projectName = scanParams.getProjectName();
+            log.info("Getting project by name for deleting project: '{}'", projectName);
+            String resolvedProjectId = getRiskManagementProjectId(projectName);
+            log.info("deleting CxSCA project according to project id {}",resolvedProjectId);
+            httpClient.deleteRequest(String.format(PROJECTS_BY_ID, resolvedProjectId), HttpStatus.SC_NO_CONTENT, "delete a project");
+        }catch (IOException e){
+            log.error("Error while deleting project");
+            throw new RuntimeException(e);
+        }
+
     }
 
     private String createSbomReport(String scanId, String fileFormat,boolean hideDev,boolean showLicenses)throws IOException
