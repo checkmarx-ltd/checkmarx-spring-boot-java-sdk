@@ -1028,7 +1028,7 @@ public class CxService implements CxClient {
         xIssueBuilder.severity(result.getSeverity());
         xIssueBuilder.vulnerability(result.getName());
         xIssueBuilder.file(resultType.getFileName());
-        xIssueBuilder.severity(resultType.getSeverity());
+        xIssueBuilder.severity(cxProperties.getSeverityFullName(resultType.getSeverityIndex()));
         xIssueBuilder.link(resultType.getDeepLink());
         xIssueBuilder.vulnerabilityStatus(cxProperties.getStateFullName(resultType.getState()));
         xIssueBuilder.queryId(result.getId());
@@ -1171,6 +1171,7 @@ public class CxService implements CxClient {
     private void prepareIssuesRemoveDuplicates(List<ScanResults.XIssue> cxIssueList, ResultType resultType, Map<Integer, ScanResults.IssueDetails> details,
                                                boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
         try {
+            String severityName = cxProperties.getSeverityFullName(resultType.getSeverityIndex());
             if (!cxProperties.getDisableClubbing() && cxIssueList.contains(issue)) {
                 /*Get existing issue of same vuln+filename*/
                 ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
@@ -1179,12 +1180,12 @@ public class CxService implements CxClient {
                     if (falsePositive) {
                         existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
                     } else {
-                        if (!summary.containsKey(resultType.getSeverity())) {
-                            summary.put(resultType.getSeverity(), 0);
+                        if (!summary.containsKey(severityName)) {
+                            summary.put(severityName, 0);
                         }
-                        int severityCount = summary.get(resultType.getSeverity());
+                        int severityCount = summary.get(severityName);
                         severityCount++;
-                        summary.put(resultType.getSeverity(), severityCount);
+                        summary.put(severityName, severityCount);
                     }
                     existingIssue.getDetails().putAll(details);
                 } else { //reference exists, ensure fp flag is maintained
@@ -1194,9 +1195,9 @@ public class CxService implements CxClient {
                         existingDetails.setFalsePositive(true);
                         existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
                         //bump down the count for the severity
-                        int severityCount = summary.get(resultType.getSeverity());
+                        int severityCount = summary.get(severityName);
                         severityCount--;
-                        summary.put(resultType.getSeverity(), severityCount);
+                        summary.put(severityName, severityCount);
                     }
                 }
                 //adding description if existing ref found
@@ -1227,12 +1228,12 @@ public class CxService implements CxClient {
                 if (falsePositive) {
                     issue.setFalsePositiveCount((issue.getFalsePositiveCount() + 1));
                 } else {
-                    if (!summary.containsKey(resultType.getSeverity())) {
-                        summary.put(resultType.getSeverity(), 0);
+                    if (!summary.containsKey(severityName)) {
+                        summary.put(severityName, 0);
                     }
-                    int severityCount = summary.get(resultType.getSeverity());
+                    int severityCount = summary.get(severityName);
                     severityCount++;
-                    summary.put(resultType.getSeverity(), severityCount);
+                    summary.put(severityName, severityCount);
                 }
                 cxIssueList.add(issue);
             }
