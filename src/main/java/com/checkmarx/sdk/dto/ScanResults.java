@@ -61,6 +61,9 @@ public class ScanResults{
     private String output;
     private Map<String, Object> additionalDetails;
     private CxScanSummary scanSummary;
+    @Getter
+    @Setter
+    private CxScanSummary projectScanSummary;
     private SCAResults scaResults;
     private ASTResults astResults;
 
@@ -809,6 +812,7 @@ public class ScanResults{
         private List<XIssue> unFilteredIssues;
         private Map<String, Object> additionalDetails;
         private CxScanSummary scanSummary;
+        private CxScanSummary projectScanSummary;
         private SCAResults scaResults;
         private ASTResults astResults;
 
@@ -874,6 +878,11 @@ public class ScanResults{
             this.scanSummary = scanSummary;
             return this;
         }
+        public ScanResults.ScanResultsBuilder projectScanSummary(CxScanSummary projectScanSummary) {
+            this.projectScanSummary = projectScanSummary;
+            return this;
+        }
+
 
         public ScanResults.ScanResultsBuilder scaResults(SCAResults scaResults) {
             this.scaResults = scaResults;
