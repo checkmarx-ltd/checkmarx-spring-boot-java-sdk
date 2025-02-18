@@ -2298,7 +2298,11 @@ public class CxService implements CxClient {
 
                             derivedProjectName = params.getProjectName().replace(params.getModifiedProjectName(),defaultBranch);
                         }else{
-                            derivedProjectName = params.getProjectName() + "-" + defaultBranch;
+                            if(cxProperties.getIsDefaultBranchEmpty() && (defaultBranch==null || defaultBranch.isEmpty())){
+                                derivedProjectName = params.getProjectName();
+                            }else{
+                                derivedProjectName = params.getProjectName() + "-" + defaultBranch;
+                            }
                         }
                     }
 
@@ -2307,7 +2311,13 @@ public class CxService implements CxClient {
                     if(baseProjectId.equals(UNKNOWN_INT)){
                         baseProjectId = createProject(teamId, derivedProjectName);
                     }
-                    projectId = branchProject(baseProjectId, params.getProjectName());
+
+                    if(cxProperties.getIsDefaultBranchEmpty() && (defaultBranch==null || defaultBranch.isEmpty()) && (currentBranch!=null || !currentBranch.isEmpty())){
+                        projectId = branchProject(baseProjectId, params.getProjectName()+"-"+currentBranch);
+                    }else{
+                        projectId = branchProject(baseProjectId, params.getProjectName());
+                    }
+
                 } else {
                     projectId = createProject(teamId, params.getProjectName());
                 }

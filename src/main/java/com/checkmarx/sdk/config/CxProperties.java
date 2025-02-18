@@ -40,6 +40,10 @@ public class CxProperties extends CxPropertiesBase{
 
     @Getter
     @Setter
+    private Boolean isDefaultBranchEmpty = false;
+
+    @Getter
+    @Setter
     @Builder.Default
     private Boolean isBranchedIncremental = false;
 
