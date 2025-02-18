@@ -409,6 +409,29 @@ public class CxService implements CxClient {
         return UNKNOWN_INT;
     }
 
+    public String getScanStatusName(Integer scanId) {
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        log.debug("Retrieving xml status of xml Id {}", scanId);
+        try {
+            ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_STATUS), HttpMethod.GET, httpEntity, String.class, scanId);
+            JSONObject obj = new JSONObject(projects.getBody());
+            JSONObject status = obj.getJSONObject("status");
+            log.debug("status id {}, status name {}", status.getInt("id"), status.getString("name"));
+            return status.getString("name");
+        } catch (HttpStatusCodeException e) {
+            log.error("HTTP Status Code of {} while getting xml status for xml Id {}", e.getStatusCode(), scanId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        catch (Exception e) {
+            log.error("Error occurred while getting scan status");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return "NA";
+    }
+
     /**
      * Generate a scan report request (xml) based on ScanId
      */
