@@ -48,6 +48,9 @@ public class CxProperties extends CxPropertiesBase{
     private String token ;
 
 
+    @Getter
+    @Setter
+    @Builder.Default
     private Boolean isDefaultBranchEmpty = false;
 
 
