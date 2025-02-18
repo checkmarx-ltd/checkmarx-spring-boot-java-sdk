@@ -40,6 +40,15 @@ public class CxProperties extends CxPropertiesBase{
 
     @Getter
     @Setter
+    private Boolean enableTokenLogin = false;
+
+    @Getter
+    @Setter
+    private String token ;
+
+
+    @Getter
+    @Setter
     @Builder.Default
     private Boolean isBranchedIncremental = false;
 
