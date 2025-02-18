@@ -155,6 +155,14 @@ public class CxProperties extends CxPropertiesBase{
             "4", "PROPOSED NOT EXPLOITABLE"
     );
 
+    private static final Map<String, String> CXSAST_SEVERITY_ID_TO_NAME = ImmutableMap.of(
+            "0", "INFO",
+            "1","LOW",
+            "2", "MEDIUM",
+            "3", "HIGH",
+            "4", "CRITICAL"
+    );
+
     public void setEnabledZipScan(Boolean enabledZipScan){
         this.enabledZipScan = enabledZipScan;
     }
@@ -359,6 +367,10 @@ public class CxProperties extends CxPropertiesBase{
 	    stateFullName = customStateMap.get(key);
 	}
 	return stateFullName;
+    }
+
+    public String getSeverityFullName(String key){
+        return CXSAST_SEVERITY_ID_TO_NAME.get(key);
     }
 
     public String checkCustomFalsePositive(String key){
