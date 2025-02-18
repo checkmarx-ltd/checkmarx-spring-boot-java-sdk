@@ -40,11 +40,15 @@ public class CxProperties extends CxPropertiesBase{
 
     @Getter
     @Setter
+
     private Boolean enableTokenLogin = false;
 
     @Getter
     @Setter
     private String token ;
+
+
+    private Boolean isDefaultBranchEmpty = false;
 
 
     @Getter
@@ -133,6 +137,9 @@ public class CxProperties extends CxPropertiesBase{
 
     @Getter @Setter
     private Boolean considerScanningStatus = false;
+
+    @Getter @Setter
+    private Boolean projectSummary= false;
 
 
     /**
