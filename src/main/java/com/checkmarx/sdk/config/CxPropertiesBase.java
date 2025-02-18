@@ -32,6 +32,13 @@ public abstract class CxPropertiesBase {
     private String excludeFolders;
     private Boolean offline = false;
     private String teamScript;
+
+    @Getter
+    @Setter
+    private String branchScript;
+    @Getter
+    @Setter
+    private String defaultBranchScript;
     private String projectScript;
     private Boolean enablePostActionMonitor = false;
     private String postCloneScript;

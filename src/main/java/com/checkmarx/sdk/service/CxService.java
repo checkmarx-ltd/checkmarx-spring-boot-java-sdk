@@ -409,6 +409,29 @@ public class CxService implements CxClient {
         return UNKNOWN_INT;
     }
 
+    public String getScanStatusName(Integer scanId) {
+        HttpEntity httpEntity = new HttpEntity<>(authClient.createAuthHeaders());
+        log.debug("Retrieving xml status of xml Id {}", scanId);
+        try {
+            ResponseEntity<String> projects = restTemplate.exchange(cxProperties.getUrl().concat(SCAN_STATUS), HttpMethod.GET, httpEntity, String.class, scanId);
+            JSONObject obj = new JSONObject(projects.getBody());
+            JSONObject status = obj.getJSONObject("status");
+            log.debug("status id {}, status name {}", status.getInt("id"), status.getString("name"));
+            return status.getString("name");
+        } catch (HttpStatusCodeException e) {
+            log.error("HTTP Status Code of {} while getting xml status for xml Id {}", e.getStatusCode(), scanId);
+            log.error(ExceptionUtils.getStackTrace(e));
+        } catch (JSONException e) {
+            log.error("Error processing JSON Response");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        catch (Exception e) {
+            log.error("Error occurred while getting scan status");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return "NA";
+    }
+
     /**
      * Generate a scan report request (xml) based on ScanId
      */
@@ -639,12 +662,17 @@ public class CxService implements CxClient {
             cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
             CxScanSummary scanSummary = null;
+            CxScanSummary projectSummary = null;
             if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                if(cxProperties.getProjectSummary()!=null && cxProperties.getProjectSummary()){
+                    projectSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                }
                 scanSummary = new CxScanSummary(summary);
             } else {
                 scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
             }
             cxScanBuilder.scanSummary(scanSummary);
+            cxScanBuilder.projectScanSummary(projectSummary);
             ScanResults results = cxScanBuilder.build();
             //Add the summary map (severity, count)
             results.getAdditionalDetails().put(Constants.SUMMARY_KEY, summary);
@@ -837,12 +865,17 @@ public class CxService implements CxClient {
             ScanResults results = cxScanBuilder.build();
             if (!cxProperties.getOffline() && !ScanUtils.empty(cxResults.getScanId())) {
                 CxScanSummary scanSummary = null;
+                CxScanSummary projectSummary = null;
                 if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                    if(cxProperties.getProjectSummary()!=null && cxProperties.getProjectSummary()){
+                        projectSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                    }
                     scanSummary = new CxScanSummary(summary);
                 } else {
                     scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
                 }
                 results.setScanSummary(scanSummary);
+                results.setProjectScanSummary(projectSummary);
             }
             results.getAdditionalDetails().put(Constants.SUMMARY_KEY, summary);
             return results;
@@ -1028,7 +1061,7 @@ public class CxService implements CxClient {
         xIssueBuilder.severity(result.getSeverity());
         xIssueBuilder.vulnerability(result.getName());
         xIssueBuilder.file(resultType.getFileName());
-        xIssueBuilder.severity(resultType.getSeverity());
+        xIssueBuilder.severity(cxProperties.getSeverityFullName(resultType.getSeverityIndex()));
         xIssueBuilder.link(resultType.getDeepLink());
         xIssueBuilder.vulnerabilityStatus(cxProperties.getStateFullName(resultType.getState()));
         xIssueBuilder.queryId(result.getId());
@@ -1171,6 +1204,7 @@ public class CxService implements CxClient {
     private void prepareIssuesRemoveDuplicates(List<ScanResults.XIssue> cxIssueList, ResultType resultType, Map<Integer, ScanResults.IssueDetails> details,
                                                boolean falsePositive, ScanResults.XIssue issue, Map<String, Integer> summary) {
         try {
+            String severityName = cxProperties.getSeverityFullName(resultType.getSeverityIndex());
             if (!cxProperties.getDisableClubbing() && cxIssueList.contains(issue)) {
                 /*Get existing issue of same vuln+filename*/
                 ScanResults.XIssue existingIssue = cxIssueList.get(cxIssueList.indexOf(issue));
@@ -1179,12 +1213,12 @@ public class CxService implements CxClient {
                     if (falsePositive) {
                         existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
                     } else {
-                        if (!summary.containsKey(resultType.getSeverity())) {
-                            summary.put(resultType.getSeverity(), 0);
+                        if (!summary.containsKey(severityName)) {
+                            summary.put(severityName, 0);
                         }
-                        int severityCount = summary.get(resultType.getSeverity());
+                        int severityCount = summary.get(severityName);
                         severityCount++;
-                        summary.put(resultType.getSeverity(), severityCount);
+                        summary.put(severityName, severityCount);
                     }
                     existingIssue.getDetails().putAll(details);
                 } else { //reference exists, ensure fp flag is maintained
@@ -1194,9 +1228,9 @@ public class CxService implements CxClient {
                         existingDetails.setFalsePositive(true);
                         existingIssue.setFalsePositiveCount((existingIssue.getFalsePositiveCount() + 1));
                         //bump down the count for the severity
-                        int severityCount = summary.get(resultType.getSeverity());
+                        int severityCount = summary.get(severityName);
                         severityCount--;
-                        summary.put(resultType.getSeverity(), severityCount);
+                        summary.put(severityName, severityCount);
                     }
                 }
                 //adding description if existing ref found
@@ -1227,12 +1261,12 @@ public class CxService implements CxClient {
                 if (falsePositive) {
                     issue.setFalsePositiveCount((issue.getFalsePositiveCount() + 1));
                 } else {
-                    if (!summary.containsKey(resultType.getSeverity())) {
-                        summary.put(resultType.getSeverity(), 0);
+                    if (!summary.containsKey(severityName)) {
+                        summary.put(severityName, 0);
                     }
-                    int severityCount = summary.get(resultType.getSeverity());
+                    int severityCount = summary.get(severityName);
                     severityCount++;
-                    summary.put(resultType.getSeverity(), severityCount);
+                    summary.put(severityName, severityCount);
                 }
                 cxIssueList.add(issue);
             }
@@ -2298,7 +2332,11 @@ public class CxService implements CxClient {
 
                             derivedProjectName = params.getProjectName().replace(params.getModifiedProjectName(),defaultBranch);
                         }else{
-                            derivedProjectName = params.getProjectName() + "-" + defaultBranch;
+                            if(cxProperties.getIsDefaultBranchEmpty() && (defaultBranch==null || defaultBranch.isEmpty())){
+                                derivedProjectName = params.getProjectName();
+                            }else{
+                                derivedProjectName = params.getProjectName() + "-" + defaultBranch;
+                            }
                         }
                     }
 
@@ -2307,7 +2345,13 @@ public class CxService implements CxClient {
                     if(baseProjectId.equals(UNKNOWN_INT)){
                         baseProjectId = createProject(teamId, derivedProjectName);
                     }
-                    projectId = branchProject(baseProjectId, params.getProjectName());
+
+                    if(cxProperties.getIsDefaultBranchEmpty() && (defaultBranch==null || defaultBranch.isEmpty()) && (currentBranch!=null || !currentBranch.isEmpty())){
+                        projectId = branchProject(baseProjectId, params.getProjectName()+"-"+currentBranch);
+                    }else{
+                        projectId = branchProject(baseProjectId, params.getProjectName());
+                    }
+
                 } else {
                     projectId = createProject(teamId, params.getProjectName());
                 }

@@ -225,7 +225,13 @@ public class CxAuthService implements CxAuthClient{
         //
         /// If shards are enabled then fetch the token from the shard; otherwise, use the local one
         //
-        String authToken = token;
+        String authToken ;
+
+        if(cxProperties.getEnableTokenLogin()){
+        token= cxProperties.getToken();
+        }
+
+        authToken = token;
         if(cxProperties.getEnableShardManager()) {
             ShardSession shard = sessionTracker.getShardSession();
             authToken = shard.getAccessToken();
@@ -234,7 +240,11 @@ public class CxAuthService implements CxAuthClient{
         /// Get a new access token if missing or has expired.
         //
         if (authToken == null || isTokenExpired()) {
-            getAuthToken();
+            if(cxProperties.getEnableTokenLogin()){
+                token= cxProperties.getToken();
+            }else{
+                getAuthToken();
+            }
             authToken = token;
         }
         //

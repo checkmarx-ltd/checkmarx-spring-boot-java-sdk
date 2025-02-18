@@ -40,6 +40,22 @@ public class CxProperties extends CxPropertiesBase{
 
     @Getter
     @Setter
+
+    private Boolean enableTokenLogin = false;
+
+    @Getter
+    @Setter
+    private String token ;
+
+
+    @Getter
+    @Setter
+    @Builder.Default
+    private Boolean isDefaultBranchEmpty = false;
+
+
+    @Getter
+    @Setter
     @Builder.Default
     private Boolean isBranchedIncremental = false;
 
@@ -125,6 +141,9 @@ public class CxProperties extends CxPropertiesBase{
     @Getter @Setter
     private Boolean considerScanningStatus = false;
 
+    @Getter @Setter
+    private Boolean projectSummary= false;
+
 
     /**
      * Maps finding state ID (as returned in CxSAST report) to state name (as specified in filter configuration).
@@ -134,6 +153,14 @@ public class CxProperties extends CxPropertiesBase{
             "2", "CONFIRMED",
             "3", "URGENT",
             "4", "PROPOSED NOT EXPLOITABLE"
+    );
+
+    private static final Map<String, String> CXSAST_SEVERITY_ID_TO_NAME = ImmutableMap.of(
+            "0", "INFO",
+            "1","LOW",
+            "2", "MEDIUM",
+            "3", "HIGH",
+            "4", "CRITICAL"
     );
 
     public void setEnabledZipScan(Boolean enabledZipScan){
@@ -340,6 +367,10 @@ public class CxProperties extends CxPropertiesBase{
 	    stateFullName = customStateMap.get(key);
 	}
 	return stateFullName;
+    }
+
+    public String getSeverityFullName(String key){
+        return CXSAST_SEVERITY_ID_TO_NAME.get(key);
     }
 
     public String checkCustomFalsePositive(String key){

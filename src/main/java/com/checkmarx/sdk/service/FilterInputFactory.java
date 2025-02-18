@@ -37,12 +37,13 @@ public class FilterInputFactory {
 
     public FilterInput createFilterInputForCxSast(QueryType findingGroup, ResultType finding) {
         String stateName = cxProperties.getStateFullName(finding.getState());
+        String severityName = cxProperties.getSeverityFullName(finding.getSeverityIndex());
 
         return FilterInput.builder()
                 .id(finding.getNodeId())
                 .category(findingGroup.getName().toUpperCase(Locale.ROOT))
                 .cwe(findingGroup.getCweId())
-                .severity(finding.getSeverity().toUpperCase(Locale.ROOT))
+                .severity(severityName)
                 .status(finding.getStatus().toUpperCase(Locale.ROOT))
                 .state(stateName)
                 .build();
