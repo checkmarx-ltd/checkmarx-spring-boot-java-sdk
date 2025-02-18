@@ -74,7 +74,7 @@ public class ScanResults{
     @Getter @Setter
     private String latestCommitterEmail;
     public ScanResults(Boolean osa, String projectId,String deepLink, String reportCreationTime, String scanTime, String team, String project, String link, String files, String loc, String scanType,String version,
-                       List<XIssue> xIssues,List<XIssue> unFilteredIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary, SCAResults scaResults, ASTResults astResults) {
+                       List<XIssue> xIssues,List<XIssue> unFilteredIssues, Map<String, Object> additionalDetails, CxScanSummary scanSummary,CxScanSummary projectScanSummary, SCAResults scaResults, ASTResults astResults) {
         this.osa = osa;
         this.projectId = projectId;
         this.DeepLink = deepLink;
@@ -91,6 +91,7 @@ public class ScanResults{
         this.unFilteredIssues = unFilteredIssues;
         this.additionalDetails = additionalDetails;
         this.scanSummary = scanSummary;
+        this.projectScanSummary = projectScanSummary;
         this.scaResults = scaResults;
         this.astResults = astResults;
     }
@@ -895,7 +896,7 @@ public class ScanResults{
         }
 
         public ScanResults build() {
-            return new ScanResults(osa, projectId, DeepLink,  ReportCreationTime, ScanTime, team, project, link, files, loc, scanType,version, xIssues,unFilteredIssues ,additionalDetails, scanSummary, scaResults, astResults);
+            return new ScanResults(osa, projectId, DeepLink,  ReportCreationTime, ScanTime, team, project, link, files, loc, scanType,version, xIssues,unFilteredIssues ,additionalDetails, scanSummary,projectScanSummary, scaResults, astResults);
         }
 
         public String getVersion() {
