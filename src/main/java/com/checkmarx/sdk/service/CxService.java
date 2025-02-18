@@ -662,12 +662,17 @@ public class CxService implements CxClient {
             cxScanBuilder.setVersion(cxResults.getCheckmarxVersion());
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
             CxScanSummary scanSummary = null;
+            CxScanSummary projectSummary = null;
             if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                if(cxProperties.getProjectSummary()!=null && cxProperties.getProjectSummary()){
+                    projectSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                }
                 scanSummary = new CxScanSummary(summary);
             } else {
                 scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
             }
             cxScanBuilder.scanSummary(scanSummary);
+            cxScanBuilder.projectScanSummary(projectSummary);
             ScanResults results = cxScanBuilder.build();
             //Add the summary map (severity, count)
             results.getAdditionalDetails().put(Constants.SUMMARY_KEY, summary);
@@ -860,12 +865,17 @@ public class CxService implements CxClient {
             ScanResults results = cxScanBuilder.build();
             if (!cxProperties.getOffline() && !ScanUtils.empty(cxResults.getScanId())) {
                 CxScanSummary scanSummary = null;
+                CxScanSummary projectSummary = null;
                 if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                    if(cxProperties.getProjectSummary()!=null && cxProperties.getProjectSummary()){
+                        projectSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                    }
                     scanSummary = new CxScanSummary(summary);
                 } else {
                     scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
                 }
                 results.setScanSummary(scanSummary);
+                results.setProjectScanSummary(projectSummary);
             }
             results.getAdditionalDetails().put(Constants.SUMMARY_KEY, summary);
             return results;
