@@ -156,11 +156,11 @@ public class CxProperties extends CxPropertiesBase{
     );
 
     private static final Map<String, String> CXSAST_SEVERITY_ID_TO_NAME = ImmutableMap.of(
-            "0", "INFO",
-            "1","LOW",
-            "2", "MEDIUM",
-            "3", "HIGH",
-            "4", "CRITICAL"
+            "0", "Info",
+            "1","Low",
+            "2", "Medium",
+            "3", "High",
+            "4", "Critical"
     );
 
     public void setEnabledZipScan(Boolean enabledZipScan){
