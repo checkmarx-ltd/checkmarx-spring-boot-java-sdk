@@ -25,6 +25,12 @@ public class CxConfig implements Serializable {
     @JsonProperty("scanSubmittedComment")
     private Boolean scanSubmittedComment = true;
 
+    @JsonProperty("turnOffComment")
+    private Boolean turnOffComment = false;
+
+    @JsonProperty("turnOffPrSummary")
+    private Boolean turnOffPrSummary = false;
+
     @JsonProperty("host")
     private String host;
     @JsonProperty("credential")
@@ -201,6 +207,23 @@ public class CxConfig implements Serializable {
         this.emailNotifications = emailNotifications;
     }
 
+    @JsonProperty("turnOffComment")
+    public void setTurnOffComment(Boolean turnOffComment) {
+        this.turnOffComment = turnOffComment;
+    }
+
+    @JsonProperty("turnOffComment")
+    public Boolean getTurnOffComment() {
+        return turnOffComment;
+    }
+    @JsonProperty("turnOffPrSummary")
+    public Boolean getTurnOffPrSummary() {
+        return turnOffPrSummary;
+    }
+    @JsonProperty("turnOffPrSummary")
+    public void setTurnOffPrSummary(Boolean turnOffPrSummary) {
+        this.turnOffPrSummary = turnOffPrSummary;
+    }
 
     @JsonProperty("postActionPostbackId")
     public Integer getPostActionPostbackId() {
