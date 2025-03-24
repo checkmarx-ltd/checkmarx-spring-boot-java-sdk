@@ -44,6 +44,7 @@ public class Filter {
         HIGH("High"),
         MEDIUM("Medium"),
         LOW("Low"),
+        NONE("None"),
         INFO("Informational");
 
         private final String value;
