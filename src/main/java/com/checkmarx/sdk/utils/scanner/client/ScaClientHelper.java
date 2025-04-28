@@ -1698,7 +1698,7 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
             log.info("Getting project by name for deleting project: '{}'", projectName);
             String resolvedProjectId = getRiskManagementProjectId(projectName);
             log.info("deleting CxSCA project according to project id {}",resolvedProjectId);
-            if(resolvedProjectId!=null || !resolvedProjectId.isEmpty()){
+            if(resolvedProjectId!=null && !resolvedProjectId.isEmpty()){
                 httpClient.deleteRequest(String.format(PROJECTS_BY_ID, resolvedProjectId), HttpStatus.SC_NO_CONTENT, "delete a project");
             }else{
                 log.info("deleting CxSCA project {} does not exist.",projectName);

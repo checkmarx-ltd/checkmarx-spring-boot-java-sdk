@@ -104,7 +104,7 @@ public class ScaScanner extends AbstractScanner {
 
         Gson gson = new Gson();
         String jsonString = gson.toJson(findingsToRetain);
-        log.info(jsonString);
+        log.debug(jsonString);
         // Write JSON string to file
         try (FileWriter writer = new FileWriter("findingsToRetain.json")) {
             writer.write(jsonString);
