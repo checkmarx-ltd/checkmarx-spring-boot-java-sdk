@@ -1883,22 +1883,36 @@ public class CxService implements CxClient {
     public Integer uploadProjectSource(CxScanParams params,Integer projectId, File file,String comment) throws CheckmarxException {
         HttpHeaders headers = authClient.createAuthHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
         LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
-        FileSystemResource value = new FileSystemResource(file);
-        map.add("projectId", projectId);
-        map.add("customFields", params.getCustomFields());
-        map.add("overrideProjectSetting", cxProperties.getOverrideProjectSetting());
-        map.add("isIncremental", params.isIncremental());
-        map.add("isPublic", params.isPublic());
-        map.add("forceScan", params.isForceScan());
-        map.add("comment", comment);
-        map.add("presetId", getPresetId(params.getScanPreset()));
-        map.add("engineConfigurationId",getScanConfiguration(params.getScanConfiguration()));
-        map.add("zippedSource", value);
+        if(cxProperties.getVersion()>9.4){
+            headers.add("version", "1.2");
+            FileSystemResource value = new FileSystemResource(file);
+            map.add("projectId", projectId);
+            map.add("customFields", params.getCustomFields());
+            map.add("overrideProjectSetting", cxProperties.getOverrideProjectSetting());
+            map.add("isIncremental", params.isIncremental());
+            map.add("isPublic", params.isPublic());
+            map.add("forceScan", params.isForceScan());
+            map.add("comment", comment);
+            map.add("presetId", getPresetId(params.getScanPreset()));
+            map.add("engineConfigurationId",getScanConfiguration(params.getScanConfiguration()));
+            map.add("zippedSource", value);
+        }else {
+            headers.add("version", "1.0");
+            FileSystemResource value = new FileSystemResource(file);
+            map.add("projectId", projectId);
+            map.add("overrideProjectSetting", cxProperties.getOverrideProjectSetting());
+            map.add("isIncremental", params.isIncremental());
+            map.add("isPublic", params.isPublic());
+            map.add("forceScan", params.isForceScan());
+            map.add("comment", comment);
+            map.add("presetId", getPresetId(params.getScanPreset()));
+            map.add("engineConfigurationId",getScanConfiguration(params.getScanConfiguration()));
+            map.add("zippedSource", value);
 
+            log.debug("Using scanWithSettings version 1.0 CustomFields not available");
+        }
         HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(map, headers);
-
         try {
             log.info("Updating Source details for project Id {}", projectId);
             String response = restTemplate.exchange(cxProperties.getUrl().concat(PROJECT_SOURCE_FILE_WITH_SETTINGS), HttpMethod.POST, requestEntity, String.class).getBody();
@@ -2720,7 +2734,6 @@ public class CxService implements CxClient {
                 return new SASTScanReport(UNKNOWN_INT,true);
             }else if(cxProperties.getEnabledZipScan() && !cxProperties.getOverrideProjectSetting()){
                 String clonedRepoPath = cxRepoFileHelper.prepareRepoFile(params);
-                uploadProjectSource(params,projectId, new File(clonedRepoPath),comment);
                 params.setFilePath(clonedRepoPath);
                 return new SASTScanReport(uploadProjectSource(params,projectId, new File(clonedRepoPath),comment),false);
             }
