@@ -1884,34 +1884,18 @@ public class CxService implements CxClient {
         HttpHeaders headers = authClient.createAuthHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
-        if(cxProperties.getVersion()>9.4){
-            headers.add("version", "1.2");
-            FileSystemResource value = new FileSystemResource(file);
-            map.add("projectId", projectId);
-            map.add("customFields", params.getCustomFields());
-            map.add("overrideProjectSetting", cxProperties.getOverrideProjectSetting());
-            map.add("isIncremental", params.isIncremental());
-            map.add("isPublic", params.isPublic());
-            map.add("forceScan", params.isForceScan());
-            map.add("comment", comment);
-            map.add("presetId", getPresetId(params.getScanPreset()));
-            map.add("engineConfigurationId",getScanConfiguration(params.getScanConfiguration()));
-            map.add("zippedSource", value);
-        }else {
-            headers.add("version", "1.0");
-            FileSystemResource value = new FileSystemResource(file);
-            map.add("projectId", projectId);
-            map.add("overrideProjectSetting", cxProperties.getOverrideProjectSetting());
-            map.add("isIncremental", params.isIncremental());
-            map.add("isPublic", params.isPublic());
-            map.add("forceScan", params.isForceScan());
-            map.add("comment", comment);
-            map.add("presetId", getPresetId(params.getScanPreset()));
-            map.add("engineConfigurationId",getScanConfiguration(params.getScanConfiguration()));
-            map.add("zippedSource", value);
-
-            log.debug("Using scanWithSettings version 1.0 CustomFields not available");
-        }
+        headers.add("version", "1.2");
+        FileSystemResource value = new FileSystemResource(file);
+        map.add("projectId", projectId);
+        map.add("customFields", params.getCustomFields());
+        map.add("overrideProjectSetting", cxProperties.getOverrideProjectSetting());
+        map.add("isIncremental", params.isIncremental());
+        map.add("isPublic", params.isPublic());
+        map.add("forceScan", params.isForceScan());
+        map.add("comment", comment);
+        map.add("presetId", getPresetId(params.getScanPreset()));
+        map.add("engineConfigurationId",getScanConfiguration(params.getScanConfiguration()));
+        map.add("zippedSource", value);
         HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(map, headers);
         try {
             log.info("Updating Source details for project Id {}", projectId);
