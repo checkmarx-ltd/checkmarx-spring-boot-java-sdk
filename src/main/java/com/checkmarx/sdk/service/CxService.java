@@ -5,6 +5,7 @@ import com.checkmarx.sdk.config.CxProperties;
 import com.checkmarx.sdk.config.CxPropertiesBase;
 import com.checkmarx.sdk.dto.cx.preandpostaction.CustomTaskByName;
 import com.checkmarx.sdk.dto.cx.preandpostaction.ScanSettings;
+import com.checkmarx.sdk.dto.cx.projectdetails.CustomField;
 import com.checkmarx.sdk.dto.cx.projectdetails.ProjectFieldDetails;
 import com.checkmarx.sdk.dto.sast.Filter;
 import com.checkmarx.sdk.dto.ScanResults;
@@ -40,6 +41,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -104,7 +106,7 @@ public class CxService implements CxClient {
     Created (2)
     */
     public static final Integer REPORT_STATUS_CREATED = 2;
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(CxService.class);
+    private static final Logger log = LoggerFactory.getLogger(CxService.class);
     private static final String CUSTOM_FIELDS = "/customFields";
     private static final String TEAMS = "/auth/teams";
     private static final String TEAM = "/auth/teams/{id}";
@@ -663,11 +665,12 @@ public class CxService implements CxClient {
             cxScanBuilder.additionalDetails(getAdditionalScanDetails(cxResults));
             CxScanSummary scanSummary = null;
             CxScanSummary projectSummary = null;
-            if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
-                if(cxProperties.getProjectSummary()!=null && cxProperties.getProjectSummary()){
-                    projectSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
-                }
-                scanSummary = new CxScanSummary(summary);
+            if (cxProperties.getCxBranch() && cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                    if(cxProperties.getProjectSummary()!=null && cxProperties.getProjectSummary()){
+                        CxProjectBranchingStatus branch = getProjectBranchingStatus(Integer.valueOf(cxResults.getProjectId()));
+                        projectSummary = getScanSummary(branch.getOriginalProjectId());
+                    }
+                    scanSummary = new CxScanSummary(summary);
             } else {
                 scanSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
             }
@@ -693,6 +696,15 @@ public class CxService implements CxClient {
             log.error(ExceptionUtils.getStackTrace(e));
             throw new CheckmarxException(ERROR_PROCESSING_RESULTS.concat(reportId.toString()));
         }
+    }
+
+    private Map<String, Integer> normalizeSummary(Map<String, Integer> summary){
+        // Normalize keys to capitalize format eg: HIGH -> High
+        Map<String, Integer> normalized = new HashMap<>();
+        for (Map.Entry<String, Integer> entry : summary.entrySet()) {
+            normalized.put(org.springframework.util.StringUtils.capitalize(entry.getKey().toLowerCase()), entry.getValue());
+        }
+        return normalized;
     }
 
     /**
@@ -866,9 +878,10 @@ public class CxService implements CxClient {
             if (!cxProperties.getOffline() && !ScanUtils.empty(cxResults.getScanId())) {
                 CxScanSummary scanSummary = null;
                 CxScanSummary projectSummary = null;
-                if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+                if (cxProperties.getCxBranch() && cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
                     if(cxProperties.getProjectSummary()!=null && cxProperties.getProjectSummary()){
-                        projectSummary = getScanSummaryByScanId(Integer.valueOf(cxResults.getScanId()));
+                        CxProjectBranchingStatus branch = getProjectBranchingStatus(Integer.valueOf(cxResults.getProjectId()));
+                        projectSummary = getScanSummary(branch.getOriginalProjectId());
                     }
                     scanSummary = new CxScanSummary(summary);
                 } else {
@@ -1006,7 +1019,7 @@ public class CxService implements CxClient {
             log.debug("sastFilters: {}", sastFilters);
 
             Set<Integer> similarityIdsToExclude = null;
-            if (cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
+            if (cxProperties.getCxBranch() && cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
                 log.debug("Restricting results to current branch");
                 int projectId = Integer.parseInt(cxResults.getProjectId());
                 CxProjectBranchingStatus branch = getProjectBranchingStatus(projectId);
@@ -1043,7 +1056,7 @@ public class CxService implements CxClient {
             log.error("Null Pointer Exception Occurred while getting issue");
             log.error(ExceptionUtils.getStackTrace(e));
         }
-        return summary;
+        return normalizeSummary(summary);
     }
 
     private ScanResults.XIssue buildIssue(ScanResults.XIssue.XIssueBuilder xIssueBuilder,ResultType resultType,QueryType result,DateTimeFormatter formatter,CxXMLResultsType cxResults,String session,List<ScanResults.XIssue> cxIssueList,Map<String, Integer> summary,boolean flag){
