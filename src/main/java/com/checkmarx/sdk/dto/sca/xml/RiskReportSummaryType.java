@@ -62,7 +62,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "projectId",
     "projectName",
     "projectCreatedOn",
-    "CriticalVulnerabilityCount",
+    "criticalVulnerabilityCount",
     "highVulnerabilityCount",
     "mediumVulnerabilityCount",
     "lowVulnerabilityCount",
@@ -119,6 +119,8 @@ public class RiskReportSummaryType {
     protected byte vulnerablePackages;
     @XmlElement(name = "TotalPackagesWithLegalRisk")
     protected byte totalPackagesWithLegalRisk;
+    @XmlElement(name = "CriticalVulnerablePackages")
+    protected byte criticalVulnerablePackages;
     @XmlElement(name = "HighVulnerablePackages")
     protected byte highVulnerablePackages;
     @XmlElement(name = "MediumVulnerablePackages")
