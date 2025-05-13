@@ -14,9 +14,9 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 /**
  * <p>Java class for PackageType complex type.
- * 
+ *
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ *
  * <pre>
  * &lt;complexType name="PackageType">
  *   &lt;complexContent>
@@ -51,8 +51,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
+ *
+ *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "PackageType", propOrder = {
@@ -61,7 +61,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "version",
     "licenses",
     "matchType",
-    "CriticalVulnerabilityCount",
+    "criticalVulnerabilityCount",
     "highVulnerabilityCount",
     "mediumVulnerabilityCount",
     "lowVulnerabilityCount",
@@ -138,11 +138,11 @@ public class PackageType {
 
     /**
      * Gets the value of the id property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getId() {
         return id;
@@ -150,11 +150,11 @@ public class PackageType {
 
     /**
      * Sets the value of the id property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setId(String value) {
         this.id = value;
@@ -162,11 +162,11 @@ public class PackageType {
 
     /**
      * Gets the value of the name property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getName() {
         return name;
@@ -174,11 +174,11 @@ public class PackageType {
 
     /**
      * Sets the value of the name property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setName(String value) {
         this.name = value;
@@ -186,11 +186,11 @@ public class PackageType {
 
     /**
      * Gets the value of the version property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getVersion() {
         return version;
@@ -198,11 +198,11 @@ public class PackageType {
 
     /**
      * Sets the value of the version property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setVersion(String value) {
         this.version = value;
@@ -210,11 +210,11 @@ public class PackageType {
 
     /**
      * Gets the value of the licenses property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link LicensesType }
-     *     
+     *
      */
     public LicensesType getLicenses() {
         return licenses;
@@ -222,11 +222,11 @@ public class PackageType {
 
     /**
      * Sets the value of the licenses property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link LicensesType }
-     *     
+     *
      */
     public void setLicenses(LicensesType value) {
         this.licenses = value;
@@ -234,11 +234,11 @@ public class PackageType {
 
     /**
      * Gets the value of the matchType property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getMatchType() {
         return matchType;
@@ -246,11 +246,11 @@ public class PackageType {
 
     /**
      * Sets the value of the matchType property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setMatchType(String value) {
         this.matchType = value;
@@ -269,7 +269,7 @@ public class PackageType {
 
     /**
      * Gets the value of the highVulnerabilityCount property.
-     * 
+     *
      */
     public byte getHighVulnerabilityCount() {
         return highVulnerabilityCount;
@@ -277,7 +277,7 @@ public class PackageType {
 
     /**
      * Sets the value of the highVulnerabilityCount property.
-     * 
+     *
      */
     public void setHighVulnerabilityCount(byte value) {
         this.highVulnerabilityCount = value;
@@ -285,7 +285,7 @@ public class PackageType {
 
     /**
      * Gets the value of the mediumVulnerabilityCount property.
-     * 
+     *
      */
     public byte getMediumVulnerabilityCount() {
         return mediumVulnerabilityCount;
@@ -293,7 +293,7 @@ public class PackageType {
 
     /**
      * Sets the value of the mediumVulnerabilityCount property.
-     * 
+     *
      */
     public void setMediumVulnerabilityCount(byte value) {
         this.mediumVulnerabilityCount = value;
@@ -301,7 +301,7 @@ public class PackageType {
 
     /**
      * Gets the value of the lowVulnerabilityCount property.
-     * 
+     *
      */
     public byte getLowVulnerabilityCount() {
         return lowVulnerabilityCount;
@@ -309,7 +309,7 @@ public class PackageType {
 
     /**
      * Sets the value of the lowVulnerabilityCount property.
-     * 
+     *
      */
     public void setLowVulnerabilityCount(byte value) {
         this.lowVulnerabilityCount = value;
@@ -317,7 +317,7 @@ public class PackageType {
 
     /**
      * Gets the value of the numberOfVersionsSinceLastUpdate property.
-     * 
+     *
      */
     public byte getNumberOfVersionsSinceLastUpdate() {
         return numberOfVersionsSinceLastUpdate;
@@ -325,7 +325,7 @@ public class PackageType {
 
     /**
      * Sets the value of the numberOfVersionsSinceLastUpdate property.
-     * 
+     *
      */
     public void setNumberOfVersionsSinceLastUpdate(byte value) {
         this.numberOfVersionsSinceLastUpdate = value;
@@ -333,11 +333,11 @@ public class PackageType {
 
     /**
      * Gets the value of the newestVersionReleaseDate property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getNewestVersionReleaseDate() {
         return newestVersionReleaseDate;
@@ -345,11 +345,11 @@ public class PackageType {
 
     /**
      * Sets the value of the newestVersionReleaseDate property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setNewestVersionReleaseDate(String value) {
         this.newestVersionReleaseDate = value;
@@ -357,11 +357,11 @@ public class PackageType {
 
     /**
      * Gets the value of the newestVersion property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getNewestVersion() {
         return newestVersion;
@@ -369,11 +369,11 @@ public class PackageType {
 
     /**
      * Sets the value of the newestVersion property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setNewestVersion(String value) {
         this.newestVersion = value;
@@ -381,11 +381,11 @@ public class PackageType {
 
     /**
      * Gets the value of the outdated property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getOutdated() {
         return outdated;
@@ -393,11 +393,11 @@ public class PackageType {
 
     /**
      * Sets the value of the outdated property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setOutdated(String value) {
         this.outdated = value;
@@ -405,11 +405,11 @@ public class PackageType {
 
     /**
      * Gets the value of the releaseDate property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link XMLGregorianCalendar }
-     *     
+     *
      */
     public XMLGregorianCalendar getReleaseDate() {
         return releaseDate;
@@ -417,11 +417,11 @@ public class PackageType {
 
     /**
      * Sets the value of the releaseDate property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link XMLGregorianCalendar }
-     *     
+     *
      */
     public void setReleaseDate(XMLGregorianCalendar value) {
         this.releaseDate = value;
@@ -429,7 +429,7 @@ public class PackageType {
 
     /**
      * Gets the value of the riskScore property.
-     * 
+     *
      */
     public float getRiskScore() {
         return riskScore;
@@ -437,7 +437,7 @@ public class PackageType {
 
     /**
      * Sets the value of the riskScore property.
-     * 
+     *
      */
     public void setRiskScore(float value) {
         this.riskScore = value;
@@ -445,11 +445,11 @@ public class PackageType {
 
     /**
      * Gets the value of the severity property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getSeverity() {
         return severity;
@@ -457,11 +457,11 @@ public class PackageType {
 
     /**
      * Sets the value of the severity property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setSeverity(String value) {
         this.severity = value;
@@ -469,11 +469,11 @@ public class PackageType {
 
     /**
      * Gets the value of the locations property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link LocationsType }
-     *     
+     *
      */
     public LocationsType getLocations() {
         return locations;
@@ -481,11 +481,11 @@ public class PackageType {
 
     /**
      * Sets the value of the locations property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link LocationsType }
-     *     
+     *
      */
     public void setLocations(LocationsType value) {
         this.locations = value;
@@ -493,11 +493,11 @@ public class PackageType {
 
     /**
      * Gets the value of the packageRepository property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getPackageRepository() {
         return packageRepository;
@@ -505,11 +505,11 @@ public class PackageType {
 
     /**
      * Sets the value of the packageRepository property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setPackageRepository(String value) {
         this.packageRepository = value;
@@ -517,11 +517,11 @@ public class PackageType {
 
     /**
      * Gets the value of the isMalicious property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getIsMalicious() {
         return isMalicious;
@@ -529,11 +529,11 @@ public class PackageType {
 
     /**
      * Sets the value of the isMalicious property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setIsMalicious(String value) {
         this.isMalicious = value;
@@ -541,11 +541,11 @@ public class PackageType {
 
     /**
      * Gets the value of the isDirectDependency property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getIsDirectDependency() {
         return isDirectDependency;
@@ -553,11 +553,11 @@ public class PackageType {
 
     /**
      * Sets the value of the isDirectDependency property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setIsDirectDependency(String value) {
         this.isDirectDependency = value;
@@ -565,11 +565,11 @@ public class PackageType {
 
     /**
      * Gets the value of the isDevelopmentDependency property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getIsDevelopmentDependency() {
         return isDevelopmentDependency;
@@ -577,11 +577,11 @@ public class PackageType {
 
     /**
      * Sets the value of the isDevelopmentDependency property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setIsDevelopmentDependency(String value) {
         this.isDevelopmentDependency = value;
@@ -589,11 +589,11 @@ public class PackageType {
 
     /**
      * Gets the value of the isTestDependency property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getIsTestDependency() {
         return isTestDependency;
@@ -601,11 +601,11 @@ public class PackageType {
 
     /**
      * Sets the value of the isTestDependency property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setIsTestDependency(String value) {
         this.isTestDependency = value;
@@ -613,11 +613,11 @@ public class PackageType {
 
     /**
      * Gets the value of the isViolatingPolicy property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getIsViolatingPolicy() {
         return isViolatingPolicy;
@@ -625,11 +625,11 @@ public class PackageType {
 
     /**
      * Sets the value of the isViolatingPolicy property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setIsViolatingPolicy(String value) {
         this.isViolatingPolicy = value;
@@ -637,11 +637,11 @@ public class PackageType {
 
     /**
      * Gets the value of the usageType property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getUsageType() {
         return usageType;
@@ -649,11 +649,11 @@ public class PackageType {
 
     /**
      * Sets the value of the usageType property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setUsageType(String value) {
         this.usageType = value;
@@ -661,7 +661,7 @@ public class PackageType {
 
     /**
      * Gets the value of the vulnerabilityCount property.
-     * 
+     *
      */
     public byte getVulnerabilityCount() {
         return vulnerabilityCount;
@@ -669,7 +669,7 @@ public class PackageType {
 
     /**
      * Sets the value of the vulnerabilityCount property.
-     * 
+     *
      */
     public void setVulnerabilityCount(byte value) {
         this.vulnerabilityCount = value;
