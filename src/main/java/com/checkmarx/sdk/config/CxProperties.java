@@ -142,7 +142,7 @@ public class CxProperties extends CxPropertiesBase{
     private Boolean considerScanningStatus = false;
 
     @Getter @Setter
-    private Boolean projectSummary= false;
+    private Boolean projectSummary= true;
 
 
     /**
