@@ -668,7 +668,9 @@ public class CxService implements CxClient {
             if (cxProperties.getCxBranch() && cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
                     if(cxProperties.getProjectSummary()!=null && cxProperties.getProjectSummary()){
                         CxProjectBranchingStatus branch = getProjectBranchingStatus(Integer.valueOf(cxResults.getProjectId()));
-                        projectSummary = getScanSummary(branch.getOriginalProjectId());
+                        if(branch!=null){
+                            projectSummary = getScanSummary(branch.getOriginalProjectId());
+                        }
                     }
                     scanSummary = new CxScanSummary(summary);
             } else {
@@ -881,7 +883,9 @@ public class CxService implements CxClient {
                 if (cxProperties.getCxBranch() && cxProperties.getRestrictResultsToBranch() != null && cxProperties.getRestrictResultsToBranch()) {
                     if(cxProperties.getProjectSummary()!=null && cxProperties.getProjectSummary()){
                         CxProjectBranchingStatus branch = getProjectBranchingStatus(Integer.valueOf(cxResults.getProjectId()));
-                        projectSummary = getScanSummary(branch.getOriginalProjectId());
+                        if(branch!=null){
+                            projectSummary = getScanSummary(branch.getOriginalProjectId());
+                        }
                     }
                     scanSummary = new CxScanSummary(summary);
                 } else {
