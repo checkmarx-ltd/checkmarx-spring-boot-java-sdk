@@ -98,11 +98,11 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
     private static final String ENGINE_TYPE_FOR_API = "sca";
 
     private static final String TENANT_HEADER_NAME = "Account-Name";
-    private static  final String CX_USER_NAME ="--cxuser ";
-    private static  final String CX_SERVER ="--cxserver ";
-    private static  final String CX_PASSWORD = "--cxpassword ";
-    private static  final String CX_PROJECT_NAME = "--cxprojectname ";
-    private static  final String CX_SAST_RESULT_PATH ="--sast-result-path ";
+    private static  final String CX_USER_NAME ="--cxuser";
+    private static  final String CX_SERVER ="--cxserver";
+    private static  final String CX_PASSWORD = "--cxpassword";
+    private static  final String CX_PROJECT_NAME = "--cxprojectname";
+    private static  final String CX_SAST_RESULT_PATH ="--sast-result-path";
 
 
     public static final String CX_REPORT_LOCATION = File.separator + "Checkmarx" + File.separator + "Reports";
@@ -401,27 +401,29 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         String projectName = config.getProjectName();
         String FolderName = uniqueFolderName();
         String resultPath = cxRepoFileHelper.getGitClonePath()+File.separator+ FolderName ;
-        String additionalParameters = manageParameters(scaProperties.getScaResolverAddParameters(),projectName,resultPath );
+        String additionalParameters = convertMapToString(scaProperties.getScaResolverAddParameters());
         String sastResultPath ="";
         ArrayList<File> resultToZip = new ArrayList<>();
-
+        ArrayList<String> exploitablePath = createExploitableList(scaProperties.getScaResolverAddParameters(),projectName,resultPath);
         //file creation
-        resultPath=resultPath+ File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
-        File resultFilePath = new File(resultPath);
+        String scaResultPath=resultPath+ File.separator + SCA_RESOLVER_RESULT_FILE_NAME;
+        File resultFilePath = new File(scaResultPath);
         File sastResultFile = null;
         log.info("Executing SCA Resolver flow.");
         log.info("Path to Sca Resolver: {}", scaProperties.getPathToScaResolver());
         //log.info("Sca Resolver Additional Parameters: {}", additionalParameters);
         File zipFile =null;
-        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),createMandatoryList(sourceDir,projectName,resultPath),additionalParameters,resultPath,log,scaConfig,scaProperties,customParameters);
+        int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),createMandatoryList(sourceDir,projectName,scaResultPath),exploitablePath,additionalParameters,scaResultPath,log,scaConfig,scaProperties,customParameters);
         try {
             if (exitCode == 0) {
                 log.info("***************SCA resolution completed successfully.******************");
                 resultToZip.add(resultFilePath);
                 //check if sast-result-path is present, if exists add to zip.
-                if(additionalParameters.contains("--sast-result-path"))
+                if(exploitablePath.contains(CX_SAST_RESULT_PATH))
                 {
-                    sastResultPath = getSastResultFilePathFromAdditionalParams(additionalParameters);
+                    int index = exploitablePath.indexOf(CX_SAST_RESULT_PATH);
+                    sastResultPath = exploitablePath.get(index+1);
+                    //sastResultPath = getSastResultFilePathFromAdditionalParams(additionalParameters);
                     sastResultFile = new File(sastResultPath);
                     resultToZip.add(sastResultFile);
                 }
@@ -479,39 +481,37 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         return mandatoryList;
     }
 
-    private String manageParameters(Map<String,String> additionalParametersMap,String projectName,String path)
-    {
-        String newAdditionalParameters="";
-        String convertedAddParams = convertMapToString(additionalParametersMap);
-        String cxUser = CX_USER_NAME.concat(cxProperties.getUsername());
-        String cxServer = CX_SERVER.concat(cxProperties.getBaseUrl());
-        String cxPassword = CX_PASSWORD.concat(cxProperties.getPassword());
-        String cxProjectName = CX_PROJECT_NAME.concat(projectName);
-        String temp = convertedAddParams;
-        String exploitableParams = temp.concat(cxServer).concat(" ").concat(cxUser).concat(" ").concat(" ")
-                .concat(cxPassword).concat(" ").concat(cxProjectName).concat(" ");
-        if(scaProperties.isEnableExploitablePath() && !convertedAddParams.contains("--sast-result-path")) {
-            String finalPath = path + File.separator +SAST_RESOLVER_RESULT_FILE_NAME;
-            String resultPath = CX_SAST_RESULT_PATH.concat(finalPath);
-            convertedAddParams = exploitableParams.concat(resultPath).concat(" ");
-        }
-        else if(scaProperties.isEnableExploitablePath() && convertedAddParams.contains("--sast-result-path"))
-        {
-            convertedAddParams = exploitableParams;
-            String sastResultPath =getSastResultFilePathFromAdditionalParams(convertedAddParams);
-            File sastResultFile = new File(sastResultPath);
-            if(sastResultFile.isDirectory())
-            {
-                sastResultPath = sastResultPath + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME;
+    private ArrayList<String> createExploitableList(Map<String,String> additionalParametersMap,String projectName,String path){
+        ArrayList<String> exploitableList = new ArrayList<>();
+        String convertedParams = convertMapToString(additionalParametersMap);
+        if(scaProperties.isEnableExploitablePath()){
+            exploitableList.add(CX_SERVER);
+            exploitableList.add(cxProperties.getBaseUrl());
+            exploitableList.add(CX_USER_NAME);
+            exploitableList.add(cxProperties.getUsername());
+            exploitableList.add(CX_PASSWORD);
+            exploitableList.add(cxProperties.getPassword());
+            exploitableList.add(CX_PROJECT_NAME);
+            exploitableList.add(projectName);
+            exploitableList.add(CX_SAST_RESULT_PATH);
+            if(convertedParams.contains(CX_SAST_RESULT_PATH)){
+                String sastResultPath =getSastResultFilePathFromAdditionalParams(convertedParams);
+                File sastResultFile = new File(sastResultPath);
+                if(sastResultFile.isDirectory())
+                {
+                    exploitableList.add(sastResultPath + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME);
+                }
+                else {
+                    String parentName = sastResultFile.getParent();
+                    exploitableList.add(parentName + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME);
+                }
+            }else{
+                String finalPath = path + File.separator +SAST_RESOLVER_RESULT_FILE_NAME;
+                exploitableList.add(finalPath);
             }
-            else {
-                String parentName = sastResultFile.getParent();
-                sastResultPath = parentName + File.separator + uniqueFolderName()+ File.separator + SAST_RESOLVER_RESULT_FILE_NAME;
-            }
-            newAdditionalParameters = setSastResultFilePathFromAdditionalParams(convertedAddParams,sastResultPath);
-            return newAdditionalParameters;
+            log.debug("Exploitable path details:{}", exploitableList);
         }
-        return convertedAddParams;
+        return exploitableList;
     }
 
     private String convertMapToString(Map<String,String> addParams)

@@ -18,12 +18,13 @@ public class ScaResolverUtils {
     public static final String SCA_RESOLVER_FOR_LINUX = "/" + "ScaResolver";
     public static final String OFFLINE = "offline";
 
-    public static int runScaResolver(String pathToScaResolver, ArrayList<String> mandatoryList , String scaResolverAddParams, String pathToResultJSONFile, Logger log, ScaConfig scaConfig, ScaProperties scaProperties,String custom)
+    public static int runScaResolver(String pathToScaResolver, ArrayList<String> mandatoryList, ArrayList<String> exploitableList, String scaResolverAddParams, String pathToResultJSONFile, Logger log, ScaConfig scaConfig, ScaProperties scaProperties,String custom)
             throws CxHTTPClientException {
         int exitCode = -100;
         String[] scaResolverCommand;
 
         ArrayList<String> arguments = new ArrayList<>(mandatoryList);
+        arguments.addAll(exploitableList);
 
         Matcher m1 = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(scaResolverAddParams);
         while (m1.find())
