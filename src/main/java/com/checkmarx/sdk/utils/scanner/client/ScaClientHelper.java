@@ -411,7 +411,6 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
         File sastResultFile = null;
         log.info("Executing SCA Resolver flow.");
         log.info("Path to Sca Resolver: {}", scaProperties.getPathToScaResolver());
-        //log.info("Sca Resolver Additional Parameters: {}", additionalParameters);
         File zipFile =null;
         int exitCode = ScaResolverUtils.runScaResolver(scaProperties.getPathToScaResolver(),createMandatoryList(sourceDir,projectName,scaResultPath),exploitablePath,additionalParameters,scaResultPath,log,scaConfig,scaProperties,customParameters);
         try {
@@ -423,7 +422,6 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 {
                     int index = exploitablePath.indexOf(CX_SAST_RESULT_PATH);
                     sastResultPath = exploitablePath.get(index+1);
-                    //sastResultPath = getSastResultFilePathFromAdditionalParams(additionalParameters);
                     sastResultFile = new File(sastResultPath);
                     resultToZip.add(sastResultFile);
                 }
@@ -509,7 +507,6 @@ public class ScaClientHelper extends ScanClientHelper implements IScanClientHelp
                 String finalPath = path + File.separator +SAST_RESOLVER_RESULT_FILE_NAME;
                 exploitableList.add(finalPath);
             }
-            log.debug("Exploitable path details:{}", exploitableList);
         }
         return exploitableList;
     }

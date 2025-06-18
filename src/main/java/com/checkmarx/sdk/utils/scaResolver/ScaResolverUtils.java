@@ -71,7 +71,7 @@ public class ScaResolverUtils {
                 }
             }
         }
-        //Overridng sca properties project name params
+        //Overriding sca properties project name params
         if(scaProperties.getScaResolverOverrideProjectName()!=null)
         {
             for(int i=0;i<arguments.size();i++)
@@ -145,7 +145,7 @@ public class ScaResolverUtils {
             exitCode = process.waitFor();
 
         } catch (IOException | InterruptedException e) {
-            log.error("Failed to execute next command : " + scaResolverCommand, e.getMessage(), e.getStackTrace());
+            log.error("Failed to execute next command : " + Arrays.toString(scaResolverCommand), e.getMessage(), e.getStackTrace());
             Thread.currentThread().interrupt();
             if (Thread.interrupted()) {
                 throw new CxHTTPClientException(e);
