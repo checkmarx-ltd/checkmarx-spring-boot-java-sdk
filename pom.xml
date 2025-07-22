@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.github.checkmarx-ltd</groupId>
 	<artifactId>cx-spring-boot-sdk</artifactId>
-	<version>0.6.28</version>
+	<version>0.6.29</version>
 
 
 	<name>cx-spring-boot-sdk</name>
@@ -219,14 +219,13 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.13</version>
+				<groupId>org.sonatype.central</groupId>
+				<artifactId>central-publishing-maven-plugin</artifactId>
+				<version>0.8.0</version>
 				<extensions>true</extensions>
 				<configuration>
-					<serverId>ossrh</serverId>
-					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+					<publishingServerId>central</publishingServerId>
+					<autoPublish>true</autoPublish>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -273,18 +272,6 @@
 		</plugins>
 	</build>
 
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/
-			</url>
-		</repository>
-	</distributionManagement>
-
 	<licenses>
 		<license>
 			<name>Apache License, Version 2.0</name>
@@ -301,8 +288,8 @@
 
 	<developers>
 		<developer>
-			<name>Ken McDonald</name>
-			<email>ken.mcdonald@checkmarx.com</email>
+			<name>Kedar Bhujade</name>
+			<email>kedar.bhujade@checkmarx.com</email>
 			<organization>Checkmarx</organization>
 			<organizationUrl>https://www.checkmarx.com</organizationUrl>
 		</developer>
