@@ -224,7 +224,8 @@
 				<version>0.8.0</version>
 				<extensions>true</extensions>
 				<configuration>
-					<publishingServerId>ossrh</publishingServerId>
+					<publishingServerId>central</publishingServerId>
+					<autoPublish>true</autoPublish>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -287,8 +288,8 @@
 
 	<developers>
 		<developer>
-			<name>Ken McDonald</name>
-			<email>ken.mcdonald@checkmarx.com</email>
+			<name>Kedar Bhujade</name>
+			<email>kedar.bhujade@checkmarx.com</email>
 			<organization>Checkmarx</organization>
 			<organizationUrl>https://www.checkmarx.com</organizationUrl>
 		</developer>
