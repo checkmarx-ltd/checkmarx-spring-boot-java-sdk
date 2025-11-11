@@ -13,5 +13,6 @@ public class Summary {
     private int directPackages;
     private int totalOutdatedPackages;
     private double riskScore;
+    private String createdOn;
     private Map<Filter.Severity, Integer> findingCounts;
 }
