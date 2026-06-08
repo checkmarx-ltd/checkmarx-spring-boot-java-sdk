@@ -81,7 +81,9 @@ public class SpringConfiguration {
                     .build();
             HttpComponentsClientHttpRequestFactory customRequestFactory = new HttpComponentsClientHttpRequestFactory();
             customRequestFactory.setHttpClient(httpClient);
-            return builder.requestFactory(() -> customRequestFactory).build();
+            RestTemplate restTemplate = builder.build();
+            restTemplate.setRequestFactory(customRequestFactory);
+            return restTemplate;
         } else if (properties.isTrustcerts()) {
             TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
@@ -113,11 +115,13 @@ public class SpringConfiguration {
                     .build();
             HttpComponentsClientHttpRequestFactory customRequestFactory = new HttpComponentsClientHttpRequestFactory();
             customRequestFactory.setHttpClient(httpClient);
-            return builder.requestFactory(() -> customRequestFactory).build();
+            RestTemplate restTemplate = builder.build();
+            restTemplate.setRequestFactory(customRequestFactory);
+            return restTemplate;
         } else {
             RestTemplate restTemplate = new RestTemplateBuilder()
-                    .setConnectTimeout(Duration.ofMillis(properties.getHttpConnectionTimeout()))
-                    .setReadTimeout(Duration.ofMillis(properties.getHttpReadTimeout()))
+                    .connectTimeout(Duration.ofMillis(properties.getHttpConnectionTimeout()))
+                    .readTimeout(Duration.ofMillis(properties.getHttpReadTimeout()))
                     .build();
 
             restTemplate.getMessageConverters()

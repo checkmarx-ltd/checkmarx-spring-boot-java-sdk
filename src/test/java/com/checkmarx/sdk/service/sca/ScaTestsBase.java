@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 public  abstract class ScaTestsBase extends CommonClientTest {
     // Storing the test project as an archive to avoid cluttering the current project
     // and also to prevent false positives during a vulnerability scan of the current project.
-    protected static final String PACKED_SOURCES_TO_SCAN = "sources-to-scan.zip";
+    protected static final String PACKED_SOURCES_TO_SCAN = "";
     
 
     protected void verifyScanResults(AstScaResults results) {
