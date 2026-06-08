@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.13</version>
+		<version>3.5.14</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.github.checkmarx-ltd</groupId>
 	<artifactId>cx-spring-boot-sdk</artifactId>
-	<version>0.6.31</version>
+	<version>0.6.32</version>
 
 
 	<name>cx-spring-boot-sdk</name>
@@ -28,6 +28,21 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web-services</artifactId>
+			<exclusions>
+				<!-- SDK is a client library; it never starts an embedded server.
+				     Drop embedded Tomcat (core + websocket) to avoid shipping it. -->
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-tomcat</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- Servlet API still needed for compilation and @SpringBootTest (MOCK) context;
+		     provided scope so the SDK does not bundle a container. -->
+		<dependency>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -111,12 +126,11 @@
 		<dependency>
 			<groupId>org.springframework.ws</groupId>
 			<artifactId>spring-ws-core</artifactId>
-			<version>3.1.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.22</version>
+			<version>1.18.34</version>
 		</dependency>
 		<dependency>
 			<groupId>org.modelmapper</groupId>
